@@ -13,7 +13,7 @@ Este guia mostra como configurar rapidamente o Draft Auth e realizar um fluxo de
 
 1.  **Clonar o Repositório:**
     ```bash
-    git clone [https://github.com/matheuspergoli/draftauth.git](https://github.com/matheuspergoli/draftauth.git)
+    git clone https://github.com/matheuspergoli/draftauth.git
     cd draftauth
     ```
 2.  **Instalar Dependências:**

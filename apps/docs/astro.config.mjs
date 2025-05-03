@@ -46,15 +46,6 @@ export default defineConfig({
 					]
 				},
 				{
-					label: "Integração Frontend",
-					items: [
-						{ label: "Visão Geral", slug: "frontend/overview" },
-						{ label: "Componentes", slug: "frontend/components" },
-						{ label: "Gerenciamento de Estado", slug: "frontend/state-management" },
-						{ label: "Roteamento", slug: "frontend/routing" }
-					]
-				},
-				{
 					label: "Guias",
 					items: [
 						{ label: "Configurando Provedores OAuth", slug: "guides/oauth-providers" },

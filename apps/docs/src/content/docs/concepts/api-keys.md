@@ -31,4 +31,3 @@ _Veja também:_
 
 - [Autenticação HMAC](/concepts/hmac)
 - [API Reference: Service API](/api/service)
-- [API Reference: Management API (API Keys)](/api/management#api-keys) (Adicionar link correto quando criado)

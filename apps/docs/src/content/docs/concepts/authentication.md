@@ -38,4 +38,3 @@ O Draft Auth gerencia a sessão centralizada e a emissão/renovação de tokens 
 _Veja também:_
 
 - [Guia: Configurando Provedores OAuth](/guides/oauth-providers)
-- [API Reference: Endpoints de Autenticação](/api/...) (Adicionar link correto quando criado)

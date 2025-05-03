@@ -7,6 +7,6 @@ Instruções detalhadas para configurar o ambiente de desenvolvimento do Draft A
 ## Clonando o Repositório
 
 ```bash
-git clone [https://github.com/matheuspergoli/draftauth.git](https://github.com/matheuspergoli/draftauth.git)
+git clone https://github.com/matheuspergoli/draftauth.git
 cd draftauth
 ```
