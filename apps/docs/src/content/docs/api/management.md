@@ -12,8 +12,6 @@ A Management API (`/api/manage`) fornece endpoints para administrar todos os asp
 
 **Principais Grupos de Endpoints:**
 
-_(Resumo dos grupos já detalhados no esboço anterior)_
-
 - **Aplicações (`/applications`, `/applications/:appId`, `/:appId`)**
   - Listar, criar, obter detalhes e deletar aplicações.
 - **URIs de Redirecionamento (`/applications/:appId/redirect-uris`)**

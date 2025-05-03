@@ -16,5 +16,3 @@ Endpoints:
 - **Gerenciamento de Cargos:**
   - `POST /roles/:userId/assign`: Atribui um cargo (pelo nome) a um usuário na aplicação.
   - `DELETE /users/:userId/revoke`: Revoga um cargo (pelo nome) de um usuário na aplicação.
-
-_(Detalhar parâmetros, corpos de requisição/resposta e códigos de status para cada endpoint)_

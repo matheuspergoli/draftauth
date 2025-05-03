@@ -31,6 +31,6 @@ Este guia mostra como configurar rapidamente o Draft Auth e realizar um fluxo de
     ```bash
     pnpm dev
     ```
-6.  **Acessar o Frontend:** Abra o `FRONTEND_URL` (geralmente `http://localhost:5173`) no navegador.
+6.  **Acessar o Frontend:** Abra o `FRONTEND_URL` no navegador.
 7.  **Setup Inicial:** Você será redirecionado para a autenticação e depois para a tela de setup para criar a aplicação principal.
 8.  **Acessar Dashboard:** Após o setup, você poderá acessar o dashboard de administração.
