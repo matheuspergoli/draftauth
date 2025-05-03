@@ -2,7 +2,7 @@
 title: O que é Draft Auth?
 ---
 
-DraftAuth é uma plataforma **centralizada** de identidade e acesso de **código aberto**, projetada para simplificar e unificar a autenticação e autorização em múltiplas aplicações[cite: 581].
+DraftAuth é uma plataforma **centralizada** de identidade e acesso de **código aberto**, projetada para simplificar e unificar a autenticação e autorização em múltiplas aplicações.
 
 ## O Problema
 
@@ -10,13 +10,13 @@ Gerenciar usuários, logins e permissões separadamente para cada aplicação po
 
 ## A Solução Draft Auth
 
-DraftAuth aborda esses desafios oferecendo[cite: 576]:
+DraftAuth aborda esses desafios oferecendo:
 
-- **Ponto Único de Gerenciamento:** Administre todos os usuários, suas credenciais e permissões em um só lugar[cite: 579].
-- **Autenticação Flexível:** Suporta múltiplos métodos de login, como **Google**, **GitHub** e **Email/Senha**, com verificação de email[cite: 577].
-- **Controle de Acesso Granular (RBAC):** Defina **Aplicações**, crie **Cargos (Roles)** específicos para cada uma e atribua permissões detalhadas aos usuários, controlando o que eles podem fazer em cada sistema[cite: 578].
-- **Gerenciamento de Identidades:** Vincule várias identidades externas (Google, GitHub) a uma única conta de usuário central[cite: 579].
-- **API Segura para Serviços:** Permite que seus backends interajam com o sistema de forma segura para gerenciar acesso e cargos programaticamente, usando **API Keys** e autenticação **HMAC**[cite: 580, 541].
+- **Ponto Único de Gerenciamento:** Administre todos os usuários, suas credenciais e permissões em um só lugar.
+- **Autenticação Flexível:** Suporta múltiplos métodos de login, como **Google**, **GitHub** e **Email/Senha**, com verificação de email.
+- **Controle de Acesso Granular (RBAC):** Defina **Aplicações**, crie **Cargos (Roles)** específicos para cada uma e atribua permissões detalhadas aos usuários, controlando o que eles podem fazer em cada sistema.
+- **Gerenciamento de Identidades:** Vincule várias identidades externas (Google, GitHub) a uma única conta de usuário central.
+- **API Segura para Serviços:** Permite que seus backends interajam com o sistema de forma segura para gerenciar acesso e cargos programaticamente, usando **API Keys** e autenticação **HMAC**.
 
 ## Para Quem é?
 

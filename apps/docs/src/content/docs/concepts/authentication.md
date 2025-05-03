@@ -23,9 +23,9 @@ O Draft Auth utiliza o padrão OAuth 2.0 e OpenID Connect (OIDC) para a maioria 
 
 ## Provedores Suportados
 
-- **Google:** Utiliza OAuth 2.0[cite: 527, 532]. Requer configuração de Client ID e Client Secret do Google Cloud Console.
-- **GitHub:** Utiliza OAuth 2.0[cite: 527, 531]. Requer configuração de Client ID e Client Secret do GitHub Developer Settings[cite: 526].
-- **Senha (Email/Código):** Fluxo customizado com envio de código de verificação para o email (implementação de envio de email necessária) e validação de força/vazamento de senha[cite: 527, 528, 534, 535].
+- **Google:** Utiliza OAuth 2.0. Requer configuração de Client ID e Client Secret do Google Cloud Console.
+- **GitHub:** Utiliza OAuth 2.0. Requer configuração de Client ID e Client Secret do GitHub Developer Settings.
+- **Senha (Email/Código):** Fluxo customizado com envio de código de verificação para o email (implementação de envio de email necessária) e validação de força/vazamento de senha.
 
 ## Verificação de Email
 

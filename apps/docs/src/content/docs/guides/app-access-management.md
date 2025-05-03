@@ -20,12 +20,12 @@ Controle fino sobre quais usuários podem acessar quais aplicações integradas 
 1.  **Dashboard de Administração (UI):**
     - Navegue até a página de detalhes do usuário.
     - Na seção "Acesso em Aplicações", você verá uma lista de todas as aplicações.
-    - Use o controle (Switch) ao lado de cada aplicação para habilitar ou desabilitar o acesso.[cite: 634]
+    - Use o controle (Switch) ao lado de cada aplicação para habilitar ou desabilitar o acesso.
 2.  **Management API:**
-    - Use o endpoint `PUT /api/manage/users/:userId/access/:appId`.[cite: 549]
+    - Use o endpoint `PUT /api/manage/users/:userId/access/:appId`.
     - Envie no corpo `{ "status": "enabled" }` ou `{ "status": "disabled" }`.
 3.  **Service API:**
-    - Seus serviços backend podem usar `PUT /api/service/users/:userId/access` (autenticado via HMAC) para alterar o status de acesso do usuário _na aplicação correspondente à API Key utilizada_.[cite: 550]
-    - Use `GET /api/service/users/:userId/access` para verificar o status atual.[cite: 550]
+    - Seus serviços backend podem usar `PUT /api/service/users/:userId/access` (autenticado via HMAC) para alterar o status de acesso do usuário _na aplicação correspondente à API Key utilizada_.
+    - Use `GET /api/service/users/:userId/access` para verificar o status atual.
 
 **Importante:** Se o status de acesso de um usuário para uma aplicação não estiver explicitamente definido (`enabled` ou `disabled`), o padrão é `enabled` (permitido), desde que o status global do usuário seja `active`.
