@@ -30,6 +30,7 @@ import { getGoogleUser } from "@draftauth/core/utils/google"
 import { getBaseUrl } from "@draftauth/utils"
 import { getContext } from "hono/context-storage"
 import { z } from "zod"
+import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "./password"
 
 export const authClient = createClient({
 	issuer: getBaseUrl(),
@@ -114,12 +115,13 @@ export const auth = issuer({
 				sendCode: async (email, code) => {
 					console.log(email, code)
 				},
-				validatePassword: (password) => {
-					if (password.length < 8) {
-						return "Senha deve ter no mínimo 8 caracteres"
-					}
-
-					return
+				validatePassword: async (password) => {
+					if (password.length < 6) return "Senha deve ter no mínimo 6 caracteres"
+					const { feedback } = checkPasswordStrength(password)
+					if (feedback.warning) return translateWarnings(feedback.warning)
+					const checkForPasswordLeaks = await checkPasswordLeaks(password)
+					if (checkForPasswordLeaks) return "Essa senha foi vazada em uma violação de dados"
+					return undefined
 				}
 			})
 		),
