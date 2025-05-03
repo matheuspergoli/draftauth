@@ -2,7 +2,7 @@
 title: O que é Draft Auth?
 ---
 
-DraftAuth é uma plataforma **centralizada** de identidade e acesso de **código aberto**, projetada para simplificar e unificar a autenticação e autorização em múltiplas aplicações.
+Draft Auth é uma plataforma **centralizada** de identidade e acesso de **código aberto**, projetada para simplificar e unificar a autenticação e autorização em múltiplas aplicações.
 
 ## O Problema
 
@@ -10,10 +10,10 @@ Gerenciar usuários, logins e permissões separadamente para cada aplicação po
 
 ## A Solução Draft Auth
 
-DraftAuth aborda esses desafios oferecendo:
+Draft Auth aborda esses desafios oferecendo:
 
 - **Ponto Único de Gerenciamento:** Administre todos os usuários, suas credenciais e permissões em um só lugar.
-- **Autenticação Flexível:** Suporta múltiplos métodos de login, como **Google**, **GitHub** e **Email/Senha**, com verificação de email.
+- **Autenticação Flexível:** Suporta múltiplos métodos de login, como **Google**, **GitHub** e **Email/Senha**, com verificação de email e extensível.
 - **Controle de Acesso Granular (RBAC):** Defina **Aplicações**, crie **Cargos (Roles)** específicos para cada uma e atribua permissões detalhadas aos usuários, controlando o que eles podem fazer em cada sistema.
 - **Gerenciamento de Identidades:** Vincule várias identidades externas (Google, GitHub) a uma única conta de usuário central.
 - **API Segura para Serviços:** Permite que seus backends interajam com o sistema de forma segura para gerenciar acesso e cargos programaticamente, usando **API Keys** e autenticação **HMAC**.

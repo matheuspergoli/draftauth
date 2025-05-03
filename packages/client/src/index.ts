@@ -149,8 +149,8 @@ export class DraftauthServiceClient {
 	}
 }
 
-export function createDraftauthServiceClient(
+export const createDraftauthServiceClient = (
 	config: DraftauthServiceClientConfig
-): DraftauthServiceClient {
+): DraftauthServiceClient => {
 	return new DraftauthServiceClient(config)
 }

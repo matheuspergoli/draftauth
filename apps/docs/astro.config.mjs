@@ -22,8 +22,7 @@ export default defineConfig({
 					label: "Comece Aqui",
 					items: [
 						{ label: "Introdução", slug: "guides/intro" },
-						{ label: "Guia Rápido", slug: "guides/quickstart" },
-						{ label: "Instalação", slug: "guides/installation" }
+						{ label: "Guia Rápido", slug: "guides/quickstart" }
 					]
 				},
 				{

@@ -18,7 +18,7 @@ As API Keys permitem que seus serviços backend interajam de forma segura com a 
 
 ## Uso
 
-- API Keys são usadas em conjunto com a **Autenticação HMAC** para assinar requests para a `/api/service`.
+- API Keys são usadas em conjunto com a **Autenticação HMAC** para assinar requests.
 - O `Key ID` é enviado no header `X-Api-Key-Id`.
 - O `Secret Key` é usado para gerar a assinatura HMAC enviada no header `X-Signature`.
 

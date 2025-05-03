@@ -13,7 +13,7 @@ Este guia mostra como configurar rapidamente o Draft Auth e realizar um fluxo de
 
 1.  **Clonar o Repositório:**
     ```bash
-    git clone https://github.com/matheuspergoli/draftauth.git
+    git clone https://github.com/matheuspergoli/draftauth
     cd draftauth
     ```
 2.  **Instalar Dependências:**
@@ -21,11 +21,11 @@ Este guia mostra como configurar rapidamente o Draft Auth e realizar um fluxo de
     pnpm install
     ```
 3.  **Configurar Variáveis de Ambiente:**
-    - Crie um arquivo `.env` na raiz e em `apps/api` e `apps/web`.
-    - Preencha as variáveis necessárias (veja `env.ts` em cada app, especialmente `DATABASE_URL`, `CLIENT_ID`s, `CLIENT_SECRET`s, `FRONTEND_URL`, `VITE_BACKEND_URL`).
-4.  **Rodar Migrations (Desenvolvimento):**
+    - Crie um arquivo `.env` em `apps/api` e `apps/web`.
+    - Preencha as variáveis necessárias (veja `.env.example` em cada app).
+4.  **Subir banco (Desenvolvimento):**
     ```bash
-    pnpm --filter ./apps/api db:push
+    pnpm db:push
     ```
 5.  **Iniciar Aplicações:**
     ```bash
