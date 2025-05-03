@@ -1,0 +1,24 @@
+{
+	"name": "Draft Auth",
+	"author": "Matheus Pergoli",
+	"version": "0.1.0",
+	"scripts": {
+		"dev": "turbo run dev",
+		"start": "turbo run start",
+		"build": "turbo run build",
+		"ui-add": "turbo run ui-add",
+		"db:push": "turbo run db:push",
+		"db:reset": "turbo run db:reset",
+		"db:studio": "turbo run db:studio",
+		"db:generate": "turbo run db:generate",
+		"format": "biome format --write .",
+		"clean": "turbo run clean && rm -rf .turbo node_modules"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@turbo/gen": "^2.5.2",
+		"turbo": "^2.5.2",
+		"typescript": "^5.8.3"
+	},
+	"packageManager": "pnpm@10.0.0"
+}

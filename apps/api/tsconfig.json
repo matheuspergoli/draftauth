@@ -1,0 +1,12 @@
+{
+	"extends": "@draftauth/tsconfig/internal-package.json",
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"jsxImportSource": "hono/jsx",
+		"types": ["@draftauth/tsconfig/reset", "node"]
+	},
+	"include": ["src"]
+}

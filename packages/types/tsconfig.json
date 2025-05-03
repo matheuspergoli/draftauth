@@ -1,0 +1,7 @@
+{
+	"extends": "@draftauth/tsconfig/internal-package.json",
+	"compilerOptions": {
+		"types": ["@draftauth/tsconfig/reset", "node"]
+	},
+	"include": ["src"]
+}

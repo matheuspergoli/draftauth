@@ -1,0 +1,19 @@
+# Backend deploy
+
+[build]
+builder = "NIXPACKS"
+
+[build.nixpacksPlan]
+providers = ["node"]
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs", "bun", "pnpm"]
+
+[build.nixpacksPlan.phases.install]
+cmds = ["pnpm install"]
+
+[build.nixpacksPlan.phases.build]
+cmds = ["pnpm --filter ./apps/api... install --workspace-root && pnpm --filter ./apps/api... run build"]
+
+[deploy]
+startCommand = "pnpm --filter ./apps/api... run start"

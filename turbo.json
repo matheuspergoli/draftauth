@@ -1,0 +1,49 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": ["public/**", "dist/**", ".dist/**"]
+		},
+		"start": {
+			"cache": false,
+			"persistent": true
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true
+		},
+		"clean": {
+			"cache": false
+		},
+		"ui-add": {
+			"cache": false,
+			"interactive": true
+		},
+		"db:push": {
+			"cache": false,
+			"interactive": true
+		},
+		"db:reset": {
+			"cache": false,
+			"interactive": true
+		},
+		"db:studio": {
+			"cache": false,
+			"interactive": true
+		},
+		"db:generate": {
+			"cache": false,
+			"interactive": true
+		}
+	},
+	"globalEnv": [
+		"PORT",
+		"DATABASE_URL",
+		"FRONTEND_URL",
+		"VITE_BACKEND_URL",
+		"DATABASE_AUTH_TOKEN"
+	]
+}
