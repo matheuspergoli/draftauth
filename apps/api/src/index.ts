@@ -5,10 +5,10 @@ import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
 import { poweredBy } from "hono/powered-by"
 import { z } from "zod"
+import { env } from "./environment/env"
 import { manageRouter } from "./routes/management"
 import { serviceRouter } from "./routes/service"
 import { setupRouter } from "./routes/setup"
-import { env } from "./environment/env"
 
 const app = new Hono()
 
