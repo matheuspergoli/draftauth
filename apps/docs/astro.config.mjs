@@ -19,8 +19,48 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
-					label: "Comece aqui",
-					items: [{ label: "Introdução", slug: "guides/intro" }]
+					label: "Comece Aqui",
+					items: [
+						{ label: "Introdução", slug: "guides/intro" },
+						{ label: "Guia Rápido", slug: "guides/quickstart" },
+						{ label: "Instalação", slug: "guides/installation" }
+					]
+				},
+				{
+					label: "Conceitos Fundamentais",
+					items: [
+						{ label: "Autenticação", slug: "concepts/authentication" },
+						{ label: "Autorização (RBAC)", slug: "concepts/authorization" },
+						{ label: "Aplicações", slug: "concepts/applications" },
+						{ label: "Usuários", slug: "concepts/users" },
+						{ label: "API Keys", slug: "concepts/api-keys" },
+						{ label: "Autenticação HMAC", slug: "concepts/hmac" }
+					]
+				},
+				{
+					label: "API Reference",
+					items: [
+						{ label: "Management API", slug: "api/management" },
+						{ label: "Service API", slug: "api/service" },
+						{ label: "Setup API", slug: "api/setup" }
+					]
+				},
+				{
+					label: "Integração Frontend",
+					items: [
+						{ label: "Visão Geral", slug: "frontend/overview" },
+						{ label: "Componentes", slug: "frontend/components" },
+						{ label: "Gerenciamento de Estado", slug: "frontend/state-management" },
+						{ label: "Roteamento", slug: "frontend/routing" }
+					]
+				},
+				{
+					label: "Guias",
+					items: [
+						{ label: "Configurando Provedores OAuth", slug: "guides/oauth-providers" },
+						{ label: "Protegendo API com HMAC", slug: "guides/protecting-api-hmac" },
+						{ label: "Gerenciando Acesso por Aplicação", slug: "guides/app-access-management" }
+					]
 				}
 			]
 		})

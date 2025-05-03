@@ -81,6 +81,10 @@ importers:
       sharp:
         specifier: ^0.34.1
         version: 0.34.1
+    devDependencies:
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
 
   apps/web:
     dependencies:
