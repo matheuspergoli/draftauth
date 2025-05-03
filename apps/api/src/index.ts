@@ -8,6 +8,7 @@ import { z } from "zod"
 import { manageRouter } from "./routes/management"
 import { serviceRouter } from "./routes/service"
 import { setupRouter } from "./routes/setup"
+import { env } from "./environment/env"
 
 const app = new Hono()
 
@@ -23,7 +24,12 @@ app.onError((error, c) => {
 	return c.text("Something went wrong", 500)
 })
 
-app.use("/*", cors())
+app.use(
+	"/*",
+	cors({
+		origin: env.FRONTEND_URL
+	})
+)
 app.use(contextStorage())
 app.use(poweredBy({ serverName: "Draft Auth" }))
 
