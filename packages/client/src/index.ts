@@ -135,17 +135,17 @@ export class DraftauthServiceClient {
 		status: "enabled" | "disabled"
 	}) {
 		const path = `/api/service/users/${body.userId}/access`
-		return await this._makeSignedRequest("PUT", path, body.status)
+		return await this._makeSignedRequest("PUT", path, body)
 	}
 
 	async assignRoleToUser(body: { roleName: string; userId: string }) {
 		const path = `/api/service/roles/${body.userId}/assign`
-		return await this._makeSignedRequest("POST", path, body.roleName)
+		return await this._makeSignedRequest("POST", path, body)
 	}
 
 	async revokeRoleFromUser(body: { userId: string; roleName: string }) {
 		const path = `/api/service/users/${body.userId}/revoke`
-		return await this._makeSignedRequest("DELETE", path, body.roleName)
+		return await this._makeSignedRequest("DELETE", path, body)
 	}
 }
 
