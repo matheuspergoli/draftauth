@@ -1,0 +1,20 @@
+{
+	"name": "docs",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"license": "MIT",
+	"scripts": {
+		"dev": "astro dev",
+		"start": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro",
+		"clean": "rm -rf dist .turbo .astro node_modules"
+	},
+	"dependencies": {
+		"@astrojs/starlight": "^0.34.2",
+		"astro": "^5.7.10",
+		"sharp": "^0.34.1"
+	}
+}

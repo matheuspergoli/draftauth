@@ -1,0 +1,35 @@
+---
+title: Draft Auth 
+template: splash
+hero:
+  tagline: Sistema de Autenticação e Autorização Centralizado
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: Explore a documentação 
+      link: /guides/intro/
+      icon: right-arrow
+    - text: Veja no Github 
+      link: https://github.com/matheuspergoli/draftauth
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Funcionalidades
+
+<CardGrid stagger>
+	<Card title="Autenticação Centralizada" icon="seti:lock">
+    Suporte a múltiplos provedores (OAuth como Google/GitHub, Senha) e verificação de email, unificando o login para diversas aplicações.
+	</Card>
+	<Card title="Autorização por Aplicação (RBAC)" icon="approve-check-circle">
+    Defina aplicações, crie cargos (roles) específicos para cada uma e atribua permissões granulares aos usuários por aplicação.
+	</Card>
+	<Card title="Gestão de Usuários" icon="setting">
+    Administre usuários, seus status (ativo/inativo), e vincule múltiplas identidades externas (Google, GitHub, etc.) a uma única conta central.
+	</Card>
+	<Card title="API Segura para Serviços" icon="farcaster">
+    Permita que suas aplicações backend gerenciem acesso e cargos de usuários de forma programática e segura através de API Keys e autenticação HMAC.
+	</Card>
+</CardGrid>

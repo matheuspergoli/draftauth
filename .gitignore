@@ -69,3 +69,5 @@
 
 # tanstack route gen
 **/routeTree.gen.ts
+
+.astro/
