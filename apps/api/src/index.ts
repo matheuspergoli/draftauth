@@ -6,21 +6,27 @@ import { HTTPException } from "hono/http-exception"
 import { poweredBy } from "hono/powered-by"
 import { z } from "zod"
 import { env } from "./environment/env"
+import { limitEmailRate, limitIpRate } from "./libs/rate-limit"
 import { manageRouter } from "./routes/management"
 import { serviceRouter } from "./routes/service"
 import { setupRouter } from "./routes/setup"
 
 const app = new Hono()
 
+declare module "hono" {
+	interface ContextVariableMap {
+		ipRateLimiter: typeof limitIpRate
+		emailRateLimiter: typeof limitEmailRate
+	}
+}
+
 app.onError((error, c) => {
-	console.log("=== Caught API Error ===")
 	if (error instanceof HTTPException) {
 		return c.text(error.message, error.status)
 	}
 	if (error instanceof z.ZodError) {
 		return c.text(error.errors.map((err) => err.message).join(",\n"), 400)
 	}
-	console.error(error)
 	return c.text("Something went wrong", 500)
 })
 
@@ -30,6 +36,11 @@ app.use(
 		origin: env.FRONTEND_URL
 	})
 )
+app.use("*", async (c, next) => {
+	c.set("ipRateLimiter", limitIpRate)
+	c.set("emailRateLimiter", limitEmailRate)
+	await next()
+})
 app.use(contextStorage())
 app.use(poweredBy({ serverName: "Draft Auth" }))
 

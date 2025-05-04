@@ -27,10 +27,14 @@ import { CustomSelect } from "@draftauth/core/ui/custom-select"
 import { UserNotFoundPage } from "@draftauth/core/ui/user-not-found-page"
 import { getGithubUser } from "@draftauth/core/utils/github"
 import { getGoogleUser } from "@draftauth/core/utils/google"
+import { VerificationCodeEmail } from "@draftauth/emails/verification-code-email"
 import { getBaseUrl } from "@draftauth/utils"
+import { getConnInfo } from "hono/bun"
 import { getContext } from "hono/context-storage"
+import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "./password"
+import { resend } from "./resend"
 
 export const authClient = createClient({
 	issuer: getBaseUrl(),
@@ -113,7 +117,31 @@ export const auth = issuer({
 					error_email_taken: "Já existe uma conta com esse email"
 				},
 				sendCode: async (email, code) => {
-					console.log(email, code)
+					const c = getContext()
+					const info = getConnInfo(c)
+					const limitIp = c.get("ipRateLimiter")
+					const limitEmail = c.get("emailRateLimiter")
+
+					const ipResult = await limitIp(info.remote.address ?? "ip:unknown")
+					if (!ipResult.success) {
+						throw new HTTPException(429, {
+							message: "Muitas tentativas do seu endereço IP. Tente novamente mais tarde."
+						})
+					}
+
+					const emailResult = await limitEmail(email)
+					if (!emailResult.success) {
+						throw new HTTPException(429, {
+							message: "Muitas tentativas para este email. Tente novamente mais tarde."
+						})
+					}
+
+					await resend.emails.send({
+						to: [email],
+						subject: "Confirmação de Email",
+						from: "Draft Auth <welcome@draftauth.com.br>",
+						react: VerificationCodeEmail({ verificationCode: code })
+					})
 				},
 				validatePassword: async (password) => {
 					if (password.length < 6) return "Senha deve ter no mínimo 6 caracteres"

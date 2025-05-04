@@ -1,0 +1,27 @@
+{
+	"name": "@draftauth/emails",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"exports": {
+		"./*": "./src/*.tsx"
+	},
+	"license": "MIT",
+	"scripts": {
+		"dev": "email dev --dir src --port 5000",
+		"clean": "rm -rf dist .turbo node_modules"
+	},
+	"devDependencies": {
+		"@draftauth/tsconfig": "workspace:*",
+		"@types/node": "^22.15.3",
+		"@types/react": "^19.1.2",
+		"hono": "^4.7.8",
+		"react-email": "4.0.11",
+		"typescript": "^5.8.3"
+	},
+	"dependencies": {
+		"@react-email/components": "^0.0.38",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0"
+	}
+}
