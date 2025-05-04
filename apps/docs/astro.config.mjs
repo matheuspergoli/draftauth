@@ -34,7 +34,8 @@ export default defineConfig({
 						{ label: "Aplicações", slug: "concepts/applications" },
 						{ label: "Usuários", slug: "concepts/users" },
 						{ label: "API Keys", slug: "concepts/api-keys" },
-						{ label: "Autenticação HMAC", slug: "concepts/hmac" }
+						{ label: "Autenticação HMAC", slug: "concepts/hmac" },
+						{ label: "Rate Limit", slug: "concepts/rate-limiting" }
 					]
 				},
 				{
@@ -48,6 +49,7 @@ export default defineConfig({
 				{
 					label: "Guias",
 					items: [
+						{ label: "Configurando Emails", slug: "guides/email-setup" },
 						{ label: "Configurando Provedores OAuth", slug: "guides/oauth-providers" },
 						{ label: "Protegendo API com HMAC", slug: "guides/protecting-api-hmac" },
 						{ label: "Gerenciando Acesso por Aplicação", slug: "guides/app-access-management" }
