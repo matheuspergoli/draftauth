@@ -1,20 +1,17 @@
 {
 	"name": "@draftauth/client",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"type": "module",
 	"description": "Draft Auth Client SDK",
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
 	"main": "dist/index.js",
-	"module": "dist/index.mjs",
 	"typings": "dist/index.d.ts",
 	"files": ["dist"],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"module": "./dist/index.mjs",
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.js",
-			"default": "./dist/index.mjs"
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
 		},
 		"./package.json": "./package.json"
 	},
