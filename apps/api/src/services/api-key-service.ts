@@ -15,19 +15,18 @@ export const generateApiKey = async ({
 }: {
 	appId: string
 }) => {
-	const keyId = generateKeyId(`sk_${appId}`)
 	const secretKey = generateSecretKey()
-
-	const encryptedPayload = encryptSecret(secretKey)
-	const storedEncryptedSecret = JSON.stringify(encryptedPayload)
+	const keyId = generateKeyId(`sk_${appId}`)
 
 	const now = Date.now()
+	const encryptedPayload = encryptSecret(secretKey)
+	const storedEncryptedSecret = JSON.stringify(encryptedPayload)
 
 	await db.insert(applicationApiKeys).values({
 		keyId,
 		appId,
-		encryptedSecretKey: storedEncryptedSecret,
-		createdAt: now
+		createdAt: now,
+		encryptedSecretKey: storedEncryptedSecret
 	})
 
 	const metadata = {
@@ -36,7 +35,9 @@ export const generateApiKey = async ({
 		createdAt: now
 	}
 
-	return { metadata, secretKey }
+	const keyFileData = `API_KEY_ID=${keyId}\nAPI_SECRET_KEY=${secretKey}\n`
+
+	return { metadata, keyFileData }
 }
 
 export const listApiKeysForApp = async ({ appId }: { appId: string }) => {

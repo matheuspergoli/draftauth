@@ -26,7 +26,7 @@ import { useParams } from "@tanstack/react-router"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import type { InferResponseType } from "hono"
-import { EyeIcon, EyeOffIcon, KeyIcon, PlusIcon, Trash } from "lucide-react"
+import { AlertTriangle, Download, KeyIcon, PlusIcon, Trash } from "lucide-react"
 import React from "react"
 import { useCreateApiKey } from "../hooks/use-create-api-key"
 import { useRevokeApiKey } from "../hooks/use-revoke-api-key"
@@ -36,7 +36,7 @@ type ApplicationApiKey = InferResponseType<(typeof api.manage)[":appId"]["api-ke
 type DialogState =
 	| { status: "closed" }
 	| { status: "creating" }
-	| { status: "displaying"; key: ApplicationApiKey; showSecret: boolean }
+	| { status: "displaying"; value: ApplicationApiKey }
 
 export const ApplicationApiKeys = () => {
 	const { appId } = useParams({ from: "/dashboard/applications/$appId" })
@@ -47,13 +47,16 @@ export const ApplicationApiKeys = () => {
 	const { mutateAsync: revokeApiKey, isPending: revokeIsPending } = useRevokeApiKey()
 	const { mutateAsync: createApiKey, isPending: createIsPending } = useCreateApiKey()
 
-	const toggleSecretVisibility = () => {
-		if (dialogState.status === "displaying") {
-			setDialogState({
-				...dialogState,
-				showSecret: !dialogState.showSecret
-			})
-		}
+	const handleDownload = (keyFileData: string, keyId: string) => {
+		const blob = new Blob([keyFileData], { type: "text/plain;charset=utf-8" })
+		const url = URL.createObjectURL(blob)
+		const link = document.createElement("a")
+		link.href = url
+		link.download = `draftauth_api_key_${keyId}.txt`
+		document.body.appendChild(link)
+		link.click()
+		document.body.removeChild(link)
+		URL.revokeObjectURL(url)
 	}
 
 	return (
@@ -64,7 +67,10 @@ export const ApplicationApiKeys = () => {
 						<CardTitle>API Keys</CardTitle>
 						<CardDescription>Gerencie as API Keys dessa aplicação</CardDescription>
 					</div>
-					<AlertDialog>
+					<AlertDialog
+						open={dialogState.status !== "closed"}
+						onOpenChange={(open) => !open && setDialogState({ status: "closed" })}
+					>
 						<AlertDialogTrigger asChild>
 							<Button onClick={() => setDialogState({ status: "creating" })}>
 								<PlusIcon />
@@ -77,24 +83,30 @@ export const ApplicationApiKeys = () => {
 									<AlertDialogHeader>
 										<AlertDialogTitle>Gerar nova API Key</AlertDialogTitle>
 										<AlertDialogDescription>
-											Você só poderá visualizá-la uma única vez!
+											Um arquivo contendo o ID e a Chave Secreta será gerado para download.
+											<strong className="text-destructive block mt-2">
+												<AlertTriangle className="inline-block h-4 w-4 mr-1" />
+												Guarde este arquivo em local seguro! A chave secreta não poderá ser
+												recuperada.
+											</strong>
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel>Cancelar</AlertDialogCancel>
+										<AlertDialogCancel onClick={() => setDialogState({ status: "closed" })}>
+											Cancelar
+										</AlertDialogCancel>
 										<Button
 											mode="loading"
 											isLoading={createIsPending}
 											onClick={async () => {
-												const newApiKey = await createApiKey({ appId })
+												const newApiKeyData = await createApiKey({ appId })
 												setDialogState({
-													key: newApiKey,
-													showSecret: false,
-													status: "displaying"
+													status: "displaying",
+													value: newApiKeyData
 												})
 											}}
 										>
-											Gerar
+											Gerar Chave
 										</Button>
 									</AlertDialogFooter>
 								</>
@@ -103,52 +115,45 @@ export const ApplicationApiKeys = () => {
 							{dialogState.status === "displaying" && (
 								<>
 									<AlertDialogHeader>
-										<AlertDialogTitle>API Key criada</AlertDialogTitle>
+										<AlertDialogTitle>API Key Gerada</AlertDialogTitle>
 										<AlertDialogDescription>
-											Guarde essa API Key de forma segura, não será possível ver novamente!
+											<strong className="text-destructive block mt-2">
+												<AlertTriangle className="inline-block h-4 w-4 mr-1" />
+												Faça o download do arquivo agora e guarde-o em local seguro. A chave
+												secreta não será exibida novamente.
+											</strong>
 										</AlertDialogDescription>
 									</AlertDialogHeader>
 									<div className="space-y-4 py-4">
 										<div className="space-y-2">
-											<Label htmlFor="keyId">ID da Chave</Label>
-											<div className="flex">
-												<Input
-													id="keyId"
-													value={dialogState.key.keyId}
-													readOnly
-													className="font-mono text-sm"
-												/>
-											</div>
+											<Label htmlFor="keyId">ID da Chave (Key ID)</Label>
+											<Input
+												id="keyId"
+												value={dialogState.value.metadata.keyId}
+												readOnly
+												className="font-mono text-sm"
+											/>
+											<p className="text-xs text-muted-foreground">
+												Este ID é público e usado para identificar a chave.
+											</p>
 										</div>
-										<div className="space-y-2">
-											<div className="flex justify-between">
-												<Label htmlFor="secretKey">Chave Secreta</Label>
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={toggleSecretVisibility}
-													className="h-6 px-2"
-												>
-													{dialogState.showSecret ? (
-														<EyeOffIcon className="h-4 w-4" />
-													) : (
-														<EyeIcon className="h-4 w-4" />
-													)}
-												</Button>
-											</div>
-											<div className="relative">
-												<Input
-													id="secretKey"
-													value={
-														dialogState.showSecret ? dialogState.key.secretKey : "•".repeat(24)
-													}
-													readOnly
-													className="font-mono text-sm"
-												/>
-											</div>
-										</div>
+
+										<Button
+											onClick={() => {
+												handleDownload(
+													dialogState.value.keyFileData,
+													dialogState.value.metadata.keyId
+												)
+											}}
+											className="w-full"
+										>
+											<Download className="mr-2 h-4 w-4" />
+											Baixar Arquivo da Chave (.txt)
+										</Button>
 									</div>
-									<AlertDialogCancel>Terminar</AlertDialogCancel>
+									<AlertDialogCancel onClick={() => setDialogState({ status: "closed" })}>
+										Concluir
+									</AlertDialogCancel>
 								</>
 							)}
 						</AlertDialogContent>
@@ -185,16 +190,16 @@ export const ApplicationApiKeys = () => {
 
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<Button variant="destructive">
+										<Button variant="destructive" size="icon">
 											<Trash />
 										</Button>
 									</AlertDialogTrigger>
 									<AlertDialogContent>
 										<AlertDialogHeader>
-											<AlertDialogTitle>Tem absoluta certeza disso?</AlertDialogTitle>
+											<AlertDialogTitle>Tem absoluta certeza?</AlertDialogTitle>
 											<AlertDialogDescription>
-												Essa ação não pode ser desfeita e irá apagar junto todas as API Keys
-												referentes a essa aplicação junto de todos os seus dados
+												Essa ação não pode ser desfeita e irá revogar permanentemente esta API
+												Key.
 											</AlertDialogDescription>
 										</AlertDialogHeader>
 										<AlertDialogFooter>
@@ -205,8 +210,12 @@ export const ApplicationApiKeys = () => {
 													await revokeApiKey({ keyId: key.keyId })
 												}}
 											>
-												<Button mode="loading" isLoading={revokeIsPending}>
-													Apagar
+												<Button
+													mode="loading"
+													variant="destructive"
+													isLoading={revokeIsPending}
+												>
+													Revogar Chave
 												</Button>
 											</AlertDialogAction>
 										</AlertDialogFooter>

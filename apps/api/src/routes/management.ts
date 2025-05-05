@@ -267,8 +267,8 @@ export const manageRouter = new Hono()
 
 	.post("/:appId/api-keys", async (c) => {
 		const appId = c.req.param("appId")
-		const { metadata, secretKey } = await generateApiKey({ appId })
-		return c.json({ ...metadata, secretKey: secretKey }, 201)
+		const apiKey = await generateApiKey({ appId })
+		return c.json(apiKey, 201)
 	})
 
 	.delete("/api-keys/:keyId", async (c) => {
