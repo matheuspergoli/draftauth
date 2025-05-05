@@ -1,10 +1,11 @@
 import { randomBytes } from "node:crypto"
 import { dbClient } from "@/db/client"
-import type { UserStatus } from "@/db/schema"
 import { env } from "@/environment/env"
+import { setUserAppAccessStatus } from "@/services/access-service"
 import { isValidApplicationClient } from "@/services/application-service"
 import { isSetupComplete } from "@/services/config-service"
 import {
+	type FindOrCreateUserResult,
 	createUser,
 	findOrCreateUser,
 	findUserByEmail,
@@ -78,7 +79,7 @@ const handlePasswordLogin = async (data: { email: string }) => {
 			userId: centralUser.userId
 		})
 
-		return centralUser
+		return { user: centralUser, created: false }
 	}
 
 	centralUser = await createUser({ email: data.email, initialStatus: "active" })
@@ -88,7 +89,7 @@ const handlePasswordLogin = async (data: { email: string }) => {
 		userId: centralUser.userId
 	})
 
-	return centralUser
+	return { user: centralUser, created: true }
 }
 
 export const auth = issuer({
@@ -165,6 +166,7 @@ export const auth = issuer({
 		})
 	},
 	async allow({ clientID, redirectURI }) {
+		getContext().set("currentAppId", clientID)
 		const setupComplete = await isSetupComplete()
 
 		if (!setupComplete) return true
@@ -174,10 +176,11 @@ export const auth = issuer({
 	success: async (ctx, value) => {
 		const context = getContext()
 		const setupComplete = await isSetupComplete()
-		let centralUser: { userId: string; email: string; status: UserStatus } | null = null
+		const currentAppId = context.get("currentAppId")
+		let centralUser: FindOrCreateUserResult | null = null
 
 		if (!setupComplete) {
-			let firstUser: { userId: string; email: string; status: UserStatus } | null = null
+			let firstUser: FindOrCreateUserResult | null = null
 
 			if (value.provider === "github") {
 				firstUser = await handleGithubLogin({ accessToken: value.tokenset.access })
@@ -191,18 +194,26 @@ export const auth = issuer({
 				firstUser = await handlePasswordLogin({ email: value.email })
 			}
 
-			if (!firstUser) {
+			if (!firstUser?.user) {
 				return context.html(UserNotFoundPage())
 			}
 
-			if (firstUser.status !== "active") {
-				await setUserGlobalStatus({ userId: firstUser.userId, status: "active" })
+			if (firstUser.user.status !== "active") {
+				await setUserGlobalStatus({ userId: firstUser.user.userId, status: "active" })
+			}
+
+			if (firstUser.created && currentAppId) {
+				await setUserAppAccessStatus({
+					status: "enabled",
+					appId: currentAppId,
+					userId: firstUser.user.userId
+				})
 			}
 
 			const setupState = randomBytes(32).toString("hex")
 			const storage = TursoStorage(dbClient)
 			const stateKey = ["setup_state", setupState]
-			const stateValue = { userId: firstUser.userId }
+			const stateValue = { userId: firstUser.user.userId }
 			const expirySeconds = 10 * 60
 
 			await storage.set(stateKey, stateValue, new Date(Date.now() + expirySeconds * 1000))
@@ -225,17 +236,25 @@ export const auth = issuer({
 			centralUser = await handlePasswordLogin({ email: value.email })
 		}
 
-		if (!centralUser) {
+		if (!centralUser?.user) {
 			return context.html(UserNotFoundPage())
 		}
 
-		if (centralUser.status !== "active") {
+		if (centralUser.user.status !== "active") {
 			return context.html(AccessDeniedPage())
 		}
 
+		if (centralUser.created && currentAppId) {
+			await setUserAppAccessStatus({
+				status: "enabled",
+				appId: currentAppId,
+				userId: centralUser.user.userId
+			})
+		}
+
 		return ctx.subject("user", {
-			id: centralUser.userId,
-			email: centralUser.email
+			id: centralUser.user.userId,
+			email: centralUser.user.email
 		})
 	}
 })

@@ -15,6 +15,7 @@ const app = new Hono()
 
 declare module "hono" {
 	interface ContextVariableMap {
+		currentAppId: string | undefined
 		ipRateLimiter: typeof limitIpRate
 		emailRateLimiter: typeof limitEmailRate
 	}

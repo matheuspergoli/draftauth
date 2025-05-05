@@ -1,5 +1,10 @@
 import { db } from "@/db/client"
-import { applicationRedirectUris, applications, roles, userRoles } from "@/db/schema"
+import {
+	applicationRedirectUris,
+	applications,
+	roles,
+	userApplicationAccess
+} from "@/db/schema"
 import { and, eq, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -155,12 +160,13 @@ export const listApplicationsWithCounts = async () => {
 	const usersCountSubquery = db.$with("users_count").as(
 		db
 			.select({
-				appId: roles.appId,
-				count: sql<number>`cast(count(distinct ${userRoles.userId}) as int)`.as("users_count")
+				appId: userApplicationAccess.appId,
+				count: sql<number>`cast(count(distinct ${userApplicationAccess.userId}) as int)`.as(
+					"users_count"
+				)
 			})
-			.from(userRoles)
-			.innerJoin(roles, eq(userRoles.roleId, roles.roleId))
-			.groupBy(roles.appId)
+			.from(userApplicationAccess)
+			.groupBy(userApplicationAccess.appId)
 	)
 
 	const results = await db

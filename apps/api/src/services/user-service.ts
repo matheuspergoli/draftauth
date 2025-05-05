@@ -4,6 +4,11 @@ import { type ProviderName, type UserStatus, userExternalIdentities, users } fro
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
+export interface FindOrCreateUserResult {
+	created: boolean
+	user: { userId: string; email: string; status: UserStatus }
+}
+
 export const findUserByEmail = async ({
 	email
 }: {
@@ -101,19 +106,21 @@ export const findOrCreateUser = async ({
 	verifiedEmail: string
 }) => {
 	let user = await findUserByExternalId({ providerName, providerUserId })
-	if (user) return user
+	if (user) {
+		return { user, created: false }
+	}
 
 	user = await findUserByEmail({ email: verifiedEmail })
 
 	if (user) {
 		await linkExternalIdentity({ userId: user.userId, providerName, providerUserId })
-		return user
+		return { user, created: false }
 	}
 
 	user = await createUser({ email: verifiedEmail })
 	await linkExternalIdentity({ userId: user.userId, providerName, providerUserId })
 
-	return user
+	return { user, created: true }
 }
 
 export const getUserDetails = async ({
