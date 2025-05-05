@@ -3,7 +3,7 @@ import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core
 
 export type UserStatus = "active" | "inactive"
 export type AccessStatus = "enabled" | "disabled"
-export type ProviderName = "github" | "google" | "password"
+export type ProviderName = "github" | "google" | "password" | "code"
 
 export const users = sqliteTable("users", {
 	userId: text("user_id").primaryKey(),

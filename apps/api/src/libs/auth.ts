@@ -15,6 +15,8 @@ import {
 import { createClient } from "@draftauth/core/client"
 import { issuer } from "@draftauth/core/issuer"
 import {
+	CodeProvider,
+	CodeUI,
 	GithubProvider,
 	GoogleProvider,
 	PasswordProvider,
@@ -48,6 +50,28 @@ export const subjects = createSubjects({
 		email: z.string()
 	})
 })
+
+const handleCodeLogin = async (data: { email: string }) => {
+	let centralUser = await findUserByEmail({ email: data.email })
+
+	if (centralUser) {
+		await linkExternalIdentity({
+			providerName: "code",
+			providerUserId: data.email,
+			userId: centralUser.userId
+		})
+		return { user: centralUser, created: false }
+	}
+
+	centralUser = await createUser({ email: data.email, initialStatus: "active" })
+	await linkExternalIdentity({
+		providerName: "code",
+		providerUserId: data.email,
+		userId: centralUser.userId
+	})
+
+	return { user: centralUser, created: true }
+}
 
 const handleGoogleLogin = async ({ accessToken }: { accessToken: string }) => {
 	const googleUser = await getGoogleUser({ accessToken })
@@ -154,6 +178,52 @@ export const auth = issuer({
 				}
 			})
 		),
+		code: CodeProvider(
+			CodeUI({
+				copy: {
+					code_placeholder: "Código",
+					button_continue: "Continuar",
+					code_invalid: "Código inválido",
+					code_resend: "Enviar novamente",
+					code_sent: "Código enviado para ",
+					code_didnt_get: "Não recebeu o código?",
+					code_info: "Nós enviaremos um código para seu email."
+				},
+				async sendCode(claims, code) {
+					const c = getContext()
+					const info = getConnInfo(c)
+					const limitIp = c.get("ipRateLimiter")
+					const limitEmail = c.get("emailRateLimiter")
+
+					if (!claims.email) {
+						throw new HTTPException(400, {
+							message: "Erro ao enviar código PIN para email"
+						})
+					}
+
+					const ipResult = await limitIp(info.remote.address ?? "ip:unknown")
+					if (!ipResult.success) {
+						throw new HTTPException(429, {
+							message: "Muitas tentativas do seu endereço IP. Tente novamente mais tarde."
+						})
+					}
+
+					const emailResult = await limitEmail(claims.email)
+					if (!emailResult.success) {
+						throw new HTTPException(429, {
+							message: "Muitas tentativas para este email. Tente novamente mais tarde."
+						})
+					}
+
+					await resend.emails.send({
+						to: [claims.email],
+						subject: "Confirmação de Email",
+						from: "Draft Auth <welcome@draftauth.com.br>",
+						react: VerificationCodeEmail({ verificationCode: code })
+					})
+				}
+			})
+		),
 		github: GithubProvider({
 			scopes: ["user:email", "profile"],
 			clientID: env.GITHUB_CLIENT_ID,
@@ -181,6 +251,11 @@ export const auth = issuer({
 
 		if (!setupComplete) {
 			let firstUser: FindOrCreateUserResult | null = null
+
+			if (value.provider === "code") {
+				if (!value.claims.email) return context.html(UserNotFoundPage())
+				firstUser = await handleCodeLogin({ email: value.claims.email })
+			}
 
 			if (value.provider === "github") {
 				firstUser = await handleGithubLogin({ accessToken: value.tokenset.access })
@@ -222,6 +297,11 @@ export const auth = issuer({
 			setupUrl.searchParams.set("state", setupState)
 
 			return context.redirect(setupUrl.toString(), 302)
+		}
+
+		if (value.provider === "code") {
+			if (!value.claims.email) return context.html(UserNotFoundPage())
+			centralUser = await handleCodeLogin({ email: value.claims.email })
 		}
 
 		if (value.provider === "github") {
