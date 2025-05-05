@@ -62,17 +62,15 @@ export const createUser = async ({
 }) => {
 	const newUserId = randomUUID()
 
-	const newUser = {
-		email,
-		userId: newUserId,
-		status: initialStatus
-	}
-
-	await db.insert(users).values({
-		userId: newUser.userId,
-		email: newUser.email,
-		status: newUser.status
-	})
+	const newUser = await db
+		.insert(users)
+		.values({
+			email,
+			userId: newUserId,
+			status: initialStatus
+		})
+		.returning()
+		.get()
 
 	return newUser
 }

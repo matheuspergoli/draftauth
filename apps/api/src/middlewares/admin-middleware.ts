@@ -53,12 +53,14 @@ export const adminMiddleware = createMiddleware<AdminEnv>(async (c, next) => {
 
 	if (!appId || !ownerId) {
 		throw new HTTPException(400, {
-			message: "Configuração do sistema não foi completado com sucesso"
+			message: "Acesso negado: Aplicação principal ou proprietário não foram identificados"
 		})
 	}
 
 	if (verifiedUser.id !== ownerId) {
-		throw new HTTPException(403, { message: "Acesso negado: sitema mal configurado" })
+		throw new HTTPException(403, {
+			message: "Acesso negado: tentativa de acesso de não proprietário"
+		})
 	}
 
 	c.set("ownerId", ownerId)

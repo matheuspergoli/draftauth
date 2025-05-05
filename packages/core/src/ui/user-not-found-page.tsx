@@ -14,12 +14,20 @@ export const UserNotFoundPage = () => {
 
 			<p
 				style={{
+					fontSize: "15px",
+					textAlign: "center"
+				}}
+			>
+				Este usuário não foi encontrado.
+			</p>
+
+			<p
+				style={{
 					fontSize: "14px",
 					textAlign: "center"
 				}}
 			>
-				Não foi encontrado este usuário. Entre em contato com o administrador do sistema se
-				acredita que isso é um erro.
+				Entre em contato com o administrador do sistema se acredita que isso é um erro.
 			</p>
 
 			<button

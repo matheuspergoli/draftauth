@@ -27,6 +27,7 @@ import { createSubjects } from "@draftauth/core/subjects"
 import { CUSTOM_THEME } from "@draftauth/core/themes/custom-theme"
 import { AccessDeniedPage } from "@draftauth/core/ui/access-denied-page"
 import { CustomSelect } from "@draftauth/core/ui/custom-select"
+import { EmailNotFoundInClaimsPage } from "@draftauth/core/ui/email-not-found-in-claims-page"
 import { UserNotFoundPage } from "@draftauth/core/ui/user-not-found-page"
 import { getGithubUser } from "@draftauth/core/utils/github"
 import { getGoogleUser } from "@draftauth/core/utils/google"
@@ -60,6 +61,7 @@ const handleCodeLogin = async (data: { email: string }) => {
 			providerUserId: data.email,
 			userId: centralUser.userId
 		})
+
 		return { user: centralUser, created: false }
 	}
 
@@ -164,7 +166,7 @@ export const auth = issuer({
 					await resend.emails.send({
 						to: [email],
 						subject: "Confirmação de Email",
-						from: "Draft Auth <welcome@draftauth.com.br>",
+						from: "Draft Auth <manager@draftauth.com.br>",
 						react: VerificationCodeEmail({ verificationCode: code })
 					})
 				},
@@ -218,7 +220,7 @@ export const auth = issuer({
 					await resend.emails.send({
 						to: [claims.email],
 						subject: "Confirmação de Email",
-						from: "Draft Auth <welcome@draftauth.com.br>",
+						from: "Draft Auth <manager@draftauth.com.br>",
 						react: VerificationCodeEmail({ verificationCode: code })
 					})
 				}
@@ -238,9 +240,7 @@ export const auth = issuer({
 	async allow({ clientID, redirectURI }) {
 		getContext().set("currentAppId", clientID)
 		const setupComplete = await isSetupComplete()
-
 		if (!setupComplete) return true
-
 		return await isValidApplicationClient({ clientId: clientID, redirectUri: redirectURI })
 	},
 	success: async (ctx, value) => {
@@ -253,7 +253,7 @@ export const auth = issuer({
 			let firstUser: FindOrCreateUserResult | null = null
 
 			if (value.provider === "code") {
-				if (!value.claims.email) return context.html(UserNotFoundPage())
+				if (!value.claims.email) return context.html(EmailNotFoundInClaimsPage())
 				firstUser = await handleCodeLogin({ email: value.claims.email })
 			}
 
@@ -300,7 +300,7 @@ export const auth = issuer({
 		}
 
 		if (value.provider === "code") {
-			if (!value.claims.email) return context.html(UserNotFoundPage())
+			if (!value.claims.email) return context.html(EmailNotFoundInClaimsPage())
 			centralUser = await handleCodeLogin({ email: value.claims.email })
 		}
 

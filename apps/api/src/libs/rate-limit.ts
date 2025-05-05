@@ -29,7 +29,7 @@ export const limitIpRate = async (identifier: string) => {
 		const result = await limiter.limit(identifier)
 		return { success: result.success, remaining: result.remaining }
 	} catch (error) {
-		return { success: true, remaining: 0 }
+		return { success: false, remaining: 0 }
 	}
 }
 
@@ -54,6 +54,6 @@ export const limitEmailRate = async (identifier: string) => {
 		const result = await limiter.limit(identifier)
 		return { success: result.success, remaining: result.remaining }
 	} catch (error) {
-		return { success: true, remaining: 0 }
+		return { success: false, remaining: 0 }
 	}
 }

@@ -1,6 +1,6 @@
 import { Layout } from "@openauthjs/openauth/ui/base"
 
-export const AccessDeniedPage = () => {
+export const EmailNotFoundInClaimsPage = () => {
 	return (
 		<Layout>
 			<h1
@@ -9,7 +9,7 @@ export const AccessDeniedPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Acesso Negado
+				Email Não Encontrado
 			</h1>
 
 			<p
@@ -18,7 +18,7 @@ export const AccessDeniedPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Você não possui permissão para acessar este recurso.
+				Não foi possível obter seu email durante o processo de autenticação.
 			</p>
 
 			<p
@@ -27,7 +27,8 @@ export const AccessDeniedPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Entre em contato com o administrador do sistema se acredita que isso é um erro.
+				Isso pode ocorrer se você não concedeu permissão para acessar seu email ou se houve um
+				problema durante a autenticação.
 			</p>
 
 			<button
@@ -36,7 +37,7 @@ export const AccessDeniedPage = () => {
 				data-component="button"
 				onClick={() => window.history.back()}
 			>
-				Voltar
+				Tentar Novamente
 			</button>
 		</Layout>
 	)
