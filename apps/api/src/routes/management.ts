@@ -15,6 +15,7 @@ import {
 	listRedirectUrisForApp
 } from "@/services/application-service"
 import { CONFIG_KEYS, getConfigValue } from "@/services/config-service"
+import { getDashboardStats } from "@/services/dashboard-service"
 import {
 	assignRoleToUser,
 	createRole,
@@ -38,6 +39,11 @@ import { z } from "zod"
 
 export const manageRouter = new Hono()
 	.use("*", adminMiddleware)
+
+	.get("/dashboard/stats", async (c) => {
+		const stats = await getDashboardStats()
+		return c.json(stats)
+	})
 
 	.get("/user", async (c) => {
 		const ownerId = c.get("ownerId")

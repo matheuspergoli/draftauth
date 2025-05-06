@@ -18,6 +18,9 @@ export const queryKeys = {
 	applicationRoles: (applicationId: string) => ["application-roles", applicationId] as const,
 	applicationRedirectUris: (applicationId: string) => {
 		return ["application-redirect-uris", applicationId] as const
+	},
+	dashboardStats: () => {
+		return ["dashboard-stats"] as const
 	}
 }
 
@@ -163,3 +166,11 @@ export const applicationApiKeysQueryOptions = (appId: string) => {
 		}
 	})
 }
+
+export const dashboardStatsQueryOptions = queryOptions({
+	queryKey: queryKeys.dashboardStats(),
+	queryFn: async () => {
+		const response = await api.manage.dashboard.stats.$get()
+		return await response.json()
+	}
+})

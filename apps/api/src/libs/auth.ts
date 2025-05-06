@@ -31,6 +31,7 @@ import { EmailNotFoundInClaimsPage } from "@draftauth/core/ui/email-not-found-in
 import { UserNotFoundPage } from "@draftauth/core/ui/user-not-found-page"
 import { getGithubUser } from "@draftauth/core/utils/github"
 import { getGoogleUser } from "@draftauth/core/utils/google"
+import { PINCodeEmail } from "@draftauth/emails/pin-code-email"
 import { VerificationCodeEmail } from "@draftauth/emails/verification-code-email"
 import { getBaseUrl } from "@draftauth/utils"
 import { getConnInfo } from "hono/bun"
@@ -219,9 +220,9 @@ export const auth = issuer({
 
 					await resend.emails.send({
 						to: [claims.email],
-						subject: "Confirmação de Email",
+						subject: "Confirmação de acesso",
 						from: "Draft Auth <manager@draftauth.com.br>",
-						react: VerificationCodeEmail({ verificationCode: code })
+						react: PINCodeEmail({ pinCode: code })
 					})
 				}
 			})
