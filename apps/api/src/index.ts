@@ -2,16 +2,15 @@ import { auth } from "@/libs/auth"
 import { Hono } from "hono"
 import { contextStorage } from "hono/context-storage"
 import { cors } from "hono/cors"
-import { csrf } from "hono/csrf"
 import { HTTPException } from "hono/http-exception"
 import { poweredBy } from "hono/powered-by"
-import { secureHeaders } from "hono/secure-headers"
 import { z } from "zod"
 import { env } from "./environment/env"
 import { limitEmailRate, limitIpRate } from "./libs/rate-limit"
 import { manageRouter } from "./routes/management"
 import { serviceRouter } from "./routes/service"
 import { setupRouter } from "./routes/setup"
+import { secureHeaders } from "hono/secure-headers"
 
 const app = new Hono()
 
@@ -40,7 +39,6 @@ app.use(
 	secureHeaders(),
 	contextStorage(),
 	cors({ origin: env.FRONTEND_URL }),
-	csrf({ origin: env.FRONTEND_URL }),
 	poweredBy({ serverName: "Draft Auth" })
 )
 
