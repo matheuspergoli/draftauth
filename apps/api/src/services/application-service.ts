@@ -69,6 +69,16 @@ export const addRedirectUri = async ({ appId, uri }: { appId: string; uri: strin
 		})
 	}
 
+	const uriExists = await db
+		.select()
+		.from(applicationRedirectUris)
+		.where(eq(applicationRedirectUris.uri, uri))
+		.get()
+
+	if (uriExists) {
+		throw new HTTPException(409, { message: `URI: ${uri} já existe` })
+	}
+
 	const newRedirectUri = await db
 		.insert(applicationRedirectUris)
 		.values({ appId, uri })
