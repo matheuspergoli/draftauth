@@ -10,6 +10,7 @@
 		"db:push": "turbo run db:push",
 		"db:reset": "turbo run db:reset",
 		"db:studio": "turbo run db:studio",
+		"db:migrate": "turbo run db:migrate",
 		"db:generate": "turbo run db:generate",
 		"format": "biome format --write .",
 		"clean": "turbo run clean && rm -rf .turbo node_modules"
