@@ -1,7 +1,6 @@
 {
 	"extends": "@draftauth/tsconfig/internal-package.json",
 	"compilerOptions": {
-		"jsxImportSource": "react",
 		"types": ["@draftauth/tsconfig/reset", "node"]
 	},
 	"include": ["src"]

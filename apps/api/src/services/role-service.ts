@@ -1,5 +1,6 @@
 import { db } from "@/db/client"
 import { applications, roles, userRoles, users } from "@/db/schema"
+import { events } from "@/libs/events"
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -78,11 +79,15 @@ export const createRole = async (data: {
 		})
 	}
 
-	return await db
+	const newRole = await db
 		.insert(roles)
 		.values({ appId: data.appId, roleName: data.roleName })
 		.returning()
 		.get()
+
+	events.emit("role.created", { newRole, details: newRole })
+
+	return newRole
 }
 
 export const updateRole = async (data: {
@@ -111,26 +116,43 @@ export const updateRole = async (data: {
 		})
 	}
 
-	await db
+	const updatedRole = await db
 		.update(roles)
 		.set({ roleName: data.roleName })
 		.where(and(eq(roles.roleId, data.roleId), eq(roles.appId, data.appId)))
+		.returning()
+		.get()
+
+	events.emit("role.updated", {
+		updatedRole,
+		details: {
+			appId: data.appId,
+			roleId: data.roleId,
+			newRoleName: data.roleName,
+			oldRoleName: requestedRole.roleName
+		}
+	})
 }
 
 export const deleteRole = async ({ roleId }: { roleId: string }) => {
-	const roleToDelete = await db
-		.select({
-			roleName: roles.roleName
-		})
-		.from(roles)
-		.where(eq(roles.roleId, roleId))
-		.get()
+	const roleToDelete = await db.select().from(roles).where(eq(roles.roleId, roleId)).get()
 
 	if (!roleToDelete) {
 		throw new HTTPException(404, {
 			message: `Cargo com RoleID: ${roleId} não foi encontrado`
 		})
 	}
+
+	events.emit("role.deleted", {
+		roleId,
+		appId: roleToDelete.appId,
+		roleName: roleToDelete.roleName,
+		details: {
+			roleId,
+			appId: roleToDelete.appId,
+			roleName: roleToDelete.roleName
+		}
+	})
 
 	await db.delete(roles).where(eq(roles.roleId, roleId))
 }
@@ -158,6 +180,19 @@ export const assignRoleToUser = async ({
 		throw new HTTPException(404, { message: `Usuário com ID: ${userId} não foi encontrado` })
 	}
 
+	events.emit("user.role.assigned", {
+		userId,
+		roleId,
+		appId: requestedRole.appId,
+		details: {
+			roleId,
+			userId,
+			appId: requestedRole.appId,
+			userEmail: requestedUser.email,
+			roleName: requestedRole.roleName
+		}
+	})
+
 	await db.insert(userRoles).values({ userId, roleId }).onConflictDoNothing()
 }
 
@@ -183,6 +218,19 @@ export const revokeRoleFromUser = async ({
 	if (!requestedUser) {
 		throw new HTTPException(404, { message: `Usuário com ID: ${userId} não foi encontrado` })
 	}
+
+	events.emit("user.role.revoked", {
+		userId,
+		roleId,
+		appId: requestedRole.appId,
+		details: {
+			roleId,
+			userId,
+			appId: requestedRole.appId,
+			userEmail: requestedUser.email,
+			roleName: requestedRole.roleName
+		}
+	})
 
 	await db
 		.delete(userRoles)

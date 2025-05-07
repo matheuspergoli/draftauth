@@ -14,6 +14,7 @@ import {
 	listApplicationsWithCounts,
 	listRedirectUrisForApp
 } from "@/services/application-service"
+import { getAuditLogs } from "@/services/audit-log-service"
 import { CONFIG_KEYS, getConfigValue } from "@/services/config-service"
 import { getDashboardStats } from "@/services/dashboard-service"
 import {
@@ -39,6 +40,11 @@ import { z } from "zod"
 
 export const manageRouter = new Hono()
 	.use("*", adminMiddleware)
+
+	.get("/audit-logs", async (c) => {
+		const logs = await getAuditLogs()
+		return c.json(logs)
+	})
 
 	.get("/dashboard/stats", async (c) => {
 		const stats = await getDashboardStats()

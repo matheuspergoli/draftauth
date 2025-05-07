@@ -7,6 +7,7 @@ import {
 	generateKeyId,
 	generateSecretKey
 } from "@/libs/crypto"
+import { events } from "@/libs/events"
 import { eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -36,6 +37,8 @@ export const generateApiKey = async ({
 	}
 
 	const keyFileData = `API_KEY_ID=${keyId}\nAPI_SECRET_KEY=${secretKey}\n`
+
+	events.emit("apikey.created", { metadata, details: { appId, keyId } })
 
 	return { metadata, keyFileData }
 }
@@ -69,6 +72,25 @@ export const getApiKeyDetailsForKeyId = async ({ keyId }: { keyId: string }) => 
 }
 
 export const revokeApiKey = async ({ keyId }: { keyId: string }) => {
+	const requestedApiKey = await db
+		.select()
+		.from(applicationApiKeys)
+		.where(eq(applicationApiKeys.keyId, keyId))
+		.get()
+
+	if (!requestedApiKey) {
+		throw new HTTPException(400, { message: `API Key com KeyID: ${keyId} não foi encontrada` })
+	}
+
+	events.emit("apikey.revoked", {
+		keyId,
+		appId: requestedApiKey.appId,
+		details: {
+			keyId,
+			appId: requestedApiKey.appId
+		}
+	})
+
 	await db.delete(applicationApiKeys).where(eq(applicationApiKeys.keyId, keyId))
 }
 

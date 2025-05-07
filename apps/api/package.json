@@ -17,6 +17,7 @@
 	"dependencies": {
 		"@draftauth/core": "workspace:*",
 		"@draftauth/emails": "workspace:*",
+		"@draftauth/events": "workspace:*",
 		"@draftauth/utils": "workspace:*",
 		"@hono/zod-validator": "^0.5.0",
 		"@libsql/client": "^0.15.4",
@@ -31,7 +32,7 @@
 	},
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^22.15.12",
+		"@types/node": "^22.15.14",
 		"@types/zxcvbn": "^4.4.5",
 		"drizzle-kit": "^0.31.1",
 		"tsup": "^8.4.0",

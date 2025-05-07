@@ -1,5 +1,5 @@
 {
-	"name": "@draftauth/utils",
+	"name": "@draftauth/events",
 	"private": true,
 	"version": "0.1.0",
 	"type": "module",

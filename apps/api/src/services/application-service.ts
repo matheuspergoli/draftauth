@@ -5,6 +5,7 @@ import {
 	roles,
 	userApplicationAccess
 } from "@/db/schema"
+import { events } from "@/libs/events"
 import { and, eq, sql } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -20,6 +21,15 @@ export const deleteApplication = async ({ appId }: { appId: string }) => {
 			message: `Aplicação com AppID: ${appId} não foi encontrada`
 		})
 	}
+
+	events.emit("app.deleted", {
+		appId,
+		appName: requestedApp.appName,
+		details: {
+			appId,
+			appName: requestedApp.appName
+		}
+	})
 
 	await db.delete(applications).where(eq(applications.appId, appId))
 }
@@ -59,7 +69,22 @@ export const addRedirectUri = async ({ appId, uri }: { appId: string; uri: strin
 		})
 	}
 
-	await db.insert(applicationRedirectUris).values({ appId, uri }).returning().get()
+	const newRedirectUri = await db
+		.insert(applicationRedirectUris)
+		.values({ appId, uri })
+		.returning()
+		.get()
+
+	events.emit("app.redirecturi.added", {
+		appId,
+		uri,
+		uriId: newRedirectUri.uriId,
+		details: {
+			uri,
+			appId,
+			uriId: newRedirectUri.uriId
+		}
+	})
 }
 
 export const deleteRedirectUri = async ({
@@ -86,6 +111,13 @@ export const deleteRedirectUri = async ({
 			message: `RedirectURI com URI ID: ${uriId} não foi encontrada`
 		})
 	}
+
+	events.emit("app.redirecturi.deleted", {
+		appId,
+		uriId,
+		uri: requestedURI.uri,
+		details: { uriId, appId, uri: requestedURI.uri }
+	})
 
 	await db
 		.delete(applicationRedirectUris)
@@ -201,8 +233,14 @@ export const createApplication = async (data: {
 		})
 	}
 
-	await db.insert(applications).values({
-		appId: data.appId,
-		appName: data.appName
-	})
+	const newApplication = await db
+		.insert(applications)
+		.values({
+			appId: data.appId,
+			appName: data.appName
+		})
+		.returning()
+		.get()
+
+	events.emit("app.created", { newApp: newApplication, details: newApplication })
 }

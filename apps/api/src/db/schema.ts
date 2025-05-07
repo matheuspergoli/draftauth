@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import type { AppEventType } from "@/libs/events"
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 
 export type UserStatus = "active" | "inactive"
@@ -131,3 +132,30 @@ export const userApplicationAccess = sqliteTable(
 		]
 	}
 )
+
+export const auditLogs = sqliteTable("audit_logs", {
+	logId: text("log_id")
+		.primaryKey()
+		.$defaultFn(() => randomUUID()),
+	timestamp: integer("timestamp")
+		.notNull()
+		.$defaultFn(() => Date.now()),
+	details: text("details"),
+	eventType: text("event_type").notNull().$type<AppEventType>(),
+	actorUserId: text("actor_user_id").references(() => users.userId, {
+		onDelete: "set null"
+	}),
+	actorIpAddress: text("actor_ip_address"),
+	targetUserId: text("target_user_id").references(() => users.userId, {
+		onDelete: "set null"
+	}),
+	targetAppId: text("target_app_id").references(() => applications.appId, {
+		onDelete: "set null"
+	}),
+	targetRoleId: text("target_role_id").references(() => roles.roleId, {
+		onDelete: "set null"
+	}),
+	targetApiKeyId: text("target_api_key_id").references(() => applicationApiKeys.keyId, {
+		onDelete: "set null"
+	})
+})

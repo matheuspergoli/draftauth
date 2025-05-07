@@ -1,5 +1,6 @@
 import { db } from "@/db/client"
 import { type AccessStatus, applications, userApplicationAccess, users } from "@/db/schema"
+import { events } from "@/libs/events"
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -30,6 +31,17 @@ export const setUserAppAccessStatus = async ({
 	if (!requestedUser) {
 		throw new HTTPException(404, { message: `Usuário com ID: ${userId} não foi encontrado` })
 	}
+
+	events.emit("user.access.updated", {
+		newStatus: status,
+		userId,
+		appId,
+		details: {
+			appId,
+			userId,
+			newStatus: status
+		}
+	})
 
 	await db
 		.insert(userApplicationAccess)

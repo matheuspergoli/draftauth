@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { db } from "@/db/client"
 import { type ProviderName, type UserStatus, userExternalIdentities, users } from "@/db/schema"
+import { events } from "@/libs/events"
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
@@ -71,6 +72,15 @@ export const createUser = async ({
 		})
 		.returning()
 		.get()
+
+	events.emit("user.created", {
+		newUser,
+		details: {
+			email,
+			initialStatus,
+			userId: newUser.userId
+		}
+	})
 
 	return newUser
 }
@@ -164,6 +174,17 @@ export const setUserGlobalStatus = async ({
 	if (!requestedUser) {
 		throw new HTTPException(404, { message: `Usuário com ID: ${userId} não foi encontrado` })
 	}
+
+	events.emit("user.status.updated", {
+		userId,
+		oldStatus: requestedUser.status,
+		newStatus: status,
+		details: {
+			userId,
+			newStatus: status,
+			oldStatus: requestedUser.status
+		}
+	})
 
 	await db.update(users).set({ status: status }).where(eq(users.userId, userId))
 }
