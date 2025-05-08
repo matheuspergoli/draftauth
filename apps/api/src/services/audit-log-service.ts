@@ -5,8 +5,6 @@ import { desc } from "drizzle-orm"
 
 interface AuditEventData {
 	eventType: AppEventType
-	actorUserId?: string | null
-	actorIpAddress?: string | null
 	targetUserId?: string | null
 	targetAppId?: string | null
 	targetRoleId?: string | null
@@ -18,8 +16,6 @@ export const logAuditEvent = async (event: AuditEventData) => {
 	await db.insert(auditLogs).values({
 		timestamp: Date.now(),
 		eventType: event.eventType,
-		actorUserId: event.actorUserId,
-		actorIpAddress: event.actorIpAddress,
 		targetUserId: event.targetUserId,
 		targetAppId: event.targetAppId,
 		targetRoleId: event.targetRoleId,

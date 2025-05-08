@@ -2,12 +2,7 @@ import type { applications, auditLogs, roles, userApplicationAccess, users } fro
 import { logAuditEvent } from "@/services/audit-log-service"
 import { Emitter } from "@draftauth/events"
 
-interface BasePayloadData {
-	actorUserId?: string | null
-	actorIpAddress?: string | null
-}
-
-interface RoleCreatedPayloadData extends BasePayloadData {
+interface RoleCreatedPayloadData {
 	newRole: typeof roles.$inferSelect
 	details: {
 		roleId: string
@@ -16,7 +11,7 @@ interface RoleCreatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface RoleAssignedPayloadData extends BasePayloadData {
+interface RoleAssignedPayloadData {
 	userId: string
 	roleId: string
 	appId: string
@@ -29,7 +24,7 @@ interface RoleAssignedPayloadData extends BasePayloadData {
 	}
 }
 
-interface ApiKeyCreatedPayloadData extends BasePayloadData {
+interface ApiKeyCreatedPayloadData {
 	metadata: { keyId: string; appId: string; createdAt: number }
 	details: {
 		keyId: string
@@ -37,7 +32,7 @@ interface ApiKeyCreatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface ApiKeyRevokedPayloadData extends BasePayloadData {
+interface ApiKeyRevokedPayloadData {
 	keyId: string
 	appId: string
 	details: {
@@ -46,7 +41,7 @@ interface ApiKeyRevokedPayloadData extends BasePayloadData {
 	}
 }
 
-interface UserCreatedPayloadData extends BasePayloadData {
+interface UserCreatedPayloadData {
 	newUser: typeof users.$inferSelect
 	details: {
 		userId: string
@@ -55,7 +50,7 @@ interface UserCreatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface UserStatusUpdatedPayloadData extends BasePayloadData {
+interface UserStatusUpdatedPayloadData {
 	userId: string
 	oldStatus: (typeof users.$inferSelect)["status"]
 	newStatus: (typeof users.$inferSelect)["status"]
@@ -66,7 +61,7 @@ interface UserStatusUpdatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface UserAccessUpdatedPayloadData extends BasePayloadData {
+interface UserAccessUpdatedPayloadData {
 	userId: string
 	appId: string
 	newStatus: (typeof userApplicationAccess.$inferSelect)["accessStatus"]
@@ -77,7 +72,7 @@ interface UserAccessUpdatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface AppCreatedPayloadData extends BasePayloadData {
+interface AppCreatedPayloadData {
 	newApp: typeof applications.$inferSelect
 	details: {
 		appId: string
@@ -85,7 +80,7 @@ interface AppCreatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface AppDeletedPayloadData extends BasePayloadData {
+interface AppDeletedPayloadData {
 	appId: string
 	appName: string
 	details: {
@@ -94,7 +89,7 @@ interface AppDeletedPayloadData extends BasePayloadData {
 	}
 }
 
-interface AppRedirectUriAddedPayloadData extends BasePayloadData {
+interface AppRedirectUriAddedPayloadData {
 	appId: string
 	uri: string
 	uriId: string
@@ -105,7 +100,7 @@ interface AppRedirectUriAddedPayloadData extends BasePayloadData {
 	}
 }
 
-interface AppRedirectUriDeletedPayloadData extends BasePayloadData {
+interface AppRedirectUriDeletedPayloadData {
 	appId: string
 	uriId: string
 	uri: string
@@ -116,7 +111,7 @@ interface AppRedirectUriDeletedPayloadData extends BasePayloadData {
 	}
 }
 
-interface RoleUpdatedPayloadData extends BasePayloadData {
+interface RoleUpdatedPayloadData {
 	updatedRole: typeof roles.$inferSelect
 	oldRoleName?: string
 	details: {
@@ -127,7 +122,7 @@ interface RoleUpdatedPayloadData extends BasePayloadData {
 	}
 }
 
-interface RoleDeletedPayloadData extends BasePayloadData {
+interface RoleDeletedPayloadData {
 	roleId: string
 	roleName: string
 	appId: string
@@ -173,8 +168,6 @@ export const registerAuditLogListeners = () => {
 	events.on("role.created", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetAppId: event.payload.newRole.appId,
 			targetRoleId: event.payload.newRole.roleId,
 			details: event.payload.details
@@ -184,8 +177,6 @@ export const registerAuditLogListeners = () => {
 	events.on("apikey.created", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetApiKeyId: event.payload.metadata.keyId,
 			targetAppId: event.payload.metadata.appId,
 			details: event.payload.details
@@ -195,8 +186,6 @@ export const registerAuditLogListeners = () => {
 	events.on("apikey.revoked", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetApiKeyId: event.payload.keyId,
 			targetAppId: event.payload.appId,
 			details: event.payload.details
@@ -206,8 +195,6 @@ export const registerAuditLogListeners = () => {
 	events.on("user.created", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetUserId: event.payload.newUser.userId,
 			details: event.payload.details
 		})
@@ -216,8 +203,6 @@ export const registerAuditLogListeners = () => {
 	events.on("user.status.updated", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetUserId: event.payload.userId,
 			details: event.payload.details
 		})
@@ -226,8 +211,6 @@ export const registerAuditLogListeners = () => {
 	events.on("user.role.assigned", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetUserId: event.payload.userId,
 			targetRoleId: event.payload.roleId,
 			targetAppId: event.payload.appId,
@@ -238,8 +221,6 @@ export const registerAuditLogListeners = () => {
 	events.on("user.role.revoked", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetUserId: event.payload.userId,
 			targetRoleId: event.payload.roleId,
 			targetAppId: event.payload.appId,
@@ -250,8 +231,6 @@ export const registerAuditLogListeners = () => {
 	events.on("user.access.updated", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetUserId: event.payload.userId,
 			targetAppId: event.payload.appId,
 			details: event.payload.details
@@ -261,8 +240,6 @@ export const registerAuditLogListeners = () => {
 	events.on("app.created", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetAppId: event.payload.newApp.appId,
 			details: event.payload.details
 		})
@@ -271,8 +248,6 @@ export const registerAuditLogListeners = () => {
 	events.on("app.deleted", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetAppId: event.payload.appId,
 			details: event.payload.details
 		})
@@ -281,8 +256,6 @@ export const registerAuditLogListeners = () => {
 	events.on("app.redirecturi.added", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetAppId: event.payload.appId,
 			details: event.payload.details
 		})
@@ -291,8 +264,6 @@ export const registerAuditLogListeners = () => {
 	events.on("app.redirecturi.deleted", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetAppId: event.payload.appId,
 			details: event.payload.details
 		})
@@ -301,8 +272,6 @@ export const registerAuditLogListeners = () => {
 	events.on("role.updated", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetRoleId: event.payload.updatedRole.roleId,
 			targetAppId: event.payload.updatedRole.appId,
 			details: event.payload.details
@@ -312,8 +281,6 @@ export const registerAuditLogListeners = () => {
 	events.on("role.deleted", async (event) => {
 		await logAuditEvent({
 			eventType: event.type,
-			actorUserId: event.payload.actorUserId,
-			actorIpAddress: event.payload.actorIpAddress,
 			targetRoleId: event.payload.roleId,
 			targetAppId: event.payload.appId,
 			details: event.payload.details

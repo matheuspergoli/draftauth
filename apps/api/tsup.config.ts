@@ -5,10 +5,10 @@ export default defineConfig((options) => ({
 	format: ["esm"],
 	target: "esnext",
 	dts: false,
-	splitting: true,
-	sourcemap: false,
 	clean: true,
 	minify: true,
 	treeshake: true,
+	splitting: true,
+	sourcemap: false,
 	...options
 }))

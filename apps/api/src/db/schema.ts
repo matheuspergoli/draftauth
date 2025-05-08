@@ -142,10 +142,6 @@ export const auditLogs = sqliteTable("audit_logs", {
 		.$defaultFn(() => Date.now()),
 	details: text("details"),
 	eventType: text("event_type").notNull().$type<AppEventType>(),
-	actorUserId: text("actor_user_id").references(() => users.userId, {
-		onDelete: "set null"
-	}),
-	actorIpAddress: text("actor_ip_address"),
 	targetUserId: text("target_user_id").references(() => users.userId, {
 		onDelete: "set null"
 	}),

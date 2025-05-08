@@ -13,8 +13,8 @@
 		"clean": "rm -rf dist .turbo .astro node_modules"
 	},
 	"dependencies": {
-		"@astrojs/starlight": "^0.34.2",
-		"astro": "^5.7.11",
+		"@astrojs/starlight": "^0.34.3",
+		"astro": "^5.7.12",
 		"sharp": "^0.34.1"
 	},
 	"devDependencies": {

@@ -33,7 +33,7 @@
 	},
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^22.15.14",
+		"@types/node": "^22.15.17",
 		"@types/zxcvbn": "^4.4.5",
 		"drizzle-kit": "^0.31.1",
 		"tsup": "^8.4.0",
