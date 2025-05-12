@@ -168,7 +168,7 @@ export const auth = issuer({
 						to: [email],
 						subject: "Confirmação de Email",
 						from: "Draft Auth <manager@draftauth.com.br>",
-						react: VerificationCodeEmail({ verificationCode: code })
+						react: VerificationCodeEmail({ code })
 					})
 				},
 				validatePassword: async (password) => {
@@ -222,7 +222,7 @@ export const auth = issuer({
 						to: [claims.email],
 						subject: "Confirmação de acesso",
 						from: "Draft Auth <manager@draftauth.com.br>",
-						react: PINCodeEmail({ pinCode: code })
+						react: PINCodeEmail({ code })
 					})
 				}
 			})

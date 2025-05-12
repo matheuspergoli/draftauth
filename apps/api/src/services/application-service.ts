@@ -72,7 +72,7 @@ export const addRedirectUri = async ({ appId, uri }: { appId: string; uri: strin
 	const uriExists = await db
 		.select()
 		.from(applicationRedirectUris)
-		.where(eq(applicationRedirectUris.uri, uri))
+		.where(and(eq(applicationRedirectUris.uri, uri), eq(applicationRedirectUris.appId, appId)))
 		.get()
 
 	if (uriExists) {
