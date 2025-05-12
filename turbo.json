@@ -42,12 +42,5 @@
 			"cache": false,
 			"interactive": true
 		}
-	},
-	"globalEnv": [
-		"PORT",
-		"DATABASE_URL",
-		"FRONTEND_URL",
-		"VITE_BACKEND_URL",
-		"DATABASE_AUTH_TOKEN"
-	]
+	}
 }
