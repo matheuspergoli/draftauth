@@ -13,12 +13,10 @@ import {
 } from "@react-email/components"
 
 interface VerificationEmailProps {
-	verificationCode: string
+	code: string
 }
 
-export const VerificationCodeEmail = ({
-	verificationCode = "123456"
-}: VerificationEmailProps) => {
+export const VerificationCodeEmail = ({ code = "123456" }: VerificationEmailProps) => {
 	return (
 		<Html>
 			<Head />
@@ -31,7 +29,7 @@ export const VerificationCodeEmail = ({
 						para completar o processo:
 					</Text>
 					<Section style={codeContainer}>
-						<Text style={verificationCodeStyle}>{verificationCode}</Text>
+						<Text style={verificationCodeStyle}>{code}</Text>
 					</Section>
 					<Text style={paragraph}>
 						Se você não solicitou este código, por favor ignore este email ou entre em contato

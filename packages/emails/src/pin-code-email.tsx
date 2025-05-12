@@ -13,10 +13,10 @@ import {
 } from "@react-email/components"
 
 interface VerificationEmailProps {
-	pinCode: string
+	code: string
 }
 
-export const PINCodeEmail = ({ pinCode = "123456" }: VerificationEmailProps) => {
+export const PINCodeEmail = ({ code = "123456" }: VerificationEmailProps) => {
 	return (
 		<Html>
 			<Head />
@@ -29,7 +29,7 @@ export const PINCodeEmail = ({ pinCode = "123456" }: VerificationEmailProps) => 
 						para completar o processo:
 					</Text>
 					<Section style={codeContainer}>
-						<Text style={verificationCodeStyle}>{pinCode}</Text>
+						<Text style={verificationCodeStyle}>{code}</Text>
 					</Section>
 					<Text style={paragraph}>
 						Se você não solicitou este código, por favor ignore este email ou entre em contato

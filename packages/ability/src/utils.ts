@@ -6,9 +6,9 @@ import type {
 	SubjectTypeName
 } from "./types"
 
-export function detectSubjectTypeName<Subjects extends SubjectTypeMappings>(
+export const detectSubjectTypeName = <Subjects extends SubjectTypeMappings>(
 	subject: SubjectTypeName | SubjectObjectBase
-): RegisteredSubjectTypeName<Subjects> | SubjectTypeName {
+): RegisteredSubjectTypeName<Subjects> | SubjectTypeName => {
 	if (typeof subject === "string") {
 		return subject
 	}
@@ -21,10 +21,10 @@ export function detectSubjectTypeName<Subjects extends SubjectTypeMappings>(
 	throw new Error(`Cannot detect subject type for ${JSON.stringify(subject)}`)
 }
 
-export function actionsMatcher(
+export const actionsMatcher = (
 	requestedActions: ActionName | ActionName[],
 	ruleActions: ActionName | ActionName[]
-): boolean {
+): boolean => {
 	const requested = Array.isArray(requestedActions) ? requestedActions : [requestedActions]
 	const rule = Array.isArray(ruleActions) ? ruleActions : [ruleActions]
 
@@ -34,13 +34,13 @@ export function actionsMatcher(
 	return requested.some((action) => rule.includes(action))
 }
 
-export function subjectsMatcher<Subjects extends SubjectTypeMappings>(
+export const subjectsMatcher = <Subjects extends SubjectTypeMappings>(
 	requestedSubjectName: RegisteredSubjectTypeName<Subjects> | SubjectTypeName,
 	ruleSubjects:
 		| RegisteredSubjectTypeName<Subjects>
 		| RegisteredSubjectTypeName<Subjects>[]
 		| "all"
-): boolean {
+): boolean => {
 	if (ruleSubjects === "all") {
 		return true
 	}
