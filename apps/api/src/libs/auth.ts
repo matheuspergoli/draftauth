@@ -1,11 +1,9 @@
 import { randomBytes } from "node:crypto"
 import { dbClient } from "@/db/client"
 import { env } from "@/environment/env"
-import { setUserAppAccessStatus } from "@/services/access-service"
 import { isValidApplicationClient } from "@/services/application-service"
 import { isSetupComplete } from "@/services/config-service"
 import {
-	type FindOrCreateUserResult,
 	createUser,
 	findOrCreateUser,
 	findUserByEmail,
@@ -41,6 +39,12 @@ import { z } from "zod"
 import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "./password"
 import { resend } from "./resend"
 
+interface CentralUser {
+	email: string
+	userId: string
+	status: "active" | "inactive"
+}
+
 export const authClient = createClient({
 	issuer: getBaseUrl(),
 	clientID: "draftauth-api-verifier"
@@ -63,7 +67,7 @@ const handleCodeLogin = async (data: { email: string }) => {
 			userId: centralUser.userId
 		})
 
-		return { user: centralUser, created: false }
+		return centralUser
 	}
 
 	centralUser = await createUser({ email: data.email, initialStatus: "active" })
@@ -73,7 +77,7 @@ const handleCodeLogin = async (data: { email: string }) => {
 		userId: centralUser.userId
 	})
 
-	return { user: centralUser, created: true }
+	return centralUser
 }
 
 const handleGoogleLogin = async ({ accessToken }: { accessToken: string }) => {
@@ -106,7 +110,7 @@ const handlePasswordLogin = async (data: { email: string }) => {
 			userId: centralUser.userId
 		})
 
-		return { user: centralUser, created: false }
+		return centralUser
 	}
 
 	centralUser = await createUser({ email: data.email, initialStatus: "active" })
@@ -116,7 +120,7 @@ const handlePasswordLogin = async (data: { email: string }) => {
 		userId: centralUser.userId
 	})
 
-	return { user: centralUser, created: true }
+	return centralUser
 }
 
 export const auth = issuer({
@@ -239,7 +243,6 @@ export const auth = issuer({
 		})
 	},
 	async allow({ clientID, redirectURI }) {
-		getContext().set("currentAppId", clientID)
 		const setupComplete = await isSetupComplete()
 		if (!setupComplete) return true
 		return await isValidApplicationClient({ clientId: clientID, redirectUri: redirectURI })
@@ -247,11 +250,10 @@ export const auth = issuer({
 	success: async (ctx, value) => {
 		const context = getContext()
 		const setupComplete = await isSetupComplete()
-		const currentAppId = context.get("currentAppId")
-		let centralUser: FindOrCreateUserResult | null = null
+		let centralUser: CentralUser | null = null
 
 		if (!setupComplete) {
-			let firstUser: FindOrCreateUserResult | null = null
+			let firstUser: CentralUser | null = null
 
 			if (value.provider === "code") {
 				if (!value.claims.email) return context.html(EmailNotFoundInClaimsPage())
@@ -270,26 +272,18 @@ export const auth = issuer({
 				firstUser = await handlePasswordLogin({ email: value.email })
 			}
 
-			if (!firstUser?.user) {
+			if (!firstUser) {
 				return context.html(UserNotFoundPage())
 			}
 
-			if (firstUser.user.status !== "active") {
-				await setUserGlobalStatus({ userId: firstUser.user.userId, status: "active" })
-			}
-
-			if (firstUser.created && currentAppId) {
-				await setUserAppAccessStatus({
-					status: "enabled",
-					appId: currentAppId,
-					userId: firstUser.user.userId
-				})
+			if (firstUser.status !== "active") {
+				await setUserGlobalStatus({ userId: firstUser.userId, status: "active" })
 			}
 
 			const setupState = randomBytes(32).toString("hex")
 			const storage = TursoStorage(dbClient)
 			const stateKey = ["setup_state", setupState]
-			const stateValue = { userId: firstUser.user.userId }
+			const stateValue = { userId: firstUser.userId }
 			const expirySeconds = 10 * 60
 
 			await storage.set(stateKey, stateValue, new Date(Date.now() + expirySeconds * 1000))
@@ -317,25 +311,17 @@ export const auth = issuer({
 			centralUser = await handlePasswordLogin({ email: value.email })
 		}
 
-		if (!centralUser?.user) {
+		if (!centralUser) {
 			return context.html(UserNotFoundPage())
 		}
 
-		if (centralUser.user.status !== "active") {
+		if (centralUser.status !== "active") {
 			return context.html(AccessDeniedPage())
 		}
 
-		if (centralUser.created && currentAppId) {
-			await setUserAppAccessStatus({
-				status: "enabled",
-				appId: currentAppId,
-				userId: centralUser.user.userId
-			})
-		}
-
 		return ctx.subject("user", {
-			id: centralUser.user.userId,
-			email: centralUser.user.email
+			id: centralUser.userId,
+			email: centralUser.email
 		})
 	}
 })

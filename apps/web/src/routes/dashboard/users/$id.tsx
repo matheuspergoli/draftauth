@@ -42,7 +42,7 @@ import {
 	userQueryOptions
 } from "@/shared/queries"
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouteContext } from "@tanstack/react-router"
 import React from "react"
 
 export const Route = createFileRoute("/dashboard/users/$id")({
@@ -61,6 +61,7 @@ type AccessStatus = "enabled" | "disabled"
 
 function RouteComponent() {
 	const params = Route.useParams()
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { mutateAsync: revokeUserRole } = useRevokeUserRole()
 	const { mutateAsync: assignRoleToUser } = useAssignRoleToUser()
 	const { mutateAsync: changeUserGlobalStatus } = useChangeUserGlobalStatus()
@@ -147,6 +148,7 @@ function RouteComponent() {
 										<field.LabelField>Status</field.LabelField>
 										<field.SelectField
 											label="Status"
+											disabled={ability.cannot("edit_user_global_status", "User")}
 											placeholder="Status global do usuário"
 											values={[
 												{ label: "Ativo", value: "active" },
@@ -179,6 +181,7 @@ function RouteComponent() {
 							<fieldset className="space-y-1">
 								<Label>Selecionar Aplicação</Label>
 								<Select
+									disabled={ability.cannot("assign_role_to_user", "User")}
 									defaultValue={currentAppId}
 									onValueChange={(value) => {
 										setCurrentAppId(value)
@@ -206,6 +209,7 @@ function RouteComponent() {
 										<field.LabelField>Selecionar Cargo</field.LabelField>
 										<field.SelectField
 											label="Cargos"
+											disabled={ability.cannot("assign_role_to_user", "User")}
 											placeholder="Selecione o cargo"
 											values={renderRoles()}
 										/>
@@ -214,7 +218,10 @@ function RouteComponent() {
 							</rolesForm.AppField>
 
 							<rolesForm.AppForm>
-								<rolesForm.SubscribeButton className="self-end">
+								<rolesForm.SubscribeButton
+									disabled={ability.cannot("assign_role_to_user", "User")}
+									className="self-end"
+								>
 									Adicionar cargo
 								</rolesForm.SubscribeButton>
 							</rolesForm.AppForm>
@@ -241,6 +248,7 @@ function RouteComponent() {
 													<Button
 														variant="destructive"
 														size="sm"
+														disabled={ability.cannot("revoke_role_from_user", "User")}
 														onClick={async () =>
 															await revokeUserRole({
 																roleId: role.roleId,
@@ -304,6 +312,7 @@ function RouteComponent() {
 											</TableCell>
 											<TableCell className="text-right">
 												<Switch
+													disabled={ability.cannot("edit_user_application_access", "User")}
 													defaultChecked={isCurrentlyEnabled}
 													onCheckedChange={async (checked) => {
 														await changeUserAppAccessStatus({

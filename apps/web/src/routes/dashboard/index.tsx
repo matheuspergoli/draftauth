@@ -52,9 +52,9 @@ const eventDisplayMap: Record<AppEventType, { icon: React.ElementType; title: st
 }
 
 const formatLogDescription = (log: AuditLogEntry) => {
-	const { eventType, details, actorUserId, targetUserId, targetAppId, targetRoleId } = log
+	const { eventType, details, targetUserId, targetAppId, targetRoleId } = log
 
-	const actor = actorUserId ? `Ator ${actorUserId.substring(0, 8)}...` : "Sistema"
+	const actor = "Sistema"
 
 	switch (eventType) {
 		case "user.created":

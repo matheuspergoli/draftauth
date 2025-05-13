@@ -8,6 +8,7 @@ import {
 	DialogTrigger
 } from "@/shared/components/dialog"
 import { useAppForm } from "@/shared/components/form"
+import { useRouteContext } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
 import { useCreateApplication } from "../hooks/use-create-application"
 import {
@@ -16,6 +17,7 @@ import {
 } from "../schemas/create-application-schema"
 
 export const CreateApplicationDialog = () => {
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { mutateAsync: createApplication } = useCreateApplication()
 
 	const form = useAppForm({
@@ -34,7 +36,7 @@ export const CreateApplicationDialog = () => {
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
-				<Button>
+				<Button disabled={ability.cannot("create_application", "Application")}>
 					<Plus /> Criar aplicação
 				</Button>
 			</DialogTrigger>
@@ -75,7 +77,11 @@ export const CreateApplicationDialog = () => {
 					</form.AppField>
 
 					<form.AppForm>
-						<form.SubscribeButton>Criar</form.SubscribeButton>
+						<form.SubscribeButton
+							disabled={ability.cannot("create_application", "Application")}
+						>
+							Criar
+						</form.SubscribeButton>
 					</form.AppForm>
 				</form>
 			</DialogContent>

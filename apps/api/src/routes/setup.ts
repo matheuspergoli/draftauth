@@ -1,8 +1,10 @@
 import { dbClient } from "@/db/client"
 import { env } from "@/environment/env"
+import { SYSTEM_ROLES } from "@/libs/ability"
 import { setUserAppAccessStatus } from "@/services/access-service"
 import { addRedirectUri, createApplication } from "@/services/application-service"
 import { CONFIG_KEYS, isSetupComplete, setConfigValue } from "@/services/config-service"
+import { assignRoleToUser, createRole } from "@/services/role-service"
 import { TursoStorage } from "@draftauth/core/storage/turso"
 import { zValidator } from "@hono/zod-validator"
 import { Hono } from "hono"
@@ -45,13 +47,19 @@ export const setupRouter = new Hono()
 			}
 
 			await createApplication({ appId, appName })
+			const superAdminRole = await createRole({
+				appId,
+				roleName: SYSTEM_ROLES.SUPER_ADMIN_ROLE
+			})
 
 			await Promise.all([
 				addRedirectUri({ appId, uri: redirectURI }),
 				setConfigValue(CONFIG_KEYS.INITIAL_SETUP_COMPLETE, "true"),
 				setConfigValue(CONFIG_KEYS.PRIMARY_MANAGEMENT_APP_ID, appId),
 				setConfigValue(CONFIG_KEYS.SYSTEM_OWNER_USER_ID, setupUserId),
-				setUserAppAccessStatus({ userId: setupUserId, appId, status: "enabled" })
+				assignRoleToUser({ userId: setupUserId, roleId: superAdminRole.roleId }),
+				setUserAppAccessStatus({ userId: setupUserId, appId, status: "enabled" }),
+				createRole({ appId, roleName: SYSTEM_ROLES.APPLICATION_ADMINISTRATOR_ROLE })
 			])
 
 			return c.body(null, 201)

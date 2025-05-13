@@ -28,7 +28,7 @@ import {
 import { useAppForm } from "@/shared/components/form"
 import { applicationRedirectUrisQueryOptions } from "@/shared/queries"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams } from "@tanstack/react-router"
+import { useParams, useRouteContext } from "@tanstack/react-router"
 import { Plus, Trash } from "lucide-react"
 import { useCreateRedirectURI } from "../hooks/use-create-redirect-uri"
 import { useDeleteRedirectURI } from "../hooks/use-delete-redirect-uri"
@@ -38,6 +38,7 @@ import {
 } from "../schemas/create-redirect-uri-schema"
 
 export const ApplicationRedirectUris = () => {
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { appId } = useParams({ from: "/dashboard/applications/$appId" })
 	const { data } = useSuspenseQuery(applicationRedirectUrisQueryOptions(appId))
 
@@ -68,7 +69,7 @@ export const ApplicationRedirectUris = () => {
 
 				<Dialog>
 					<DialogTrigger asChild>
-						<Button>
+						<Button disabled={ability.cannot("create_redirect_uri", "Application")}>
 							<Plus /> Criar URI
 						</Button>
 					</DialogTrigger>
@@ -99,7 +100,11 @@ export const ApplicationRedirectUris = () => {
 							</form.AppField>
 
 							<form.AppForm>
-								<form.SubscribeButton>Criar</form.SubscribeButton>
+								<form.SubscribeButton
+									disabled={ability.cannot("create_redirect_uri", "Application")}
+								>
+									Criar
+								</form.SubscribeButton>
 							</form.AppForm>
 						</form>
 					</DialogContent>
@@ -116,7 +121,10 @@ export const ApplicationRedirectUris = () => {
 
 							<AlertDialog>
 								<AlertDialogTrigger asChild>
-									<Button variant="destructive">
+									<Button
+										disabled={ability.cannot("delete_redirect_uri", "Application")}
+										variant="destructive"
+									>
 										<Trash />
 									</Button>
 								</AlertDialogTrigger>
@@ -131,9 +139,10 @@ export const ApplicationRedirectUris = () => {
 										<AlertDialogCancel>Cancelar</AlertDialogCancel>
 										<AlertDialogAction
 											asChild
-											onClick={async () =>
+											disabled={ability.cannot("delete_redirect_uri", "Application")}
+											onClick={async () => {
 												await deleteRedirectURI({ uriId: uri.uriId, appId })
-											}
+											}}
 										>
 											<Button mode="loading" isLoading={isPending}>
 												Apagar

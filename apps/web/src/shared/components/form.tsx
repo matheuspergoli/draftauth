@@ -76,7 +76,7 @@ export function SubscribeButton(props: SubscribeButtonProps) {
 					type="submit"
 					mode="loading"
 					isLoading={isSubmitting}
-					disabled={isSubmitting}
+					disabled={isSubmitting || props.disabled}
 				/>
 			)}
 		</form.Subscribe>
@@ -110,6 +110,7 @@ export function SelectField(props: SelectFieldProps) {
 	return (
 		<Select
 			name={field.name}
+			disabled={props.disabled}
 			value={field.state.value}
 			onValueChange={(value) => field.handleChange(value)}
 		>

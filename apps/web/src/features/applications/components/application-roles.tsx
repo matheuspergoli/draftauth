@@ -36,7 +36,7 @@ import {
 } from "@/shared/components/table"
 import { applicationQueryOptions, applicationRolesQueryOptions } from "@/shared/queries"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams } from "@tanstack/react-router"
+import { useParams, useRouteContext } from "@tanstack/react-router"
 import { Plus, Trash } from "lucide-react"
 import { useCreateRoleName } from "../hooks/use-create-role-name"
 import { useDeleteRole } from "../hooks/use-delete-role"
@@ -47,6 +47,7 @@ import {
 import { UpdateRoleDialog } from "./update-role-dialog"
 
 export const ApplicationRoles = () => {
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { appId } = useParams({ from: "/dashboard/applications/$appId" })
 
 	const { mutateAsync: createRoleName } = useCreateRoleName()
@@ -76,7 +77,7 @@ export const ApplicationRoles = () => {
 
 				<Dialog>
 					<DialogTrigger asChild>
-						<Button>
+						<Button disabled={ability.cannot("create_role", "Application")}>
 							<Plus /> Criar novo cargo
 						</Button>
 					</DialogTrigger>
@@ -106,7 +107,12 @@ export const ApplicationRoles = () => {
 							</form.AppField>
 
 							<form.AppForm>
-								<form.SubscribeButton className="mt-3">Criar cargo</form.SubscribeButton>
+								<form.SubscribeButton
+									disabled={ability.cannot("create_role", "Application")}
+									className="mt-3"
+								>
+									Criar cargo
+								</form.SubscribeButton>
 							</form.AppForm>
 						</form>
 					</DialogContent>
@@ -133,7 +139,10 @@ export const ApplicationRoles = () => {
 
 									<AlertDialog>
 										<AlertDialogTrigger asChild>
-											<Button variant="destructive">
+											<Button
+												disabled={ability.cannot("delete_role", "Application")}
+												variant="destructive"
+											>
 												<Trash />
 											</Button>
 										</AlertDialogTrigger>
@@ -148,6 +157,7 @@ export const ApplicationRoles = () => {
 												<AlertDialogCancel>Cancelar</AlertDialogCancel>
 												<AlertDialogAction
 													asChild
+													disabled={ability.cannot("delete_role", "Application")}
 													onClick={async () => await deleteRole({ roleId: values.roleId })}
 												>
 													<Button mode="loading" isLoading={isPending}>

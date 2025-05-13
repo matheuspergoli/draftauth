@@ -25,7 +25,12 @@
 			},
 			"suspicious": {
 				"useAwait": "error",
-				"noConsole": "error"
+				"noConsole": {
+					"level": "error",
+					"options": {
+						"allow": ["warn", "error"]
+					}
+				}
 			},
 			"style": {
 				"noNonNullAssertion": "off"

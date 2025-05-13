@@ -17,6 +17,7 @@
 	},
 	"dependencies": {
 		"@draftauth/core": "workspace:*",
+		"@draftauth/ability": "workspace:*",
 		"@draftauth/emails": "workspace:*",
 		"@draftauth/events": "workspace:*",
 		"@draftauth/utils": "workspace:*",

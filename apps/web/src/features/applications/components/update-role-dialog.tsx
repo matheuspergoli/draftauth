@@ -7,6 +7,7 @@ import {
 	DialogTrigger
 } from "@/shared/components/dialog"
 import { useAppForm } from "@/shared/components/form"
+import { useRouteContext } from "@tanstack/react-router"
 import { useUpdateRole } from "../hooks/use-update-role"
 import { type UpdateRoleData, UpdateRoleSchema } from "../schemas/update-role-schema"
 
@@ -15,6 +16,7 @@ export const UpdateRoleDialog = ({
 	roleId,
 	roleName
 }: { appId: string; roleName: string; roleId: string }) => {
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { mutateAsync: updateRole } = useUpdateRole()
 
 	const form = useAppForm({
@@ -32,7 +34,7 @@ export const UpdateRoleDialog = ({
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
-				<Button>Gerenciar</Button>
+				<Button disabled={ability.cannot("edit_role", "Application")}>Gerenciar</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -57,7 +59,12 @@ export const UpdateRoleDialog = ({
 					</form.AppField>
 
 					<form.AppForm>
-						<form.SubscribeButton className="mt-3">Atualizar</form.SubscribeButton>
+						<form.SubscribeButton
+							disabled={ability.cannot("edit_role", "Application")}
+							className="mt-3"
+						>
+							Atualizar
+						</form.SubscribeButton>
 					</form.AppForm>
 				</form>
 			</DialogContent>

@@ -22,7 +22,7 @@ import { Input } from "@/shared/components/input"
 import { Label } from "@/shared/components/label"
 import { applicationApiKeysQueryOptions } from "@/shared/queries"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams } from "@tanstack/react-router"
+import { useParams, useRouteContext } from "@tanstack/react-router"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import type { InferResponseType } from "hono"
@@ -39,6 +39,7 @@ type DialogState =
 	| { status: "displaying"; value: ApplicationApiKey }
 
 export const ApplicationApiKeys = () => {
+	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { appId } = useParams({ from: "/dashboard/applications/$appId" })
 	const { data } = useSuspenseQuery(applicationApiKeysQueryOptions(appId))
 
@@ -72,7 +73,10 @@ export const ApplicationApiKeys = () => {
 						onOpenChange={(open) => !open && setDialogState({ status: "closed" })}
 					>
 						<AlertDialogTrigger asChild>
-							<Button onClick={() => setDialogState({ status: "creating" })}>
+							<Button
+								disabled={ability.cannot("create_api_key", "Application")}
+								onClick={() => setDialogState({ status: "creating" })}
+							>
 								<PlusIcon />
 								Gerar API Key
 							</Button>
@@ -190,7 +194,11 @@ export const ApplicationApiKeys = () => {
 
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<Button variant="destructive" size="icon">
+										<Button
+											disabled={ability.cannot("delete_api_key", "Application")}
+											variant="destructive"
+											size="icon"
+										>
 											<Trash />
 										</Button>
 									</AlertDialogTrigger>
@@ -212,6 +220,7 @@ export const ApplicationApiKeys = () => {
 											>
 												<Button
 													mode="loading"
+													disabled={ability.cannot("delete_api_key", "Application")}
 													variant="destructive"
 													isLoading={revokeIsPending}
 												>
