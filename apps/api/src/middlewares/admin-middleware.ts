@@ -1,5 +1,6 @@
 import { type AppNameActions, type AppSubjectTypeMappings, SYSTEM_ROLES } from "@/libs/ability"
 import { authClient, subjects } from "@/libs/auth"
+import { getUserAppAccessStatus } from "@/services/access-service"
 import { CONFIG_KEYS, getConfigValue } from "@/services/config-service"
 import { getUserRolesForApp } from "@/services/role-service"
 import { getUserGlobalStatus } from "@/services/user-service"
@@ -96,6 +97,17 @@ export const adminMiddleware = createMiddleware<AdminEnv>(async (c, next) => {
 	if (!managementAppId) {
 		throw new HTTPException(500, {
 			message: "Configuração crítica: Aplicação de gerenciamento principal não identificada."
+		})
+	}
+
+	const currentAppStatus = await getUserAppAccessStatus({
+		appId: managementAppId,
+		userId: verifiedUser.id
+	})
+
+	if (currentAppStatus !== "enabled") {
+		throw new HTTPException(403, {
+			message: `Acesso negado: essa conta está ${currentAppStatus || "indisponível"}`
 		})
 	}
 

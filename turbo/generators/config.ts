@@ -19,6 +19,12 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 			},
 			{
 				type: "input",
+				name: "workspace",
+				message: "Which workspace should the package be created? (e.g. packages, apps)",
+				default: "packages"
+			},
+			{
+				type: "input",
 				name: "deps",
 				message: "Enter a space separated list of dependencies you would like to install"
 			}
@@ -34,22 +40,22 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 			},
 			{
 				type: "add",
-				path: "packages/{{ name }}/package.json",
+				path: "{{ workspace }}/{{ name }}/package.json",
 				templateFile: "templates/package.json.hbs"
 			},
 			{
 				type: "add",
-				path: "packages/{{ name }}/tsconfig.json",
+				path: "{{ workspace }}/{{ name }}/tsconfig.json",
 				templateFile: "templates/tsconfig.json.hbs"
 			},
 			{
 				type: "add",
-				path: "packages/{{ name }}/src/index.ts",
+				path: "{{ workspace }}/{{ name }}/src/index.ts",
 				template: "export const name = '{{ name }}';"
 			},
 			{
 				type: "modify",
-				path: "packages/{{ name }}/package.json",
+				path: "{{ workspace }}/{{ name }}/package.json",
 				async transform(content, answers) {
 					if ("deps" in answers && typeof answers.deps === "string") {
 						const pkg = JSON.parse(content) as PackageJson

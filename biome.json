@@ -28,7 +28,7 @@
 				"noConsole": {
 					"level": "error",
 					"options": {
-						"allow": ["warn", "error"]
+						"allow": ["warn", "error", "log"]
 					}
 				}
 			},
