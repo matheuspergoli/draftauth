@@ -29,81 +29,165 @@ export class AbilityBuilder<
 		this.ResolvedAbilityClass = AbilityClassParam
 	}
 
-	can(
+	can<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
-		subject: "all",
-		fields?: string[] | null,
-		conditions?: undefined
+		subject: Name | Name[]
+	): this
+	can(action: AppActions | AppActions[], subject: "all"): this
+
+	can<Name extends RegisteredSubjectTypeName<AppSubjects>>(
+		action: AppActions | AppActions[],
+		subject: Name | Name[],
+		conditions: Conditions<Name, AppSubjects>
 	): this
 
 	can<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
 		subject: Name | Name[],
-		fields?: Fields<Name, AppSubjects>[] | null,
-		conditions?: Conditions<Name, AppSubjects>
+		fields: Fields<Name, AppSubjects>[] | null
+	): this
+
+	can<Name extends RegisteredSubjectTypeName<AppSubjects>>(
+		action: AppActions | AppActions[],
+		subject: Name | Name[],
+		fields: Fields<Name, AppSubjects>[] | null | undefined,
+		conditions: Conditions<Name, AppSubjects>
+	): this
+
+	can(
+		action: AppActions | AppActions[],
+		subject: "all",
+		conditions: Record<string, unknown>
+	): this
+
+	can(action: AppActions | AppActions[], subject: "all", fields: string[] | null): this
+
+	can(
+		action: AppActions | AppActions[],
+		subject: "all",
+		fields: string[] | null | undefined,
+		conditions: Record<string, unknown>
 	): this
 
 	can<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
 		subject: Name | Name[] | "all",
-		fields?: (string[] | Fields<Name, AppSubjects>[]) | null,
-		conditions?: Conditions<Name, AppSubjects>
+		p3?:
+			| string[]
+			| Fields<Name, AppSubjects>[]
+			| Conditions<Name, AppSubjects>
+			| Record<string, unknown>
+			| null,
+		p4?: Conditions<Name, AppSubjects> | Record<string, unknown>
 	): this {
 		const ruleToAdd: Partial<Rule<AppActions, AppSubjects>> = {
 			action,
-			subject: subject as
-				| RegisteredSubjectTypeName<AppSubjects>
-				| RegisteredSubjectTypeName<AppSubjects>[]
-				| "all",
+			subject: subject,
 			inverted: false
 		}
 
-		if (fields !== null && fields !== undefined) {
-			ruleToAdd.fields = fields as Rule<AppActions, AppSubjects>["fields"]
+		let finalRuleFields = undefined
+		let finalRuleConditions = undefined
+
+		if (p4 !== undefined) {
+			finalRuleFields = p3
+			finalRuleConditions = p4
+		} else if (p3 !== null && p3 !== undefined) {
+			if (Array.isArray(p3)) {
+				finalRuleFields = p3
+			} else if (typeof p3 === "object") {
+				finalRuleConditions = p3
+			}
 		}
 
-		if (conditions !== undefined) {
-			ruleToAdd.conditions = conditions as Rule<AppActions, AppSubjects>["conditions"]
+		if (finalRuleFields !== null && finalRuleFields !== undefined) {
+			ruleToAdd.fields = finalRuleFields as Rule<AppActions, AppSubjects>["fields"]
+		}
+		if (finalRuleConditions !== undefined) {
+			ruleToAdd.conditions = finalRuleConditions as Rule<AppActions, AppSubjects>["conditions"]
 		}
 
 		this.rules.push(ruleToAdd as Rule<AppActions, AppSubjects>)
 		return this
 	}
 
-	cannot(
+	cannot<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
-		subject: "all",
-		fields?: string[] | null,
-		conditions?: undefined
+		subject: Name | Name[]
+	): this
+	cannot(action: AppActions | AppActions[], subject: "all"): this
+
+	cannot<Name extends RegisteredSubjectTypeName<AppSubjects>>(
+		action: AppActions | AppActions[],
+		subject: Name | Name[],
+		conditions: Conditions<Name, AppSubjects>
 	): this
 
 	cannot<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
 		subject: Name | Name[],
-		fields?: Fields<Name, AppSubjects>[] | null,
-		conditions?: Conditions<Name, AppSubjects>
+		fields: Fields<Name, AppSubjects>[] | null
+	): this
+
+	cannot<Name extends RegisteredSubjectTypeName<AppSubjects>>(
+		action: AppActions | AppActions[],
+		subject: Name | Name[],
+		fields: Fields<Name, AppSubjects>[] | null | undefined,
+		conditions: Conditions<Name, AppSubjects>
+	): this
+
+	cannot(
+		action: AppActions | AppActions[],
+		subject: "all",
+		conditions: Record<string, unknown>
+	): this
+
+	cannot(action: AppActions | AppActions[], subject: "all", fields: string[] | null): this
+
+	cannot(
+		action: AppActions | AppActions[],
+		subject: "all",
+		fields: string[] | null | undefined,
+		conditions: Record<string, unknown>
 	): this
 
 	cannot<Name extends RegisteredSubjectTypeName<AppSubjects>>(
 		action: AppActions | AppActions[],
 		subject: Name | Name[] | "all",
-		fields?: (string[] | Fields<Name, AppSubjects>[]) | null,
-		conditions?: Conditions<Name, AppSubjects>
+		p3?:
+			| string[]
+			| Fields<Name, AppSubjects>[]
+			| Conditions<Name, AppSubjects>
+			| Record<string, unknown>
+			| null,
+		p4?: Conditions<Name, AppSubjects> | Record<string, unknown>
 	): this {
 		const ruleToAdd: Partial<Rule<AppActions, AppSubjects>> = {
 			action,
-			subject: subject as
-				| RegisteredSubjectTypeName<AppSubjects>
-				| RegisteredSubjectTypeName<AppSubjects>[]
-				| "all",
+			subject: subject,
 			inverted: true
 		}
 
-		if (fields !== null && fields !== undefined) {
-			ruleToAdd.fields = fields as Rule<AppActions, AppSubjects>["fields"]
+		let finalRuleFields = undefined
+		let finalRuleConditions = undefined
+
+		if (p4 !== undefined) {
+			finalRuleFields = p3
+			finalRuleConditions = p4
+		} else if (p3 !== null && p3 !== undefined) {
+			if (Array.isArray(p3)) {
+				finalRuleFields = p3
+			} else if (typeof p3 === "object") {
+				finalRuleConditions = p3
+			}
 		}
-		if (conditions !== undefined) {
-			ruleToAdd.conditions = conditions as Rule<AppActions, AppSubjects>["conditions"]
+
+		if (finalRuleFields !== null && finalRuleFields !== undefined) {
+			ruleToAdd.fields = finalRuleFields as Rule<AppActions, AppSubjects>["fields"]
+		}
+
+		if (finalRuleConditions !== undefined) {
+			ruleToAdd.conditions = finalRuleConditions as Rule<AppActions, AppSubjects>["conditions"]
 		}
 
 		this.rules.push(ruleToAdd as Rule<AppActions, AppSubjects>)

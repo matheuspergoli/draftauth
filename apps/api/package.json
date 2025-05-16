@@ -37,7 +37,7 @@
 		"@types/node": "^22.15.18",
 		"@types/zxcvbn": "^4.4.5",
 		"drizzle-kit": "^0.31.1",
-		"tsup": "^8.4.0",
+		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
 	}
 }

@@ -1,5 +1,4 @@
 export type SubjectTypeName = string
-
 export type ActionName = string
 
 export interface SubjectObjectBase {
@@ -30,11 +29,13 @@ export type Fields<
 	Subjects extends SubjectTypeMappings
 > = Extract<keyof SubjectObject<Name, Subjects>, string>
 
+type ElementOf<T> = T extends ReadonlyArray<infer E> ? E : T extends Array<infer E> ? E : T
+
 export type ConditionOperators<T> = {
 	$eq?: T
 	$ne?: T
-	$in?: T[]
-	$nin?: T[]
+	$in?: ReadonlyArray<ElementOf<T>>
+	$nin?: ReadonlyArray<ElementOf<T>>
 	$lt?: T
 	$lte?: T
 	$gt?: T
