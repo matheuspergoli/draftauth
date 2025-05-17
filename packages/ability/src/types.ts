@@ -36,6 +36,7 @@ export type ConditionOperators<T> = {
 	$ne?: T
 	$in?: ReadonlyArray<ElementOf<T>>
 	$nin?: ReadonlyArray<ElementOf<T>>
+	$all?: ReadonlyArray<ElementOf<T>>
 	$lt?: T
 	$lte?: T
 	$gt?: T

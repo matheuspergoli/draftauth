@@ -1,7 +1,7 @@
+import { evaluateCondition } from "./evaluator"
 import type {
 	AbilitySubject,
 	ActionName,
-	ConditionOperators,
 	Conditions,
 	Fields,
 	RegisteredSubjectTypeName,
@@ -92,20 +92,15 @@ export class Ability<AppActions extends ActionName, AppSubjects extends SubjectT
 		if (!conditions || Object.keys(conditions).length === 0) return true
 		if (!subjectInstance) return false
 
-		for (const key in conditions) {
-			if (Object.prototype.hasOwnProperty.call(conditions, key)) {
-				const expected = conditions[key]
-				const actual = subjectInstance[key as keyof SubjectObjectBase]
+		for (const key of Object.keys(conditions)) {
+			const expected = conditions[key]!
+			const actual = subjectInstance[key as keyof SubjectObjectBase]
 
-				if (typeof expected === "object" && expected !== null && !Array.isArray(expected)) {
-					const expectedAsRecord = expected as Record<string, unknown>
-					if (expectedAsRecord.$eq !== undefined && actual !== expectedAsRecord.$eq)
-						return false
-				} else if (actual !== expected) {
-					return false
-				}
+			if (!evaluateCondition(actual, expected)) {
+				return false
 			}
 		}
+
 		return true
 	}
 
@@ -136,6 +131,7 @@ export class Ability<AppActions extends ActionName, AppSubjects extends SubjectT
 				}
 				continue
 			}
+
 			if (conditionKey === "$or") {
 				const subConditionsArray = conditions[conditionKey] as Conditions<Name, AppSubjects>[]
 				if (!Array.isArray(subConditionsArray) || subConditionsArray.length === 0) return false
@@ -149,6 +145,7 @@ export class Ability<AppActions extends ActionName, AppSubjects extends SubjectT
 				if (!orPassed) return false
 				continue
 			}
+
 			if (conditionKey === "$not") {
 				const subCondition = conditions[conditionKey] as Conditions<Name, AppSubjects>
 				if (this.checkTypedConditions(subCondition, subjectInstance)) {
@@ -157,126 +154,15 @@ export class Ability<AppActions extends ActionName, AppSubjects extends SubjectT
 				continue
 			}
 
-			const fieldName = conditionKey as Fields<Name, AppSubjects>
-			const conditionValueNode = conditions[fieldName] as Conditions<Name, AppSubjects>[Fields<
-				Name,
-				AppSubjects
-			>]
-			if (!this.evaluateFieldCondition(fieldName, conditionValueNode, subjectInstance)) {
+			const fieldName = key as Fields<Name, AppSubjects>
+			const node = conditions[fieldName]!
+			const subjectValue = subjectInstance[fieldName]
+
+			if (!evaluateCondition(subjectValue, node)) {
 				return false
 			}
 		}
 		return true
-	}
-
-	private evaluateFieldCondition<Name extends RegisteredSubjectTypeName<AppSubjects>>(
-		fieldName: Fields<Name, AppSubjects>,
-		conditionValueNode: Conditions<Name, AppSubjects>[Fields<Name, AppSubjects>],
-		subjectInstance: SubjectObject<Name, AppSubjects>
-	): boolean {
-		const subjectValue = subjectInstance[fieldName]
-
-		if (
-			typeof conditionValueNode === "object" &&
-			conditionValueNode !== null &&
-			!Array.isArray(conditionValueNode)
-		) {
-			const operatorObject = conditionValueNode as ConditionOperators<typeof subjectValue>
-			for (const opKey in operatorObject) {
-				if (Object.prototype.hasOwnProperty.call(operatorObject, opKey)) {
-					const op = opKey as keyof typeof operatorObject
-					const opValue = operatorObject[op]
-					let opFailed = false
-
-					switch (op) {
-						case "$eq":
-							if (subjectValue !== opValue) opFailed = true
-							break
-						case "$ne":
-							if (subjectValue === opValue) opFailed = true
-							break
-						case "$in":
-							if (!Array.isArray(opValue)) {
-								opFailed = true
-								break
-							}
-							if (Array.isArray(subjectValue)) {
-								if (
-									!(subjectValue as unknown[]).some((item) =>
-										(opValue as unknown[]).includes(item)
-									)
-								) {
-									opFailed = true
-								}
-							} else {
-								if (!(opValue as unknown[]).includes(subjectValue)) {
-									opFailed = true
-								}
-							}
-							break
-						case "$nin":
-							if (!Array.isArray(opValue)) {
-								opFailed = true
-								break
-							}
-							if (Array.isArray(subjectValue)) {
-								if (
-									(subjectValue as unknown[]).some((item) =>
-										(opValue as unknown[]).includes(item)
-									)
-								) {
-									opFailed = true
-								}
-							} else {
-								if ((opValue as unknown[]).includes(subjectValue)) {
-									opFailed = true
-								}
-							}
-							break
-						case "$lt":
-						case "$lte":
-						case "$gt":
-						case "$gte":
-							if (subjectValue === null || typeof subjectValue === "undefined") {
-								if (subjectValue === opValue && (op === "$lte" || op === "$gte")) {
-								} else {
-									opFailed = true
-								}
-							} else if (opValue === null || typeof opValue === "undefined") {
-								opFailed = true
-							} else if (typeof subjectValue !== typeof opValue) {
-								opFailed = true
-							} else {
-								if (op === "$lt" && !(subjectValue < opValue)) opFailed = true
-								if (op === "$lte" && !(subjectValue <= opValue)) opFailed = true
-								if (op === "$gt" && !(subjectValue > opValue)) opFailed = true
-								if (op === "$gte" && !(subjectValue >= opValue)) opFailed = true
-							}
-							break
-						case "$exists": {
-							if (typeof opValue === "boolean") {
-								const propActuallyExists =
-									Object.prototype.hasOwnProperty.call(subjectInstance, fieldName) &&
-									subjectInstance[fieldName] !== undefined
-
-								if (opValue === true && !propActuallyExists) opFailed = true
-								if (opValue === false && propActuallyExists) opFailed = true
-							} else {
-								opFailed = true
-							}
-							break
-						}
-						default:
-							opFailed = true
-					}
-					if (opFailed) {
-						return false
-					}
-				}
-			}
-			return true
-		}
-		return subjectValue === conditionValueNode
 	}
 
 	private checkGlobalFields(

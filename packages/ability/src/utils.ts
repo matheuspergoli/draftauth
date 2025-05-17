@@ -9,9 +9,7 @@ import type {
 export const detectSubjectTypeName = <Subjects extends SubjectTypeMappings>(
 	subject: SubjectTypeName | SubjectObjectBase
 ): RegisteredSubjectTypeName<Subjects> | SubjectTypeName => {
-	if (typeof subject === "string") {
-		return subject
-	}
+	if (typeof subject === "string") return subject
 	if (subject && typeof subject === "object") {
 		if (subject._subjectType) {
 			return subject._subjectType as RegisteredSubjectTypeName<Subjects>
@@ -27,10 +25,7 @@ export const actionsMatcher = (
 ): boolean => {
 	const requested = Array.isArray(requestedActions) ? requestedActions : [requestedActions]
 	const rule = Array.isArray(ruleActions) ? ruleActions : [ruleActions]
-
-	if (rule.includes("manage")) {
-		return true
-	}
+	if (rule.includes("manage")) return true
 	return requested.some((action) => rule.includes(action))
 }
 
@@ -41,9 +36,7 @@ export const subjectsMatcher = <Subjects extends SubjectTypeMappings>(
 		| RegisteredSubjectTypeName<Subjects>[]
 		| "all"
 ): boolean => {
-	if (ruleSubjects === "all") {
-		return true
-	}
+	if (ruleSubjects === "all") return true
 	const rule = Array.isArray(ruleSubjects) ? ruleSubjects : [ruleSubjects]
 	return rule.includes(requestedSubjectName as RegisteredSubjectTypeName<Subjects>)
 }
