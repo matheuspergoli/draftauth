@@ -19,11 +19,11 @@
 	},
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^22.15.19",
+		"@types/node": "^22.15.20",
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@libsql/client": "^0.15.6",
+		"@libsql/client": "^0.15.7",
 		"@openauthjs/openauth": "^0.4.3",
 		"hono": "^4.7.10",
 		"zod": "^3.25.7"
