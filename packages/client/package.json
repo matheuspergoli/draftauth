@@ -6,7 +6,9 @@
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -31,7 +33,7 @@
 	"devDependencies": {
 		"@changesets/cli": "^2.29.4",
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^22.15.21",
+		"@types/node": "^22.15.29",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
 	}
