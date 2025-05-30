@@ -1,5 +1,5 @@
 import type { Client } from "@libsql/client"
-import { type StorageAdapter, joinKey, splitKey } from "@openauthjs/openauth/storage/storage"
+import { type StorageAdapter, joinKey, splitKey } from "./storage"
 
 export const TursoStorage = (client: Client): StorageAdapter => {
 	const TABLE_NAME = "__draftauth__kv_storage"

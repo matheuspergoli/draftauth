@@ -1,5 +1,5 @@
-import { Layout } from "@openauthjs/openauth/ui/base"
-import type { SelectProps } from "@openauthjs/openauth/ui/select"
+import { Layout } from "./base"
+import type { SelectProps } from "./select"
 
 export const CustomSelect = (props?: SelectProps) => {
 	return async (providers: Record<string, string>, _req: Request): Promise<Response> => {
