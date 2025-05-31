@@ -174,6 +174,7 @@ export interface AuthorizationState {
 	state: string
 	client_id: string
 	audience?: string
+	scopes?: string[]
 	pkce?: {
 		challenge: string
 		method: "S256"
@@ -197,12 +198,13 @@ import {
 	UnknownStateError
 } from "./error"
 import { encryptionKeys, signingKeys } from "./keys"
-import { validatePKCE } from "./pkce.js"
-import { MemoryStorage } from "./storage/memory.js"
+import { validatePKCE } from "./pkce"
+import { MemoryStorage } from "./storage/memory"
 import { Storage, type StorageAdapter } from "./storage/storage"
-import { type Theme, setTheme } from "./themes/theme.ts"
+import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
 import { getRelativeUrl, isDomainMatch, lazy } from "./util"
+import { parseScopes, validateScopes } from "./scopes"
 
 export interface IssuerInput<
 	Providers extends Record<string, Provider<unknown>>,
@@ -279,6 +281,18 @@ export interface IssuerInput<
 	 * ```
 	 */
 	providers: Providers
+	/**
+	 * Array containing a list of the OAuth 2.0 [RFC6749] "scope" values that this authorization server advertises.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   scopes_supported: ["read", "write"]
+	 * }
+	 * ```
+	 */
+	scopes_supported?: string[]
+
 	/**
 	 * The theme you want to use for the UI.
 	 *
@@ -530,6 +544,7 @@ export function issuer<
 								type: type as string,
 								properties,
 								clientID: authorization.client_id,
+								scopes: authorization.scopes,
 								ttl: {
 									access: subjectOpts?.ttl?.access ?? ttlAccess,
 									refresh: subjectOpts?.ttl?.refresh ?? ttlRefresh
@@ -555,6 +570,7 @@ export function issuer<
 									redirectURI: authorization.redirect_uri,
 									clientID: authorization.client_id,
 									pkce: authorization.pkce,
+									scopes: authorization.scopes,
 									ttl: {
 										access: subjectOpts?.ttl?.access ?? ttlAccess,
 										refresh: subjectOpts?.ttl?.refresh ?? ttlRefresh
@@ -655,6 +671,7 @@ export function issuer<
 			}
 			timeUsed?: number
 			nextToken?: string
+			scopes?: string[]
 		},
 		opts?: {
 			generateRefreshToken?: boolean
@@ -695,7 +712,8 @@ export function issuer<
 				properties: value.properties,
 				aud: value.clientID,
 				iss: issuer(ctx),
-				sub: value.subject
+				sub: value.subject,
+				scopes: value.scopes
 			})
 				.setIssuedAt()
 				.setExpirationTime(Math.floor(accessTimeUsed + value.ttl.access))
@@ -787,7 +805,8 @@ export function issuer<
 				authorization_endpoint: `${iss}/authorize`,
 				token_endpoint: `${iss}/token`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
-				response_types_supported: ["code", "token"]
+				response_types_supported: ["code", "token"],
+				scopes_supported: input.scopes_supported
 			})
 		}
 	)
@@ -803,6 +822,7 @@ export function issuer<
 		async (c) => {
 			const form = await c.req.formData()
 			const grantType = form.get("grant_type")
+			const scope = form.get("scope") as string | null
 
 			if (grantType === "authorization_code") {
 				const code = form.get("code")
@@ -821,6 +841,7 @@ export function issuer<
 					clientID: string
 					redirectURI: string
 					subject: string
+					scopes?: string[]
 					ttl: {
 						access: number
 						refresh: number
@@ -878,12 +899,14 @@ export function issuer<
 						)
 					}
 				}
+				payload.scopes = validateScopes(scope, payload.scopes)
 				const tokens = await generateTokens(c, payload)
 				await Storage.remove(storage, key)
 				return c.json({
 					access_token: tokens.access,
 					expires_in: tokens.expiresIn,
-					refresh_token: tokens.refresh
+					refresh_token: tokens.refresh,
+					scope: payload.scopes?.join(" ")
 				})
 			}
 
@@ -906,6 +929,7 @@ export function issuer<
 					properties: unknown
 					clientID: string
 					subject: string
+					scopes?: string[]
 					ttl: {
 						access: number
 						refresh: number
@@ -940,13 +964,15 @@ export function issuer<
 						400
 					)
 				}
+				payload.scopes = validateScopes(scope, payload.scopes)
 				const tokens = await generateTokens(c, payload, {
 					generateRefreshToken
 				})
 				return c.json({
 					access_token: tokens.access,
 					refresh_token: tokens.refresh,
-					expires_in: tokens.expiresIn
+					expires_in: tokens.expiresIn,
+					scope: payload.scopes?.join(" ")
 				})
 			}
 
@@ -984,6 +1010,7 @@ export function issuer<
 								subject: opts?.subject || (await resolveSubject(type, properties)),
 								properties,
 								clientID: clientID.toString(),
+								scopes: parseScopes(scope),
 								ttl: {
 									access: opts?.ttl?.access ?? ttlAccess,
 									refresh: opts?.ttl?.refresh ?? ttlRefresh
@@ -1017,12 +1044,14 @@ export function issuer<
 		const audience = c.req.query("audience")
 		const code_challenge = c.req.query("code_challenge")
 		const code_challenge_method = c.req.query("code_challenge_method")
+		const scope = c.req.query("scope")
 		const authorization: AuthorizationState = {
 			response_type,
 			redirect_uri,
 			state,
 			client_id,
 			audience,
+			scopes: parseScopes(scope),
 			pkce:
 				code_challenge && code_challenge_method
 					? {

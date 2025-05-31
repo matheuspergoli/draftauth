@@ -181,6 +181,16 @@ export interface AuthorizeOptions {
 	 * If there's only one provider configured, the user will be redirected to that.
 	 */
 	provider?: string
+	/**
+	 * The scopes you want to request.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *  scopes: ["read", "write"]
+	 * }
+	 */
+	scopes?: string[]
 }
 
 export interface AuthorizeResult {
@@ -324,6 +334,10 @@ export interface VerifyResult<T extends SubjectSchema> {
 	subject: {
 		[type in keyof T]: { type: type; properties: StandardSchemaV1.InferOutput<T[type]> }
 	}[keyof T]
+	/**
+	 * The scopes of the token.
+	 */
+	scopes?: string[]
 }
 
 /**
@@ -588,6 +602,7 @@ export function createClient(input: ClientInput): Client {
 				result.searchParams.set("code_challenge", pkce.challenge)
 				challenge.verifier = pkce.verifier
 			}
+			if (opts?.scopes) result.searchParams.set("scope", opts.scopes.join(" "))
 			return {
 				challenge,
 				url: result.toString()
@@ -742,7 +757,8 @@ export function createClient(input: ClientInput): Client {
 						subject: {
 							type: jwtResult.payload.type,
 							properties: validated.value
-						} as VerifyResult<T>["subject"]
+						} as VerifyResult<T>["subject"],
+						...(jwtResult.payload.scopes ? { scopes: jwtResult.payload.scopes } : {})
 					}
 				}
 
