@@ -21,9 +21,9 @@
  *
  * @packageDocumentation
  */
-
+import type { Context } from "hono"
 import { createRemoteJWKSet, jwtVerify } from "jose"
-import { OauthError } from "../error"
+import { OauthError, type OauthErrorType } from "../error"
 import { generatePKCE } from "../pkce"
 import { getRelativeUrl } from "../util"
 import type { Provider } from "./provider"
@@ -131,7 +131,7 @@ export interface Oauth2Token {
 	access: string
 	refresh: string
 	expiry: number
-	id?: Record<string, unknown>
+	id: Record<string, unknown> | null
 	raw: Record<string, unknown>
 }
 
@@ -141,18 +141,34 @@ interface ProviderState {
 	codeVerifier?: string
 }
 
+interface TokenResponse {
+	access_token: string
+	refresh_token?: string
+	expires_in?: number
+	id_token?: string
+	error?: string
+	error_description?: string
+	[key: string]: unknown
+}
+
 export function Oauth2Provider(
 	config: Oauth2Config
 ): Provider<{ tokenset: Oauth2Token; clientID: string }> {
 	const query = config.query || {}
 
-	// Helper function to handle token exchange and response building
 	async function handleCallbackLogic(
-		c: any,
-		ctx: any,
+		c: Context,
+		ctx: {
+			get: <T>(c: Context, key: string) => Promise<T | undefined>
+			set: <T>(c: Context, key: string, ttl: number, value: T) => Promise<void>
+			success: (
+				c: Context,
+				data: { tokenset: Oauth2Token; clientID: string }
+			) => Promise<Response>
+		},
 		provider: ProviderState,
 		code: string | undefined
-	) {
+	): Promise<Response> {
 		if (!provider || !code) {
 			return c.redirect(getRelativeUrl(c, "./authorize"))
 		}
@@ -166,21 +182,23 @@ export function Oauth2Provider(
 			...(provider.codeVerifier ? { code_verifier: provider.codeVerifier } : {})
 		})
 
-		const json: any = await fetch(config.endpoint.token, {
+		const response = await fetch(config.endpoint.token, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded",
 				Accept: "application/json"
 			},
 			body: body.toString()
-		}).then((r) => r.json())
+		})
 
-		if ("error" in json) {
-			throw new OauthError(json.error, json.error_description)
+		const json = (await response.json()) as TokenResponse
+
+		if (json.error) {
+			throw new OauthError(json.error as OauthErrorType, json.error_description || "")
 		}
 
-		let idTokenPayload: Record<string, any> | null = null
-		if (config.endpoint.jwks) {
+		let idTokenPayload: Record<string, unknown> | null = null
+		if (config.endpoint.jwks && json.id_token) {
 			const jwksEndpoint = new URL(config.endpoint.jwks)
 			const jwks = createRemoteJWKSet(jwksEndpoint)
 			const { payload } = await jwtVerify(json.id_token, jwks, {
@@ -189,23 +207,22 @@ export function Oauth2Provider(
 			idTokenPayload = payload
 		}
 
-		return ctx.success(c, {
+		return await ctx.success(c, {
 			clientID: config.clientID,
 			tokenset: {
-				get access() {
+				get access(): string {
 					return json.access_token
 				},
-				get refresh() {
-					return json.refresh_token
+				get refresh(): string {
+					return json.refresh_token || ""
 				},
-				get expiry() {
-					return json.expires_in
+				get expiry(): number {
+					return json.expires_in || 0
 				},
-				get id() {
-					if (!idTokenPayload) return null
+				get id(): Record<string, unknown> | null {
 					return idTokenPayload
 				},
-				get raw() {
+				get raw(): Record<string, unknown> {
 					return json
 				}
 			}
@@ -215,7 +232,7 @@ export function Oauth2Provider(
 	return {
 		type: config.type || "oauth2",
 		init(routes, ctx) {
-			routes.get("/authorize", async (c) => {
+			routes.get("/authorize", async (c: Context) => {
 				const state = crypto.randomUUID()
 				const pkce = config.pkce ? await generatePKCE() : undefined
 				await ctx.set<ProviderState>(c, "provider", 60 * 10, {
@@ -239,44 +256,42 @@ export function Oauth2Provider(
 				return c.redirect(authorization.toString())
 			})
 
-			routes.get("/callback", async (c) => {
+			routes.get("/callback", async (c: Context) => {
 				const provider = (await ctx.get(c, "provider")) as ProviderState
 				const code = c.req.query("code")
 				const state = c.req.query("state")
 				const error = c.req.query("error")
 
-				if (error)
-					throw new OauthError(
-						error.toString() as any,
-						c.req.query("error_description")?.toString() || ""
-					)
+				if (error) {
+					throw new OauthError(error as OauthErrorType, c.req.query("error_description") || "")
+				}
 				if (!provider || !code || (provider.state && state !== provider.state)) {
 					return c.redirect(getRelativeUrl(c, "./authorize"))
 				}
 
-				return handleCallbackLogic(c, ctx, provider, code)
+				return await handleCallbackLogic(c, ctx, provider, code)
 			})
 
-			routes.post("/callback", async (c) => {
+			routes.post("/callback", async (c: Context) => {
 				const provider = (await ctx.get(c, "provider")) as ProviderState
 
-				// Handle form data from POST request
 				const formData = await c.req.formData()
 				const code = formData.get("code")?.toString()
 				const state = formData.get("state")?.toString()
 				const error = formData.get("error")?.toString()
 
-				if (error)
+				if (error) {
 					throw new OauthError(
-						error as any,
+						error as OauthErrorType,
 						formData.get("error_description")?.toString() || ""
 					)
+				}
 
 				if (!provider || !code || (provider.state && state !== provider.state)) {
 					return c.redirect(getRelativeUrl(c, "./authorize"))
 				}
 
-				return handleCallbackLogic(c, ctx, provider, code)
+				return await handleCallbackLogic(c, ctx, provider, code)
 			})
 		}
 	}

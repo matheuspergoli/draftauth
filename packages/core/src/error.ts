@@ -17,28 +17,21 @@
 /**
  * The OAuth server returned an error.
  */
+
+export type OauthErrorType =
+	| "invalid_request"
+	| "invalid_grant"
+	| "unauthorized_client"
+	| "access_denied"
+	| "unsupported_grant_type"
+	| "server_error"
+	| "temporarily_unavailable"
+
 export class OauthError extends Error {
-	public error:
-		| "invalid_request"
-		| "invalid_grant"
-		| "unauthorized_client"
-		| "access_denied"
-		| "unsupported_grant_type"
-		| "server_error"
-		| "temporarily_unavailable"
+	public error: OauthErrorType
 	public description: string
 
-	constructor(
-		error:
-			| "invalid_request"
-			| "invalid_grant"
-			| "unauthorized_client"
-			| "access_denied"
-			| "unsupported_grant_type"
-			| "server_error"
-			| "temporarily_unavailable",
-		description: string
-	) {
+	constructor(error: OauthErrorType, description: string) {
 		super(`${error} - ${description}`)
 		this.error = error
 		this.description = description

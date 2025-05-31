@@ -95,7 +95,7 @@ export interface CodeProviderConfig<
 	 * }
 	 * ```
 	 */
-	sendCode: (claims: Claims, code: string) => Promise<void | CodeProviderError>
+	sendCode: (claims: Claims, code: string) => Promise<CodeProviderError | undefined>
 }
 
 /**
@@ -170,25 +170,25 @@ export function CodeProvider<Claims extends Record<string, string> = Record<stri
 				const action = fd.get("action")?.toString()
 
 				if (action === "request" || action === "resend") {
-					const claims = Object.fromEntries(fd) as Claims
-					delete claims.action
-					const err = await config.sendCode(claims, code)
+					const formEntries = Object.fromEntries(fd)
+					const { action: _, ...claims } = formEntries as Claims & { action?: string }
+					const err = await config.sendCode(claims as Claims, code)
 					if (err) return transition(c, { type: "start" }, fd, err)
 					return transition(
 						c,
 						{
 							type: "code",
 							resend: action === "resend",
-							claims,
+							claims: claims as Record<string, string>,
 							code
 						},
 						fd
 					)
 				}
 
-				if (fd.get("action")?.toString() === "verify" && state.type === "code") {
-					const fd = await c.req.formData()
-					const compare = fd.get("code")?.toString()
+				if (fd.get("action")?.toString() === "verify" && state?.type === "code") {
+					const formData = await c.req.formData()
+					const compare = formData.get("code")?.toString()
 					if (!state.code || !compare || !timingSafeCompare(state.code, compare)) {
 						return transition(
 							c,
@@ -196,13 +196,15 @@ export function CodeProvider<Claims extends Record<string, string> = Record<stri
 								...state,
 								resend: false
 							},
-							fd,
+							formData,
 							{ type: "invalid_code" }
 						)
 					}
 					await ctx.unset(c, "provider")
 					return ctx.forward(c, await ctx.success(c, { claims: state.claims as Claims }))
 				}
+
+				return transition(c, { type: "start" }, fd)
 			})
 		}
 	}

@@ -21,7 +21,7 @@
 import type { JWTPayload } from "hono/utils/jwt/types"
 import { type JSONWebKeySet, createLocalJWKSet, jwtVerify } from "jose"
 import type { WellKnown } from "../client"
-import { OauthError } from "../error"
+import { OauthError, type OauthErrorType } from "../error"
 import { getRelativeUrl, lazy } from "../util"
 import type { Provider } from "./provider"
 
@@ -151,11 +151,12 @@ export function OidcProvider(
 				if (!provider) return c.redirect(getRelativeUrl(c, "./authorize"))
 				const body = await c.req.formData()
 				const error = body.get("error")
-				if (error)
+				if (error) {
 					throw new OauthError(
-						error.toString(),
+						error.toString() as OauthErrorType,
 						body.get("error_description")?.toString() || ""
 					)
+				}
 				const idToken = body.get("id_token")
 				if (!idToken) throw new OauthError("invalid_request", "Missing id_token")
 				const result = await jwtVerify(idToken.toString(), await jwks(), {
