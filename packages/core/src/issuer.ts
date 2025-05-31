@@ -697,6 +697,7 @@ export function issuer<
 				iss: issuer(ctx),
 				sub: value.subject
 			})
+				.setIssuedAt()
 				.setExpirationTime(Math.floor(accessTimeUsed + value.ttl.access))
 				.setProtectedHeader({
 					alg: signingKeyData.alg,
