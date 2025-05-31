@@ -715,7 +715,7 @@ export function issuer<
 				sub: value.subject,
 				scopes: value.scopes
 			})
-				.setIssuedAt()
+				.setIssuedAt(accessTimeUsed)
 				.setExpirationTime(Math.floor(accessTimeUsed + value.ttl.access))
 				.setProtectedHeader({
 					alg: signingKeyData.alg,
