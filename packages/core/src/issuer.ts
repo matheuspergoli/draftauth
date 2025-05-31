@@ -199,12 +199,12 @@ import {
 } from "./error"
 import { encryptionKeys, signingKeys } from "./keys"
 import { validatePKCE } from "./pkce"
+import { parseScopes, validateScopes } from "./scopes"
 import { MemoryStorage } from "./storage/memory"
 import { Storage, type StorageAdapter } from "./storage/storage"
 import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
 import { getRelativeUrl, isDomainMatch, lazy } from "./util"
-import { parseScopes, validateScopes } from "./scopes"
 
 export interface IssuerInput<
 	Providers extends Record<string, Provider<unknown>>,
@@ -511,12 +511,8 @@ export function issuer<
 
 	let storage = input.storage
 	if (process.env.OPENAUTH_STORAGE) {
-		const parsed = JSON.parse(process.env.OPENAUTH_STORAGE)
+		const parsed = JSON.parse(process.env.OPENAUTH_STORAGE) as { type: string }
 		if (parsed.type === "memory") storage = MemoryStorage()
-		if (parsed.type === "cloudflare")
-			throw new Error(
-				"Cloudflare storage cannot be configured through env because it requires bindings."
-			)
 	}
 	if (!storage)
 		throw new Error(
@@ -612,12 +608,16 @@ export function issuer<
 				...(ctx.req.url.startsWith("https://") ? { secure: true, sameSite: "None" } : {})
 			})
 		},
-		async get(ctx: Context, key: string) {
+		async get<T>(ctx: Context, key: string): Promise<T> {
 			const raw = getCookie(ctx, key)
-			if (!raw) return
-			return decrypt(raw).catch((ex) => {
+			if (!raw) return undefined as T
+			try {
+				const decrypted = await decrypt(raw)
+				return decrypted as T
+			} catch (ex) {
 				console.error("failed to decrypt", key, ex)
-			})
+				return undefined as T
+			}
 		},
 		async unset(ctx: Context, key: string) {
 			deleteCookie(ctx, key)

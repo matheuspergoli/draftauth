@@ -317,7 +317,7 @@ export interface VerifyResult<T extends SubjectSchema> {
 	 */
 	err?: undefined
 	/**
-	 * Returns the refreshed tokens only if they’ve been refreshed.
+	 * Returns the refreshed tokens only if they've been refreshed.
 	 *
 	 * If they are still valid, this will be undefined.
 	 */
@@ -563,14 +563,14 @@ export function createClient(input: ClientInput): Client {
 	const issuerCache = new Map<string, WellKnown>()
 	const issuer = input.issuer || process.env.OPENAUTH_ISSUER
 	if (!issuer) throw new Error("No issuer")
-	const f = input.fetch ?? fetch
+	const f = input.fetch ?? (fetch as FetchLike)
 
 	async function getIssuer() {
 		const cached = issuerCache.get(issuer!)
 		if (cached) return cached
-		const wellKnown = (await (f || fetch)(
-			`${issuer}/.well-known/oauth-authorization-server`
-		).then((r) => r.json())) as WellKnown
+		const wellKnown = (await f(`${issuer}/.well-known/oauth-authorization-server`).then(
+			(r: FetchResponse) => r.json()
+		)) as WellKnown
 		issuerCache.set(issuer!, wellKnown)
 		return wellKnown
 	}
@@ -579,13 +579,13 @@ export function createClient(input: ClientInput): Client {
 		const wk = await getIssuer()
 		const cached = jwksCache.get(issuer!)
 		if (cached) return cached
-		const keyset = (await (f || fetch)(wk.jwks_uri).then((r) => r.json())) as JSONWebKeySet
+		const keyset = (await f(wk.jwks_uri).then((r: FetchResponse) => r.json())) as JSONWebKeySet
 		const result = createLocalJWKSet(keyset)
 		jwksCache.set(issuer!, result)
 		return result
 	}
 
-	const result = {
+	const result: Client = {
 		async authorize(redirectURI: string, response: "code" | "token", opts?: AuthorizeOptions) {
 			const result = new URL(`${issuer}/authorize`)
 			const challenge: Challenge = {
@@ -608,6 +608,7 @@ export function createClient(input: ClientInput): Client {
 				url: result.toString()
 			}
 		},
+
 		async exchange(
 			code: string,
 			redirectURI: string,
@@ -664,6 +665,7 @@ export function createClient(input: ClientInput): Client {
 				}
 			}
 		},
+
 		async refresh(
 			refresh: string,
 			opts?: RefreshOptions
@@ -723,6 +725,7 @@ export function createClient(input: ClientInput): Client {
 				}
 			}
 		},
+
 		async verify<T extends SubjectSchema>(
 			subjects: T,
 			token: string,
@@ -734,6 +737,7 @@ export function createClient(input: ClientInput): Client {
 					mode: "access"
 					type: keyof T
 					properties: StandardSchemaV1.InferInput<T[keyof T]>
+					scopes?: string[]
 				}>(token, jwks, {
 					issuer
 				})
@@ -767,7 +771,7 @@ export function createClient(input: ClientInput): Client {
 				}
 			} catch (e) {
 				if (e instanceof errors.JWTExpired && options?.refresh) {
-					const refreshed = await this.refresh(options.refresh)
+					const refreshed = await result.refresh(options.refresh)
 					if (refreshed.err) return refreshed
 
 					if (!refreshed.tokens) {
@@ -776,7 +780,7 @@ export function createClient(input: ClientInput): Client {
 						}
 					}
 
-					const verified = await this.verify(subjects, refreshed.tokens.access, {
+					const verified = await result.verify(subjects, refreshed.tokens.access, {
 						refresh: refreshed.tokens.refresh,
 						issuer: options?.issuer,
 						audience: options?.audience,

@@ -52,10 +52,29 @@ export interface MemoryStorageOptions {
 export function MemoryStorage(input?: MemoryStorageOptions): StorageAdapter {
 	const store = [] as [string, { value: Record<string, unknown>; expiry?: number }][]
 
+	function isValidStoreData(
+		data: unknown
+	): data is [string, { value: Record<string, unknown>; expiry?: number }][] {
+		return (
+			Array.isArray(data) &&
+			data.every(
+				(item) =>
+					Array.isArray(item) &&
+					item.length === 2 &&
+					typeof item[0] === "string" &&
+					typeof item[1] === "object" &&
+					item[1] !== null
+			)
+		)
+	}
+
 	if (input?.persist) {
 		if (existsSync(input.persist)) {
 			const file = readFileSync(input?.persist)
-			store.push(...JSON.parse(file.toString()))
+			const parsed = JSON.parse(file.toString())
+			if (isValidStoreData(parsed)) {
+				store.push(...parsed)
+			}
 		}
 	}
 

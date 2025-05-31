@@ -1,4 +1,4 @@
-import type { Theme } from "@openauthjs/openauth/ui/theme"
+import type { Theme } from "./theme"
 
 export const CUSTOM_THEME: Theme = {
 	title: "Draft Auth",
