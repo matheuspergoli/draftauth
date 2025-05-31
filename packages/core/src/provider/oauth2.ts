@@ -151,12 +151,12 @@ interface TokenResponse {
 	[key: string]: unknown
 }
 
-export function Oauth2Provider(
+export const Oauth2Provider = (
 	config: Oauth2Config
-): Provider<{ tokenset: Oauth2Token; clientID: string }> {
+): Provider<{ tokenset: Oauth2Token; clientID: string }> => {
 	const query = config.query || {}
 
-	async function handleCallbackLogic(
+	const handleCallbackLogic = async (
 		c: Context,
 		ctx: {
 			get: <T>(c: Context, key: string) => Promise<T | undefined>
@@ -168,7 +168,7 @@ export function Oauth2Provider(
 		},
 		provider: ProviderState,
 		code: string | undefined
-	): Promise<Response> {
+	): Promise<Response> => {
 		if (!provider || !code) {
 			return c.redirect(getRelativeUrl(c, "./authorize"))
 		}

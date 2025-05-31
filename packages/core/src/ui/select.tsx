@@ -118,7 +118,7 @@ export interface SelectProps {
 	displays?: Partial<Record<KnownProviderType, string>> & Record<string, string>
 }
 
-export function Select(props?: SelectProps) {
+export const Select = (props?: SelectProps) => {
 	return async (providers: Record<string, string>, _req: Request): Promise<Response> => {
 		const copy = {
 			...DEFAULT_COPY,

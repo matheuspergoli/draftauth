@@ -49,12 +49,12 @@ export interface MemoryStorageOptions {
 	persist?: string
 }
 
-export function MemoryStorage(input?: MemoryStorageOptions): StorageAdapter {
+export const MemoryStorage = (input?: MemoryStorageOptions): StorageAdapter => {
 	const store = [] as [string, { value: Record<string, unknown>; expiry?: number }][]
 
-	function isValidStoreData(
+	const isValidStoreData = (
 		data: unknown
-	): data is [string, { value: Record<string, unknown>; expiry?: number }][] {
+	): data is [string, { value: Record<string, unknown>; expiry?: number }][] => {
 		return (
 			Array.isArray(data) &&
 			data.every(
@@ -78,13 +78,13 @@ export function MemoryStorage(input?: MemoryStorageOptions): StorageAdapter {
 		}
 	}
 
-	async function save() {
+	const save = async () => {
 		if (!input?.persist) return
 		const file = JSON.stringify(store)
 		await writeFile(input.persist, file)
 	}
 
-	function search(key: string) {
+	const search = (key: string) => {
 		let left = 0
 		let right = store.length - 1
 		while (left <= right) {

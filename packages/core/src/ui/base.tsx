@@ -2,13 +2,13 @@ import type { PropsWithChildren } from "hono/jsx"
 import { getTheme } from "../themes/theme"
 import css from "./ui.css" assert { type: "text" }
 
-export function Layout(
+export const Layout = (
 	props: PropsWithChildren<{
 		size?: "small"
 	}>
-) {
+) => {
 	const theme = getTheme()
-	function get(key: "primary" | "background" | "logo", mode: "light" | "dark") {
+	const get = (key: "primary" | "background" | "logo", mode: "light" | "dark") => {
 		if (!theme) return
 		if (!theme[key]) return
 		if (typeof theme[key] === "string") return theme[key]

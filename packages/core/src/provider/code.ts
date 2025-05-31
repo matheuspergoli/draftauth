@@ -135,23 +135,23 @@ export type CodeProviderError =
 			value: string
 	  }
 
-export function CodeProvider<Claims extends Record<string, string> = Record<string, string>>(
+export const CodeProvider = <Claims extends Record<string, string> = Record<string, string>>(
 	config: CodeProviderConfig<Claims>
-): Provider<{ claims: Claims }> {
+): Provider<{ claims: Claims }> => {
 	const length = config.length || 6
-	function generate() {
+	const generate = () => {
 		return generateUnbiasedDigits(length)
 	}
 
 	return {
 		type: "code",
 		init(routes, ctx) {
-			async function transition(
+			const transition = async (
 				c: Context,
 				next: CodeProviderState,
 				fd?: FormData,
 				err?: CodeProviderError
-			) {
+			) => {
 				await ctx.set<CodeProviderState>(c, "provider", 60 * 60 * 24, next)
 				const resp = ctx.forward(c, await config.request(c.req.raw, next, fd, err))
 				return resp

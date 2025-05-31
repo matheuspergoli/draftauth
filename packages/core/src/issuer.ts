@@ -459,7 +459,7 @@ export interface IssuerInput<
 /**
  * Create an OpenAuth server, a Hono app.
  */
-export function issuer<
+export const issuer = <
 	Providers extends Record<string, Provider<unknown>>,
 	Subjects extends SubjectSchema,
 	Result = {
@@ -469,7 +469,9 @@ export function issuer<
 			} & (Providers[key] extends Provider<infer T> ? T : Record<string, unknown>)
 		>
 	}[keyof Providers]
->(input: IssuerInput<Providers, Subjects, Result>) {
+>(
+	input: IssuerInput<Providers, Subjects, Result>
+) => {
 	const error =
 		input.error ??
 		((err) => {
@@ -632,13 +634,13 @@ export function issuer<
 		storage
 	}
 
-	async function getAuthorization(ctx: Context) {
+	const getAuthorization = async (ctx: Context) => {
 		const match = (await auth.get(ctx, "authorization")) || ctx.get("authorization")
 		if (!match) throw new UnknownStateError()
 		return match as AuthorizationState
 	}
 
-	async function encrypt(value: unknown) {
+	const encrypt = async (value: unknown) => {
 		const key = await encryptionKey()
 		if (!key) {
 			throw new Error("Encryption key not available")
@@ -648,7 +650,7 @@ export function issuer<
 			.encrypt(key.public)
 	}
 
-	async function resolveSubject(type: string, properties: unknown) {
+	const resolveSubject = async (type: string, properties: unknown) => {
 		const jsonString = JSON.stringify(properties)
 		const encoder = new TextEncoder()
 		const data = encoder.encode(jsonString)
@@ -658,7 +660,7 @@ export function issuer<
 		return `${type}:${hashHex.slice(0, 16)}`
 	}
 
-	async function generateTokens(
+	const generateTokens = async (
 		ctx: Context,
 		value: {
 			type: string
@@ -676,7 +678,7 @@ export function issuer<
 		opts?: {
 			generateRefreshToken?: boolean
 		}
-	) {
+	) => {
 		const refreshToken = value.nextToken ?? crypto.randomUUID()
 		if (opts?.generateRefreshToken ?? true) {
 			/**
@@ -728,7 +730,7 @@ export function issuer<
 		}
 	}
 
-	async function decrypt(value: string) {
+	const decrypt = async (value: string) => {
 		const key = await encryptionKey()
 		if (!key) {
 			throw new Error("Encryption key not available")
@@ -740,7 +742,7 @@ export function issuer<
 		)
 	}
 
-	function issuer(ctx: Context) {
+	const issuer = (ctx: Context) => {
 		return new URL(getRelativeUrl(ctx, "/")).origin
 	}
 
@@ -988,7 +990,6 @@ export function issuer<
 				if (!clientID) return c.json({ error: "missing `client_id` form value" }, 400)
 				if (!clientSecret) return c.json({ error: "missing `client_secret` form value" }, 400)
 
-				// Converter FormData corretamente
 				const params: Record<string, string> = {}
 				for (const [key, value] of form.entries()) {
 					if (typeof value === "string") {

@@ -304,7 +304,7 @@ export const THEME_VERCEL: Theme = {
 /**
  * @internal
  */
-export function setTheme(value: Theme) {
+export const setTheme = (value: Theme) => {
 	// @ts-ignore
 	globalThis.OPENAUTH_THEME = value
 }
@@ -312,7 +312,7 @@ export function setTheme(value: Theme) {
 /**
  * @internal
  */
-export function getTheme() {
+export const getTheme = () => {
 	// @ts-ignore
 	return globalThis.OPENAUTH_THEME || THEME_OPENAUTH
 }

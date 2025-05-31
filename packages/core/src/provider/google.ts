@@ -51,7 +51,7 @@ export interface GoogleOidcConfig extends OidcWrappedConfig {}
  * })
  * ```
  */
-export function GoogleProvider(config: GoogleConfig) {
+export const GoogleProvider = (config: GoogleConfig) => {
 	return Oauth2Provider({
 		...config,
 		type: "google",
@@ -76,7 +76,7 @@ export function GoogleProvider(config: GoogleConfig) {
  * })
  * ```
  */
-export function GoogleOidcProvider(config: GoogleOidcConfig) {
+export const GoogleOidcProvider = (config: GoogleOidcConfig) => {
 	return OidcProvider({
 		...config,
 		type: "google",

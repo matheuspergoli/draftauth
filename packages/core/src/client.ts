@@ -558,14 +558,14 @@ export interface Client {
  *
  * @param input - Configure the client.
  */
-export function createClient(input: ClientInput): Client {
+export const createClient = (input: ClientInput): Client => {
 	const jwksCache = new Map<string, ReturnType<typeof createLocalJWKSet>>()
 	const issuerCache = new Map<string, WellKnown>()
 	const issuer = input.issuer || process.env.OPENAUTH_ISSUER
 	if (!issuer) throw new Error("No issuer")
 	const f = input.fetch ?? (fetch as FetchLike)
 
-	async function getIssuer() {
+	const getIssuer = async () => {
 		const cached = issuerCache.get(issuer!)
 		if (cached) return cached
 		const wellKnown = (await f(`${issuer}/.well-known/oauth-authorization-server`).then(
@@ -575,7 +575,7 @@ export function createClient(input: ClientInput): Client {
 		return wellKnown
 	}
 
-	async function getJWKS() {
+	const getJWKS = async () => {
 		const wk = await getIssuer()
 		const cached = jwksCache.get(issuer!)
 		if (cached) return cached

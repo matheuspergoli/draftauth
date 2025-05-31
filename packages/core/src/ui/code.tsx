@@ -25,7 +25,7 @@
 /** @jsxImportSource hono/jsx */
 
 import { UnknownStateError } from "../error"
-import type { CodeProviderOptions } from "../provider/code"
+import type { CodeProviderError, CodeProviderOptions } from "../provider/code"
 import { Layout } from "./base"
 import { FormAlert } from "./form"
 
@@ -91,7 +91,10 @@ export interface CodeUIOptions {
 	 * }
 	 * ```
 	 */
-	sendCode: (claims: Record<string, string>, code: string) => Promise<void>
+	sendCode: (
+		claims: Record<string, string>,
+		code: string
+	) => Promise<CodeProviderError | undefined>
 	/**
 	 * Custom copy for the UI.
 	 */
@@ -107,7 +110,7 @@ export interface CodeUIOptions {
  * Creates a UI for the Code provider flow.
  * @param props - Configure the UI.
  */
-export function CodeUI(props: CodeUIOptions): CodeProviderOptions {
+export const CodeUI = (props: CodeUIOptions): CodeProviderOptions => {
 	const copy = {
 		...DEFAULT_COPY,
 		...props.copy

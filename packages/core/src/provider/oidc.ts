@@ -99,9 +99,9 @@ export interface IdTokenResponse {
 	raw: Record<string, unknown>
 }
 
-export function OidcProvider(
+export const OidcProvider = (
 	config: OidcConfig
-): Provider<{ id: JWTPayload; clientID: string }> {
+): Provider<{ id: JWTPayload; clientID: string }> => {
 	const query = config.query || {}
 	const scopes = config.scopes || []
 

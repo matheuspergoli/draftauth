@@ -260,9 +260,9 @@ export type PasswordLoginError =
 			type: "invalid_email"
 	  }
 
-export function PasswordProvider(config: PasswordConfig): Provider<{ email: string }> {
+export const PasswordProvider = (config: PasswordConfig): Provider<{ email: string }> => {
 	const hasher = config.hasher ?? ScryptHasher()
-	function generate() {
+	const generate = () => {
 		return generateUnbiasedDigits(6)
 	}
 	return {
@@ -272,7 +272,7 @@ export function PasswordProvider(config: PasswordConfig): Provider<{ email: stri
 
 			routes.post("/authorize", async (c) => {
 				const fd = await c.req.formData()
-				async function error(err: PasswordLoginError) {
+				const error = async (err: PasswordLoginError) => {
 					return ctx.forward(c, await config.login(c.req.raw, fd, err))
 				}
 				const email = fd.get("email")?.toString()?.toLowerCase()
@@ -308,7 +308,10 @@ export function PasswordProvider(config: PasswordConfig): Provider<{ email: stri
 				const action = fd.get("action")?.toString()
 				const provider = await ctx.get<PasswordRegisterState>(c, "provider")
 
-				async function transition(next: PasswordRegisterState, err?: PasswordRegisterError) {
+				const transition = async (
+					next: PasswordRegisterState,
+					err?: PasswordRegisterError
+				) => {
 					await ctx.set<PasswordRegisterState>(c, "provider", 60 * 60 * 24, next)
 					return ctx.forward(c, await config.register(c.req.raw, next, fd, err))
 				}
@@ -402,7 +405,7 @@ export function PasswordProvider(config: PasswordConfig): Provider<{ email: stri
 				const provider = await ctx.get<PasswordChangeState>(c, "provider")
 				if (!provider) throw new UnknownStateError()
 
-				async function transition(next: PasswordChangeState, err?: PasswordChangeError) {
+				const transition = async (next: PasswordChangeState, err?: PasswordChangeError) => {
 					await ctx.set<PasswordChangeState>(c, "provider", 60 * 60 * 24, next)
 					return ctx.forward(c, await config.change(c.req.raw, next, fd, err))
 				}
@@ -498,11 +501,11 @@ import * as jose from "jose"
 /**
  * @internal
  */
-export function PBKDF2Hasher(opts?: { iterations?: number }): PasswordHasher<{
+export const PBKDF2Hasher = (opts?: { iterations?: number }): PasswordHasher<{
 	hash: string
 	salt: string
 	iterations: number
-}> {
+}> => {
 	const iterations = opts?.iterations ?? 600000
 	return {
 		async hash(password) {
@@ -559,7 +562,7 @@ import { getRelativeUrl } from "../util"
 /**
  * @internal
  */
-export function ScryptHasher(opts?: {
+export const ScryptHasher = (opts?: {
 	N?: number
 	r?: number
 	p?: number
@@ -569,7 +572,7 @@ export function ScryptHasher(opts?: {
 	N: number
 	r: number
 	p: number
-}> {
+}> => {
 	const N = opts?.N ?? 16384
 	const r = opts?.r ?? 8
 	const p = opts?.p ?? 1

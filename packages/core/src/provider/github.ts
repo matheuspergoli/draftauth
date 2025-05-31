@@ -33,7 +33,7 @@ export interface GithubConfig extends Oauth2WrappedConfig {}
  * })
  * ```
  */
-export function GithubProvider(config: GithubConfig) {
+export const GithubProvider = (config: GithubConfig) => {
 	return Oauth2Provider({
 		...config,
 		type: "github",
