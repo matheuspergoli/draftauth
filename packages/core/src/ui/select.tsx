@@ -7,6 +7,13 @@
  *
  * export default issuer({
  *   select: Select({
+ *     copy: {
+ *       button_provider: "Continuar com"
+ *     },
+ *     displays: {
+ *       code: "Código PIN",
+ *       github: "Conta GitHub"
+ *     },
  *     providers: {
  *       github: {
  *         hide: true
@@ -32,9 +39,42 @@ const DEFAULT_COPY = {
 	 * Copy for the provider button.
 	 */
 	button_provider: "Continue with"
-}
+} as const
+
+const DEFAULT_DISPLAY = {
+	twitch: "Twitch",
+	google: "Google",
+	github: "GitHub",
+	apple: "Apple",
+	code: "Code",
+	x: "X",
+	facebook: "Facebook",
+	microsoft: "Microsoft",
+	slack: "Slack",
+	password: "Password"
+} as const
 
 export type SelectCopy = typeof DEFAULT_COPY
+
+/**
+ * Known provider types with default display names
+ */
+export type KnownProviderType = keyof typeof DEFAULT_DISPLAY
+
+/**
+ * Provider configuration for the select UI
+ */
+export interface ProviderConfig {
+	/**
+	 * Whether to hide the provider from the select UI.
+	 * @default false
+	 */
+	hide?: boolean
+	/**
+	 * The display name of the provider.
+	 */
+	display?: string
+}
 
 export interface SelectProps {
 	/**
@@ -52,24 +92,30 @@ export interface SelectProps {
 	 * }
 	 * ```
 	 */
-	providers?: Record<
-		string,
-		{
-			/**
-			 * Whether to hide the provider from the select UI.
-			 * @default false
-			 */
-			hide?: boolean
-			/**
-			 * The display name of the provider.
-			 */
-			display?: string
-		}
-	>
+	providers?: Record<string, ProviderConfig>
 	/**
 	 * Custom copy for the UI.
 	 */
 	copy?: Partial<SelectCopy>
+	/**
+	 * Custom display names for provider types. This allows you to override
+	 * the default display names globally for all providers of a specific type.
+	 *
+	 * The keys should be provider types (like 'github', 'google', 'code', etc.).
+	 * You get autocompletion for known types, but can also use any string.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   displays: {
+	 *     code: "PIN Code",        // ✅ Autocomplete available
+	 *     github: "GitHub Account", // ✅ Autocomplete available
+	 *     customType: "Custom"     // ✅ Also works for unknown types
+	 *   }
+	 * }
+	 * ```
+	 */
+	displays?: Partial<Record<KnownProviderType, string>> & Record<string, string>
 }
 
 export function Select(props?: SelectProps) {
@@ -79,6 +125,11 @@ export function Select(props?: SelectProps) {
 			...props?.copy
 		}
 
+		const displays: Record<string, string> = {
+			...DEFAULT_DISPLAY,
+			...props?.displays
+		}
+
 		const jsx = (
 			<Layout>
 				<div data-component="form">
@@ -86,6 +137,9 @@ export function Select(props?: SelectProps) {
 						const match = props?.providers?.[key]
 						if (match?.hide) return
 						const icon = ICON[key]
+
+						const displayName = match?.display || displays[type] || type
+
 						return (
 							<a
 								key={`${key}-${type}`}
@@ -94,7 +148,7 @@ export function Select(props?: SelectProps) {
 								data-color="ghost"
 							>
 								{icon && <i data-slot="icon">{icon}</i>}
-								{copy.button_provider} {match?.display || DISPLAY[type] || type}
+								{copy.button_provider} {displayName}
 							</a>
 						)
 					})}
@@ -108,17 +162,6 @@ export function Select(props?: SelectProps) {
 			}
 		})
 	}
-}
-
-const DISPLAY: Record<string, string> = {
-	twitch: "Twitch",
-	google: "Google",
-	github: "GitHub",
-	apple: "Apple",
-	x: "X",
-	facebook: "Facebook",
-	microsoft: "Microsoft",
-	slack: "Slack"
 }
 
 const ICON: Record<string, unknown> = {
