@@ -29,7 +29,7 @@
 	"dependencies": {
 		"@libsql/client": "^0.15.8",
 		"@standard-schema/spec": "^1.0.0",
-		"hono": "^4.7.10",
+		"hono": "^4.7.11",
 		"jose": "^6.0.11",
 		"zod": "^3.25.42"
 	}

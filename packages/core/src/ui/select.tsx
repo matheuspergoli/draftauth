@@ -39,7 +39,7 @@ const DEFAULT_COPY = {
 	 * Copy for the provider button.
 	 */
 	button_provider: "Continue with"
-} as const
+}
 
 const DEFAULT_DISPLAY = {
 	twitch: "Twitch",
@@ -52,7 +52,7 @@ const DEFAULT_DISPLAY = {
 	microsoft: "Microsoft",
 	slack: "Slack",
 	password: "Password"
-} as const
+}
 
 export type SelectCopy = typeof DEFAULT_COPY
 
