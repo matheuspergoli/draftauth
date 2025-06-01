@@ -39,7 +39,7 @@
 		"sonner": "^2.0.4",
 		"tailwind-merge": "^3.3.0",
 		"tw-animate-css": "^1.3.2",
-		"zod": "^3.25.42"
+		"zod": "^3.25.45"
 	},
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
