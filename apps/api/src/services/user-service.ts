@@ -5,6 +5,11 @@ import { events } from "@/libs/events"
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
+export interface FindOrCreateUserResult {
+	created: boolean
+	user: { userId: string; email: string; status: UserStatus }
+}
+
 export const findUserByEmail = async ({
 	email
 }: {
@@ -88,7 +93,7 @@ export const linkExternalIdentity = async ({
 	userId: string
 	providerName: ProviderName
 	providerUserId: string
-}): Promise<void> => {
+}) => {
 	await db
 		.insert(userExternalIdentities)
 		.values({
@@ -107,23 +112,23 @@ export const findOrCreateUser = async ({
 	providerName: ProviderName
 	providerUserId: string
 	verifiedEmail: string
-}) => {
+}): Promise<FindOrCreateUserResult> => {
 	let user = await findUserByExternalId({ providerName, providerUserId })
 	if (user) {
-		return user
+		return { user, created: false }
 	}
 
 	user = await findUserByEmail({ email: verifiedEmail })
 
 	if (user) {
 		await linkExternalIdentity({ userId: user.userId, providerName, providerUserId })
-		return user
+		return { user, created: false }
 	}
 
 	user = await createUser({ email: verifiedEmail })
 	await linkExternalIdentity({ userId: user.userId, providerName, providerUserId })
 
-	return user
+	return { user, created: true }
 }
 
 export const getUserDetails = async ({

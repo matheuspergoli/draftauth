@@ -24,7 +24,6 @@
 				"noUnusedImports": "error"
 			},
 			"suspicious": {
-				"useAwait": "error",
 				"noConsole": {
 					"level": "error",
 					"options": {

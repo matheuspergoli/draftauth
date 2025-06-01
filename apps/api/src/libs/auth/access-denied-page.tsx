@@ -1,6 +1,6 @@
-import { Layout } from "@openauthjs/openauth/ui/base"
+import { Layout } from "@draftauth/core/ui/base"
 
-export const EmailNotFoundInClaimsPage = () => {
+export const AccessDeniedPage = () => {
 	return (
 		<Layout>
 			<h1
@@ -9,7 +9,7 @@ export const EmailNotFoundInClaimsPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Email Não Encontrado
+				Acesso Negado
 			</h1>
 
 			<p
@@ -18,7 +18,7 @@ export const EmailNotFoundInClaimsPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Não foi possível obter seu email durante o processo de autenticação.
+				Você não possui permissão para acessar este recurso.
 			</p>
 
 			<p
@@ -27,8 +27,7 @@ export const EmailNotFoundInClaimsPage = () => {
 					textAlign: "center"
 				}}
 			>
-				Isso pode ocorrer se você não concedeu permissão para acessar seu email ou se houve um
-				problema durante a autenticação.
+				Entre em contato com o administrador do sistema se acredita que isso é um erro.
 			</p>
 
 			<button
@@ -37,7 +36,7 @@ export const EmailNotFoundInClaimsPage = () => {
 				data-component="button"
 				onClick={() => window.history.back()}
 			>
-				Tentar Novamente
+				Voltar
 			</button>
 		</Layout>
 	)

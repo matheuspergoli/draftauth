@@ -27,9 +27,9 @@
 		"@upstash/ratelimit": "^2.0.5",
 		"@upstash/redis": "^1.34.9",
 		"drizzle-orm": "^0.44.1",
-		"hono": "^4.7.10",
+		"hono": "^4.7.11",
 		"resend": "^4.5.1",
-		"zod": "^3.25.42",
+		"zod": "^3.25.46",
 		"zxcvbn": "^4.4.2"
 	},
 	"devDependencies": {

@@ -1,9 +1,11 @@
 import { randomBytes } from "node:crypto"
 import { dbClient } from "@/db/client"
 import { env } from "@/environment/env"
+import { setUserAppAccessStatus } from "@/services/access-service"
 import { isValidApplicationClient } from "@/services/application-service"
 import { isSetupComplete } from "@/services/config-service"
 import {
+	type FindOrCreateUserResult,
 	createUser,
 	findOrCreateUser,
 	findUserByEmail,
@@ -12,23 +14,15 @@ import {
 } from "@/services/user-service"
 import { createClient } from "@draftauth/core/client"
 import { issuer } from "@draftauth/core/issuer"
-import {
-	CodeProvider,
-	CodeUI,
-	GithubProvider,
-	GoogleProvider,
-	PasswordProvider,
-	PasswordUI
-} from "@draftauth/core/providers"
+import { CodeProvider } from "@draftauth/core/provider/code"
+import { GithubProvider } from "@draftauth/core/provider/github"
+import { GoogleProvider } from "@draftauth/core/provider/google"
+import { PasswordProvider } from "@draftauth/core/provider/password"
 import { TursoStorage } from "@draftauth/core/storage/turso"
-import { createSubjects } from "@draftauth/core/subjects"
-import { CUSTOM_THEME } from "@draftauth/core/themes/custom-theme"
-import { AccessDeniedPage } from "@draftauth/core/ui/access-denied-page"
-import { CustomSelect } from "@draftauth/core/ui/custom-select"
-import { EmailNotFoundInClaimsPage } from "@draftauth/core/ui/email-not-found-in-claims-page"
-import { UserNotFoundPage } from "@draftauth/core/ui/user-not-found-page"
-import { getGithubUser } from "@draftauth/core/utils/github"
-import { getGoogleUser } from "@draftauth/core/utils/google"
+import { createSubjects } from "@draftauth/core/subject"
+import { CodeUI } from "@draftauth/core/ui/code"
+import { PasswordUI } from "@draftauth/core/ui/password"
+import { Select } from "@draftauth/core/ui/select"
 import { PINCodeEmail } from "@draftauth/emails/pin-code-email"
 import { VerificationCodeEmail } from "@draftauth/emails/verification-code-email"
 import { getBaseUrl } from "@draftauth/utils"
@@ -36,14 +30,12 @@ import { getConnInfo } from "hono/bun"
 import { getContext } from "hono/context-storage"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
-import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "./password"
-import { resend } from "./resend"
-
-interface CentralUser {
-	email: string
-	userId: string
-	status: "active" | "inactive"
-}
+import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "../password"
+import { resend } from "../resend"
+import { AccessDeniedPage } from "./access-denied-page"
+import { EmailNotFoundInClaimsPage } from "./email-not-found-in-claims-page"
+import { UserNotFoundPage } from "./user-not-found-page"
+import { getGithubUser, getGoogleUser } from "./utils"
 
 export const authClient = createClient({
 	issuer: getBaseUrl(),
@@ -67,7 +59,7 @@ const handleCodeLogin = async (data: { email: string }) => {
 			userId: centralUser.userId
 		})
 
-		return centralUser
+		return { user: centralUser, created: false }
 	}
 
 	centralUser = await createUser({ email: data.email, initialStatus: "active" })
@@ -77,7 +69,7 @@ const handleCodeLogin = async (data: { email: string }) => {
 		userId: centralUser.userId
 	})
 
-	return centralUser
+	return { user: centralUser, created: true }
 }
 
 const handleGoogleLogin = async ({ accessToken }: { accessToken: string }) => {
@@ -110,7 +102,7 @@ const handlePasswordLogin = async (data: { email: string }) => {
 			userId: centralUser.userId
 		})
 
-		return centralUser
+		return { user: centralUser, created: false }
 	}
 
 	centralUser = await createUser({ email: data.email, initialStatus: "active" })
@@ -120,13 +112,28 @@ const handlePasswordLogin = async (data: { email: string }) => {
 		userId: centralUser.userId
 	})
 
-	return centralUser
+	return { user: centralUser, created: true }
 }
 
 export const auth = issuer({
 	subjects,
-	theme: CUSTOM_THEME,
-	select: CustomSelect(),
+	ttl: {
+		access: 60 * 10,
+		refresh: 60 * 60 * 8,
+		reuse: 60,
+		retention: 60 * 5
+	},
+	theme: {
+		primary: "black",
+		title: "Draft Auth"
+	},
+	select: Select({
+		copy: { button_provider: "" },
+		displays: {
+			code: "Código PIN",
+			password: "Email/Senha"
+		}
+	}),
 	storage: TursoStorage(dbClient),
 	providers: {
 		password: PasswordProvider(
@@ -228,6 +235,8 @@ export const auth = issuer({
 						from: "Draft Auth <manager@draftauth.com.br>",
 						react: PINCodeEmail({ code })
 					})
+
+					return undefined
 				}
 			})
 		),
@@ -247,13 +256,13 @@ export const auth = issuer({
 		if (!setupComplete) return true
 		return await isValidApplicationClient({ clientId: clientID, redirectUri: redirectURI })
 	},
-	success: async (ctx, value) => {
+	success: async (ctx, value, _req, clientID) => {
 		const context = getContext()
 		const setupComplete = await isSetupComplete()
-		let centralUser: CentralUser | null = null
+		let centralUser: FindOrCreateUserResult | null = null
 
 		if (!setupComplete) {
-			let firstUser: CentralUser | null = null
+			let firstUser: FindOrCreateUserResult | null = null
 
 			if (value.provider === "code") {
 				if (!value.claims.email) return context.html(EmailNotFoundInClaimsPage())
@@ -276,14 +285,14 @@ export const auth = issuer({
 				return context.html(UserNotFoundPage())
 			}
 
-			if (firstUser.status !== "active") {
-				await setUserGlobalStatus({ userId: firstUser.userId, status: "active" })
+			if (firstUser.user.status !== "active") {
+				await setUserGlobalStatus({ userId: firstUser.user.userId, status: "active" })
 			}
 
 			const setupState = randomBytes(32).toString("hex")
 			const storage = TursoStorage(dbClient)
 			const stateKey = ["setup_state", setupState]
-			const stateValue = { userId: firstUser.userId }
+			const stateValue = { userId: firstUser.user.userId }
 			const expirySeconds = 10 * 60
 
 			await storage.set(stateKey, stateValue, new Date(Date.now() + expirySeconds * 1000))
@@ -315,13 +324,21 @@ export const auth = issuer({
 			return context.html(UserNotFoundPage())
 		}
 
-		if (centralUser.status !== "active") {
+		if (centralUser.user.status !== "active") {
 			return context.html(AccessDeniedPage())
 		}
 
+		if (centralUser.created) {
+			await setUserAppAccessStatus({
+				status: "enabled",
+				appId: clientID,
+				userId: centralUser.user.userId
+			})
+		}
+
 		return ctx.subject("user", {
-			id: centralUser.userId,
-			email: centralUser.email
+			id: centralUser.user.userId,
+			email: centralUser.user.email
 		})
 	}
 })

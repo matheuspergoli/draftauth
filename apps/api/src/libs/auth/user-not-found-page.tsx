@@ -1,4 +1,4 @@
-import { Layout } from "@openauthjs/openauth/ui/base"
+import { Layout } from "@draftauth/core/ui/base"
 
 export const UserNotFoundPage = () => {
 	return (
