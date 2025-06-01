@@ -44,7 +44,9 @@ import {
 	InvalidAccessTokenError,
 	InvalidAuthorizationCodeError,
 	InvalidRefreshTokenError,
-	InvalidSubjectError
+	InvalidSubjectError,
+	TokenRevocationError,
+	UnsupportedTokenTypeError
 } from "./error"
 import { generatePKCE } from "./pkce"
 import type { SubjectSchema } from "./subject"
@@ -357,6 +359,64 @@ export interface VerifyError {
 	err: InvalidRefreshTokenError | InvalidAccessTokenError
 }
 
+export interface RevokeOptions {
+	/**
+	 * Revoke all refresh tokens for the subject.
+	 *
+	 * When set to `true`, all refresh tokens for the subject will be revoked,
+	 * effectively logging the user out from all devices/sessions.
+	 *
+	 * @example
+	 * ```ts
+	 * // Revoke all tokens for the user
+	 * await client.revoke(refreshToken, { all: true })
+	 * ```
+	 */
+	all?: boolean
+	/**
+	 * The client ID to revoke tokens for (admin operation).
+	 *
+	 * When specified, only tokens issued for this specific client will be revoked.
+	 * This is useful for admin operations to revoke tokens for a specific application.
+	 *
+	 * @example
+	 * ```ts
+	 * // Revoke tokens only for a specific client
+	 * await client.revoke(refreshToken, { clientID: "mobile-app" })
+	 * ```
+	 */
+	clientID?: string
+}
+
+/**
+ * Returned when token revocation is successful.
+ */
+export interface RevokeSuccess {
+	/**
+	 * This is always `false` when the revocation is successful.
+	 */
+	err: false
+}
+
+/**
+ * Returned when token revocation fails.
+ */
+export interface RevokeError {
+	/**
+	 * The type of error that occurred during revocation.
+	 *
+	 * @example
+	 * ```ts
+	 * import { UnsupportedTokenTypeError } from "@openauthjs/openauth/error"
+	 *
+	 * if (result.err instanceof UnsupportedTokenTypeError) {
+	 *   // Token type is not supported for revocation
+	 * }
+	 * ```
+	 */
+	err: UnsupportedTokenTypeError | TokenRevocationError
+}
+
 /**
  * An instance of the OpenAuth client contains the following methods.
  */
@@ -551,6 +611,47 @@ export interface Client {
 		token: string,
 		options?: VerifyOptions
 	): Promise<VerifyResult<T> | VerifyError>
+
+	/**
+	 * Revoke a refresh token.
+	 *
+	 * This method allows you to revoke refresh tokens, which is useful for implementing
+	 * logout functionality and managing token lifecycle.
+	 *
+	 * ```ts
+	 * const result = await client.revoke(refreshToken)
+	 * ```
+	 *
+	 * Can optionally revoke all tokens for the subject:
+	 *
+	 * ```ts
+	 * // Revoke all tokens for the user (logout from all devices)
+	 * const result = await client.revoke(refreshToken, { all: true })
+	 * ```
+	 *
+	 * Or revoke tokens for a specific client (admin operation):
+	 *
+	 * ```ts
+	 * // Revoke tokens only for a specific client
+	 * const result = await client.revoke(refreshToken, { clientID: "mobile-app" })
+	 * ```
+	 *
+	 * Error handling:
+	 *
+	 * ```ts
+	 * import { UnsupportedTokenTypeError, TokenRevocationError } from "@openauthjs/openauth/error"
+	 *
+	 * const result = await client.revoke(token)
+	 * if (result.err) {
+	 *   if (result.err instanceof UnsupportedTokenTypeError) {
+	 *     // Token type not supported for revocation
+	 *   } else if (result.err instanceof TokenRevocationError) {
+	 *     // General revocation error
+	 *   }
+	 * }
+	 * ```
+	 */
+	revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError>
 }
 
 /**
@@ -586,6 +687,39 @@ export const createClient = (input: ClientInput): Client => {
 	}
 
 	const result: Client = {
+		async revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError> {
+			const response = await f(`${issuer}/revoke`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded"
+				},
+				body: new URLSearchParams({
+					token: token,
+					token_type_hint: "refresh_token",
+					...(opts?.all ? { revoke_all: "true" } : {}),
+					...(opts?.clientID ? { client_id: opts.clientID } : {})
+				}).toString()
+			})
+
+			if (!response.ok) {
+				const errorText = await response.text()
+				try {
+					const errorJson = JSON.parse(errorText) as {
+						error?: string
+						error_description?: string
+					}
+					if (errorJson.error === "unsupported_token_type") {
+						return { err: new UnsupportedTokenTypeError() }
+					}
+				} catch {
+					// Continue to generic error
+				}
+				return { err: new TokenRevocationError(`Revocation failed: ${errorText}`) }
+			}
+
+			return { err: false }
+		},
+
 		async authorize(redirectURI: string, response: "code" | "token", opts?: AuthorizeOptions) {
 			const result = new URL(`${issuer}/authorize`)
 			const challenge: Challenge = {
@@ -614,13 +748,6 @@ export const createClient = (input: ClientInput): Client => {
 			redirectURI: string,
 			verifier?: string
 		): Promise<ExchangeSuccess | ExchangeError> {
-			console.log("Exchange request:", {
-				code,
-				redirectURI,
-				verifier,
-				clientID: input.clientID
-			})
-
 			const response = await f(`${issuer}/token`, {
 				method: "POST",
 				headers: {
@@ -636,10 +763,8 @@ export const createClient = (input: ClientInput): Client => {
 			})
 
 			const responseText = await response.text()
-			console.log("Token response:", { status: response.status, body: responseText })
 
 			if (!response.ok) {
-				console.error("Token exchange failed:", responseText)
 				return {
 					err: new InvalidAuthorizationCodeError()
 				}
@@ -649,7 +774,6 @@ export const createClient = (input: ClientInput): Client => {
 			try {
 				json = JSON.parse(responseText)
 			} catch (error) {
-				console.error("Failed to parse JSON response:", responseText)
 				return {
 					err: new InvalidAuthorizationCodeError()
 				}
@@ -699,7 +823,6 @@ export const createClient = (input: ClientInput): Client => {
 			const responseText = await response.text()
 
 			if (!response.ok) {
-				console.error("Token refresh failed:", responseText)
 				return {
 					err: new InvalidRefreshTokenError()
 				}
@@ -709,7 +832,6 @@ export const createClient = (input: ClientInput): Client => {
 			try {
 				json = JSON.parse(responseText)
 			} catch (error) {
-				console.error("Failed to parse JSON response:", responseText)
 				return {
 					err: new InvalidRefreshTokenError()
 				}

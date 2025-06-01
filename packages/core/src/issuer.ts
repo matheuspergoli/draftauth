@@ -218,6 +218,66 @@ export interface IssuerInput<
 	}[keyof Providers]
 > {
 	/**
+	 * Callback to control refresh token usage.
+	 *
+	 * This allows you to implement custom logic for token refresh,
+	 * including dynamic content in JWTs and refresh token revocation.
+	 *
+	 * The callback is called whenever a refresh token is used to obtain new access tokens.
+	 * You can use this to:
+	 * - Check if the user is still active/valid
+	 * - Update JWT claims with fresh data from your database
+	 * - Revoke tokens by returning `undefined`
+	 * - Update scopes or other token metadata
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   refresh: async (payload, req) => {
+	 *     // Check if user is still active
+	 *     const user = await getUserBySubject(payload.subject)
+	 *     if (!user || !user.active) {
+	 *       return undefined // Revoke the token
+	 *     }
+	 *
+	 *     // Return updated payload with fresh data
+	 *     return {
+	 *       type: payload.type,
+	 *       properties: {
+	 *         userID: user.id,
+	 *         role: user.role, // Updated role
+	 *         permissions: user.permissions, // Updated permissions
+	 *         lastLogin: new Date().toISOString()
+	 *       },
+	 *       scopes: user.scopes // Updated scopes
+	 *     }
+	 *   }
+	 * }
+	 * ```
+	 *
+	 * @param payload - The current token payload being refreshed
+	 * @param req - The incoming HTTP request
+	 * @returns Updated payload or `undefined` to revoke the token
+	 */
+	refresh?(
+		payload: {
+			type: string
+			properties: unknown
+			subject: string
+			clientID: string
+			scopes?: string[]
+		},
+		req: Request
+	): Promise<
+		| {
+				type: string
+				properties: unknown
+				subject?: string
+				scopes?: string[]
+		  }
+		| undefined
+	>
+	/**
 	 * The shape of the subjects that you want to return.
 	 *
 	 * @example
@@ -516,10 +576,11 @@ export const issuer = <
 		const parsed = JSON.parse(process.env.OPENAUTH_STORAGE) as { type: string }
 		if (parsed.type === "memory") storage = MemoryStorage()
 	}
-	if (!storage)
+	if (!storage) {
 		throw new Error(
 			"Store is not configured. Either set the `storage` option or set `OPENAUTH_STORAGE` environment variable."
 		)
+	}
 	const allSigning = lazy(() => signingKeys(storage).then((keys) => keys))
 	const allEncryption = lazy(() => encryptionKeys(storage))
 	const signingKey = lazy(() => allSigning().then((all) => all[0]))
@@ -806,9 +867,11 @@ export const issuer = <
 				issuer: iss,
 				authorization_endpoint: `${iss}/authorize`,
 				token_endpoint: `${iss}/token`,
+				revocation_endpoint: `${iss}/revoke`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				response_types_supported: ["code", "token"],
-				scopes_supported: input.scopes_supported
+				scopes_supported: input.scopes_supported,
+				revocation_endpoint_auth_methods_supported: ["none"]
 			})
 		}
 	)
@@ -859,6 +922,7 @@ export const issuer = <
 						400
 					)
 				}
+
 				if (payload.redirectURI !== form.get("redirect_uri")) {
 					return c.json(
 						{
@@ -948,6 +1012,51 @@ export const issuer = <
 						400
 					)
 				}
+
+				if (input.refresh) {
+					try {
+						const refreshResult = await input.refresh(
+							{
+								type: payload.type,
+								properties: payload.properties,
+								subject: payload.subject,
+								clientID: payload.clientID,
+								scopes: payload.scopes
+							},
+							c.req.raw
+						)
+
+						if (!refreshResult) {
+							await auth.invalidate(subject)
+							return c.json(
+								{
+									error: "invalid_grant",
+									error_description: "Refresh token has been revoked"
+								},
+								400
+							)
+						}
+
+						payload.type = refreshResult.type
+						payload.properties = refreshResult.properties
+						if (refreshResult.subject) {
+							payload.subject = refreshResult.subject
+						}
+						if (refreshResult.scopes) {
+							payload.scopes = refreshResult.scopes
+						}
+					} catch (error) {
+						console.error("Refresh callback error:", error)
+						return c.json(
+							{
+								error: "server_error",
+								error_description: "Internal server error during token refresh"
+							},
+							500
+						)
+					}
+				}
+
 				const generateRefreshToken = !payload.timeUsed
 				if (ttlRefreshReuse <= 0) {
 					// no reuse interval, remove the refresh token immediately
@@ -1104,6 +1213,116 @@ export const issuer = <
 			)
 		)
 	})
+
+	app.post(
+		"/revoke",
+		cors({
+			origin: "*",
+			allowHeaders: ["*"],
+			allowMethods: ["POST"],
+			credentials: false
+		}),
+		async (c) => {
+			const form = await c.req.formData()
+			const tokenParam = form.get("token")
+			const tokenTypeHint = form.get("token_type_hint")
+			const revokeAll = form.get("revoke_all") === "true"
+			const clientIDParam = form.get("client_id")
+
+			if (!tokenParam) {
+				return c.newResponse(null, 200)
+			}
+
+			if (tokenTypeHint && tokenTypeHint.toString() !== "refresh_token") {
+				return c.json(
+					{
+						error: "unsupported_token_type",
+						error_description: "Revocation of access tokens is not supported"
+					},
+					400
+				)
+			}
+
+			try {
+				const token = tokenParam.toString()
+
+				const splits = token.split(":")
+				const tokenId = splits.pop()!
+				const subject = splits.join(":")
+
+				if (!subject || !tokenId) {
+					return c.newResponse(null, 200)
+				}
+
+				const key = ["oauth:refresh", subject, tokenId]
+				const payload = await Storage.get<{
+					type: string
+					properties: unknown
+					clientID: string
+					subject: string
+					scopes?: string[]
+					ttl: {
+						access: number
+						refresh: number
+					}
+					nextToken: string
+					timeUsed?: number
+				}>(storage, key)
+
+				if (payload) {
+					if (clientIDParam && payload.clientID !== clientIDParam.toString()) {
+						return c.json(
+							{
+								error: "invalid_client",
+								error_description: "Token does not belong to the specified client"
+							},
+							400
+						)
+					}
+
+					await Storage.remove(storage, key)
+
+					if (revokeAll) {
+						const keys = await Array.fromAsync(
+							Storage.scan(storage, ["oauth:refresh", subject])
+						)
+						await Promise.all(keys.map(([scanKey]) => Storage.remove(storage, scanKey)))
+					}
+
+					if (clientIDParam && !revokeAll) {
+						const keys = await Array.fromAsync(
+							Storage.scan(storage, ["oauth:refresh", subject])
+						)
+
+						for (const [scanKey] of keys) {
+							const scanPayload = await Storage.get<{
+								type: string
+								properties: unknown
+								clientID: string
+								subject: string
+								scopes?: string[]
+								ttl: {
+									access: number
+									refresh: number
+								}
+								nextToken: string
+								timeUsed?: number
+							}>(storage, scanKey)
+
+							if (scanPayload && scanPayload.clientID === clientIDParam.toString()) {
+								await Storage.remove(storage, scanKey)
+							}
+						}
+					}
+				}
+
+				return c.newResponse(null, 200)
+			} catch (error) {
+				console.error("Error revoking token:", error)
+				return c.newResponse(null, 200)
+			}
+		}
+	)
 
 	app.get("/userinfo", async (c) => {
 		const header = c.req.header("Authorization")

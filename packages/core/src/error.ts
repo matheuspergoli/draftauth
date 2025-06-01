@@ -126,3 +126,17 @@ export class InvalidAuthorizationCodeError extends Error {
 		super("Invalid authorization code")
 	}
 }
+
+/**
+ * The token type provided is not supported for revocation.
+ */
+export class UnsupportedTokenTypeError extends Error {
+	constructor() {
+		super("Unsupported token type")
+	}
+}
+
+/**
+ * An error occurred during token revocation.
+ */
+export class TokenRevocationError extends Error {}
