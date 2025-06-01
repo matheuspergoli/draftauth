@@ -32,10 +32,10 @@ import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
 import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "../password"
 import { resend } from "../resend"
-import { getGithubUser, getGoogleUser } from "./utils"
+import { AccessDeniedPage } from "./access-denied-page"
 import { EmailNotFoundInClaimsPage } from "./email-not-found-in-claims-page"
 import { UserNotFoundPage } from "./user-not-found-page"
-import { AccessDeniedPage } from "./access-denied-page"
+import { getGithubUser, getGoogleUser } from "./utils"
 
 export const authClient = createClient({
 	issuer: getBaseUrl(),
@@ -117,6 +117,12 @@ const handlePasswordLogin = async (data: { email: string }) => {
 
 export const auth = issuer({
 	subjects,
+	ttl: {
+		access: 60 * 10,
+		refresh: 60 * 60 * 8,
+		reuse: 60,
+		retention: 60 * 5
+	},
 	theme: {
 		primary: "black",
 		title: "Draft Auth"

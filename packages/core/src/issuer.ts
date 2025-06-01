@@ -261,8 +261,8 @@ export interface IssuerInput<
 	 */
 	refresh?(
 		payload: {
-			type: string
-			properties: unknown
+			type: SubjectPayload<Subjects>["type"]
+			properties: SubjectPayload<Subjects>["properties"]
 			subject: string
 			clientID: string
 			scopes?: string[]
@@ -270,8 +270,8 @@ export interface IssuerInput<
 		req: Request
 	): Promise<
 		| {
-				type: string
-				properties: unknown
+				type: SubjectPayload<Subjects>["type"]
+				properties: SubjectPayload<Subjects>["properties"]
 				subject?: string
 				scopes?: string[]
 		  }
