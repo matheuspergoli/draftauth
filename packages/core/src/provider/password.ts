@@ -4,8 +4,8 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
  * paired with the `PasswordUI`.
  *
  * ```ts
- * import { PasswordUI } from "@openaut/openauth/ui/password"
- * import { PasswordProvider } from "@openaut/openauth/provider/password"
+ * import { PasswordUI } from "@draftauth/core/ui/password"
+ * import { PasswordProvider } from "@draftauth/core/provider/password"
  *
  * export default issuer({
  *   providers: {

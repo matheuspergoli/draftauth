@@ -1,10 +1,10 @@
 /**
- * A list of errors that can be thrown by OpenAuth.
+ * A list of errors that can be thrown by Draft Auth.
  *
  * You can use these errors to check the type of error and handle it. For example.
  *
  * ```ts
- * import { InvalidAuthorizationCodeError } from "@openauthjs/openauth/error"
+ * import { InvalidAuthorizationCodeError } from "@draftauth/core/error"
  *
  * if (err instanceof InvalidAuthorizationCodeError) {
  *   // handle invalid code error

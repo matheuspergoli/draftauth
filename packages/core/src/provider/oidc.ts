@@ -2,7 +2,7 @@
  * Use this to connect authentication providers that support OIDC.
  *
  * ```ts {5-8}
- * import { OidcProvider } from "@openauthjs/openauth/provider/oidc"
+ * import { OidcProvider } from "@draftauth/core/provider/oidc"
  *
  * export default issuer({
  *   providers: {

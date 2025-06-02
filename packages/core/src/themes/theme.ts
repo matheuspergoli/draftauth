@@ -4,7 +4,7 @@
  * @example
  *
  * ```ts
- * import { THEME_SST } from "@openauthjs/openauth/ui/theme"
+ * import { THEME_SST } from "@draftauth/core/ui/theme"
  *
  * export default issuer({
  *   theme: THEME_SST,
@@ -15,7 +15,7 @@
  * Or define your own.
  *
  * ```ts
- * import type { Theme } from "@openauthjs/openauth/ui/theme"
+ * import type { Theme } from "@draftauth/core/ui/theme"
  *
  * const MY_THEME: Theme = {
  *   title: "Acne",
@@ -180,10 +180,10 @@ export interface Theme {
 }
 
 /**
- * Built-in default OpenAuth theme.
+ * Built-in default Draft Auth theme.
  */
-export const THEME_OPENAUTH: Theme = {
-	title: "OpenAuth",
+export const THEME_DRAFTAUTH: Theme = {
+	title: "Draft Auth",
 	radius: "none",
 	background: {
 		dark: "black",
@@ -299,14 +299,12 @@ export const THEME_VERCEL: Theme = {
   `
 }
 
-// i really don't wanna use async local storage for this so get over it
-
 /**
  * @internal
  */
 export const setTheme = (value: Theme) => {
 	// @ts-ignore
-	globalThis.OPENAUTH_THEME = value
+	globalThis.DRAFTAUTH_THEME = value
 }
 
 /**
@@ -314,5 +312,5 @@ export const setTheme = (value: Theme) => {
  */
 export const getTheme = () => {
 	// @ts-ignore
-	return globalThis.OPENAUTH_THEME || THEME_OPENAUTH
+	return globalThis.DRAFTAUTH_THEME || THEME_DRAFTAUTH
 }

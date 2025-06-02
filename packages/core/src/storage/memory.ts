@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs"
 import { writeFile } from "node:fs/promises"
 /**
- * Configure OpenAuth to use a simple in-memory store.
+ * Configure Draft Auth to use a simple in-memory store.
  *
  * :::caution
  * This is not meant to be used in production.
@@ -10,7 +10,7 @@ import { writeFile } from "node:fs/promises"
  * This is useful for testing and development. It's not meant to be used in production.
  *
  * ```ts
- * import { MemoryStorage } from "@openauthjs/openauth/storage/memory"
+ * import { MemoryStorage } from "@draftauth/core/storage/memory"
  *
  * const storage = MemoryStorage()
  *

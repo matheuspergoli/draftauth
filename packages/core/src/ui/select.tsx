@@ -1,9 +1,9 @@
 /**
- * The UI that's displayed when loading the root page of the OpenAuth server. You can configure
+ * The UI that's displayed when loading the root page of the Draft Auth server. You can configure
  * which providers should be displayed in the select UI.
  *
  * ```ts
- * import { Select } from "@openauthjs/openauth/ui/select"
+ * import { Select } from "@draftauth/core/ui/select"
  *
  * export default issuer({
  *   select: Select({

@@ -41,7 +41,7 @@ export const Layout = (
 			}}
 		>
 			<head>
-				<title>{theme?.title || "OpenAuthJS"}</title>
+				<title>{theme?.title || "Draft Auth"}</title>
 				<meta charset="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				{theme?.favicon ? (
@@ -88,7 +88,7 @@ export const Layout = (
 								/>
 							</>
 						) : (
-							ICON_OPENAUTH
+							ICON_DRAFTAUTH
 						)}
 						{props.children}
 					</div>
@@ -98,7 +98,7 @@ export const Layout = (
 	)
 }
 
-const ICON_OPENAUTH = (
+const ICON_DRAFTAUTH = (
 	<svg
 		data-component="logo-default"
 		width="51"

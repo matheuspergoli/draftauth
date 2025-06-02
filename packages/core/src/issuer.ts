@@ -9,7 +9,7 @@ import type { StatusCode } from "hono/utils/http-status"
  * The `issuer` function requires a few things:
  *
  * ```ts title="issuer.ts"
- * import { issuer } from "@openauthjs/openauth"
+ * import { issuer } from "@draftauth/core"
  *
  * const app = issuer({
  *   providers: { ... },
@@ -25,8 +25,8 @@ import type { StatusCode } from "hono/utils/http-status"
  * to be able to authenticate with GitHub and with their email and password.
  *
  * ```ts title="issuer.ts"
- * import { GithubProvider } from "@openauthjs/openauth/provider/github"
- * import { PasswordProvider } from "@openauthjs/openauth/provider/password"
+ * import { GithubProvider } from "@draftauth/core/provider/github"
+ * import { PasswordProvider } from "@draftauth/core/provider/password"
  *
  * const app = issuer({
  *   providers: {
@@ -79,7 +79,7 @@ import type { StatusCode } from "hono/utils/http-status"
  *
  * ```ts title="subjects.ts"
  * import { object, string } from "valibot"
- * import { createSubjects } from "@openauthjs/openauth/subject"
+ * import { createSubjects } from "@draftauth/core/subject"
  *
  * const subjects = createSubjects({
  *   user: object({
@@ -284,7 +284,7 @@ export interface IssuerInput<
 	 *
 	 * ```ts title="issuer.ts"
 	 * import { object, string } from "valibot"
-	 * import { createSubjects } from "@openauthjs/openauth/subject"
+	 * import { createSubjects } from "@draftauth/core/subject"
 	 *
 	 * issuer({
 	 *   subjects: createSubjects({
@@ -302,7 +302,7 @@ export interface IssuerInput<
 	 *
 	 * @example
 	 * ```ts title="issuer.ts"
-	 * import { DynamoStorage } from "@openauthjs/openauth/storage/dynamo"
+	 * import { DynamoStorage } from "@draftauth/core/storage/dynamo"
 	 *
 	 * issuer({
 	 *   storage: DynamoStorage()
@@ -312,12 +312,12 @@ export interface IssuerInput<
 	 */
 	storage?: StorageAdapter
 	/**
-	 * The providers that you want your OpenAuth server to support.
+	 * The providers that you want your Draft Auth server to support.
 	 *
 	 * @example
 	 *
 	 * ```ts title="issuer.ts"
-	 * import { GithubProvider } from "@openauthjs/openauth/provider/github"
+	 * import { GithubProvider } from "@draftauth/core/provider/github"
 	 *
 	 * issuer({
 	 *   providers: {
@@ -361,7 +361,7 @@ export interface IssuerInput<
 	 *
 	 * @example
 	 * ```ts title="issuer.ts"
-	 * import { THEME_SST } from "@openauthjs/openauth/ui/theme"
+	 * import { THEME_SST } from "@draftauth/core/ui/theme"
 	 *
 	 * issuer({
 	 *   theme: THEME_SST
@@ -372,7 +372,7 @@ export interface IssuerInput<
 	 * Or define your own.
 	 *
 	 * ```ts title="issuer.ts"
-	 * import type { Theme } from "@openauthjs/openauth/ui/theme"
+	 * import type { Theme } from "@draftauth/core/ui/theme"
 	 *
 	 * const MY_THEME: Theme = {
 	 *   // ...
@@ -423,10 +423,10 @@ export interface IssuerInput<
 	}
 	/**
 	 * Optionally, configure the UI that's displayed when the user visits the root URL of the
-	 * of the OpenAuth server.
+	 * of the Draft Auth server.
 	 *
 	 * ```ts title="issuer.ts"
-	 * import { Select } from "@openauthjs/openauth/ui/select"
+	 * import { Select } from "@draftauth/core/ui/select"
 	 *
 	 * issuer({
 	 *   select: Select({
@@ -517,7 +517,7 @@ export interface IssuerInput<
 }
 
 /**
- * Create an OpenAuth server, a Hono app.
+ * Create an Draft Auth server, a Hono app.
  */
 export const issuer = <
 	Providers extends Record<string, Provider<unknown>>,
@@ -572,13 +572,13 @@ export const issuer = <
 	)
 
 	let storage = input.storage
-	if (process.env.OPENAUTH_STORAGE) {
-		const parsed = JSON.parse(process.env.OPENAUTH_STORAGE) as { type: string }
+	if (process.env.DRAFTAUTH_STORAGE) {
+		const parsed = JSON.parse(process.env.DRAFTAUTH_STORAGE) as { type: string }
 		if (parsed.type === "memory") storage = MemoryStorage()
 	}
 	if (!storage) {
 		throw new Error(
-			"Store is not configured. Either set the `storage` option or set `OPENAUTH_STORAGE` environment variable."
+			"Store is not configured. Either set the `storage` option or set `DRAFTAUTH_STORAGE` environment variable."
 		)
 	}
 	const allSigning = lazy(() => signingKeys(storage).then((keys) => keys))

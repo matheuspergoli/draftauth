@@ -2,8 +2,8 @@
  * Configure the UI that's used by the Code provider.
  *
  * ```ts {1,7-12}
- * import { CodeUI } from "@openauthjs/openauth/ui/code"
- * import { CodeProvider } from "@openauthjs/openauth/provider/code"
+ * import { CodeUI } from "@draftauth/core/ui/code"
+ * import { CodeProvider } from "@draftauth/core/provider/code"
  *
  * export default issuer({
  *   providers: {

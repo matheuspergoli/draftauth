@@ -1,12 +1,12 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 /**
- * Use the OpenAuth client kick off your OAuth flows, exchange tokens, refresh tokens,
+ * Use the Draft Auth client kick off your OAuth flows, exchange tokens, refresh tokens,
  * and verify tokens.
  *
  * First, create a client.
  *
  * ```ts title="client.ts"
- * import { createClient } from "@openauthjs/openauth/client"
+ * import { createClient } from "@draftauth/core/client"
  *
  * const client = createClient({
  *   clientID: "my-client",
@@ -136,7 +136,7 @@ export interface ClientInput {
 	 */
 	clientID: string
 	/**
-	 * The URL of your OpenAuth server.
+	 * The URL of your Draft Auth server.
 	 *
 	 * @example
 	 * ```ts
@@ -241,7 +241,7 @@ export interface ExchangeError {
 	 *
 	 * @example
 	 * ```ts
-	 * import { InvalidAuthorizationCodeError } from "@openauthjs/openauth/error"
+	 * import { InvalidAuthorizationCodeError } from "@draftauth/core/error"
 	 *
 	 * console.log(err instanceof InvalidAuthorizationCodeError)
 	 *```
@@ -281,7 +281,7 @@ export interface RefreshError {
 	 *
 	 * @example
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@openauthjs/openauth/error"
+	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
 	 *
 	 * console.log(err instanceof InvalidRefreshTokenError)
 	 *```
@@ -351,7 +351,7 @@ export interface VerifyError {
 	 *
 	 * @example
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@openauthjs/openauth/error"
+	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
 	 *
 	 * console.log(err instanceof InvalidRefreshTokenError)
 	 *```
@@ -407,7 +407,7 @@ export interface RevokeError {
 	 *
 	 * @example
 	 * ```ts
-	 * import { UnsupportedTokenTypeError } from "@openauthjs/openauth/error"
+	 * import { UnsupportedTokenTypeError } from "@draftauth/core/error"
 	 *
 	 * if (result.err instanceof UnsupportedTokenTypeError) {
 	 *   // Token type is not supported for revocation
@@ -418,7 +418,7 @@ export interface RevokeError {
 }
 
 /**
- * An instance of the OpenAuth client contains the following methods.
+ * An instance of the Draft Auth client contains the following methods.
  */
 export interface Client {
 	/**
@@ -495,7 +495,7 @@ export interface Client {
 	 * you can handle depending on the error.
 	 *
 	 * ```ts
-	 * import { InvalidAuthorizationCodeError } from "@openauthjs/openauth/error"
+	 * import { InvalidAuthorizationCodeError } from "@draftauth/core/error"
 	 *
 	 * if (exchanged.err) {
 	 *   if (exchanged.err instanceof InvalidAuthorizationCodeError) {
@@ -543,7 +543,7 @@ export interface Client {
 	 * Or if it fails, it returns an error that you can handle depending on the error.
 	 *
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@openauthjs/openauth/error"
+	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
 	 *
 	 * if (next.err) {
 	 *   if (next.err instanceof InvalidRefreshTokenError) {
@@ -594,7 +594,7 @@ export interface Client {
 	 * Or if it fails, it returns an error that you can handle depending on the error.
 	 *
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@openauthjs/openauth/error"
+	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
 	 *
 	 * if (verified.err) {
 	 *   if (verified.err instanceof InvalidRefreshTokenError) {
@@ -639,7 +639,7 @@ export interface Client {
 	 * Error handling:
 	 *
 	 * ```ts
-	 * import { UnsupportedTokenTypeError, TokenRevocationError } from "@openauthjs/openauth/error"
+	 * import { UnsupportedTokenTypeError, TokenRevocationError } from "@draftauth/core/error"
 	 *
 	 * const result = await client.revoke(token)
 	 * if (result.err) {
@@ -655,14 +655,14 @@ export interface Client {
 }
 
 /**
- * Create an OpenAuth client.
+ * Create an Draft Auth client.
  *
  * @param input - Configure the client.
  */
 export const createClient = (input: ClientInput): Client => {
 	const jwksCache = new Map<string, ReturnType<typeof createLocalJWKSet>>()
 	const issuerCache = new Map<string, WellKnown>()
-	const issuer = input.issuer || process.env.OPENAUTH_ISSUER
+	const issuer = input.issuer || process.env.DRAFTAUTH_ISSUER
 	if (!issuer) throw new Error("No issuer")
 	const f = input.fetch ?? (fetch as FetchLike)
 

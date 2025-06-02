@@ -2,7 +2,7 @@
  * Use this to connect authentication providers that support OAuth 2.0.
  *
  * ```ts {5-12}
- * import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2"
+ * import { Oauth2Provider } from "@draftauth/core/provider/oauth2"
  *
  * export default issuer({
  *   providers: {

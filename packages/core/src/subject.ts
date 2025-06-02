@@ -72,7 +72,7 @@
  *
  * #### Decode the subject
  *
- * Now when your user logs in, you can use the OpenAuth client to decode the subject. For
+ * Now when your user logs in, you can use the Draft Auth client to decode the subject. For
  * example, in our SSR app we can do the following.
  *
  * ```ts title="app/page.tsx"
