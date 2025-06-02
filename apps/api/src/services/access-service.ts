@@ -4,6 +4,43 @@ import { events } from "@/libs/events"
 import { and, eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
+export const ensureUserAppAccessRecord = async ({
+	userId,
+	appId
+}: {
+	userId: string
+	appId: string
+}) => {
+	const [requestedApp, requestedUser] = await Promise.all([
+		db.query.applications.findFirst({
+			where: eq(applications.appId, appId)
+		}),
+		db.query.users.findFirst({
+			where: eq(users.userId, userId)
+		})
+	])
+
+	if (!requestedApp) {
+		throw new HTTPException(404, {
+			message: `Aplicação com AppID: ${appId} não foi encontrada`
+		})
+	}
+
+	if (!requestedUser) {
+		throw new HTTPException(404, { message: `Usuário com ID: ${userId} não foi encontrado` })
+	}
+
+	await db
+		.insert(userApplicationAccess)
+		.values({
+			userId: userId,
+			appId: appId
+		})
+		.onConflictDoNothing({
+			target: [userApplicationAccess.userId, userApplicationAccess.appId]
+		})
+}
+
 export const setUserAppAccessStatus = async ({
 	appId,
 	status,

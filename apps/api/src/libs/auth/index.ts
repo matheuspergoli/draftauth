@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto"
 import { dbClient } from "@/db/client"
 import { env } from "@/environment/env"
-import { setUserAppAccessStatus } from "@/services/access-service"
+import { ensureUserAppAccessRecord, getUserAppAccessStatus } from "@/services/access-service"
 import { isValidApplicationClient } from "@/services/application-service"
 import { isSetupComplete } from "@/services/config-service"
 import {
@@ -328,12 +328,18 @@ export const auth = issuer({
 			return context.html(AccessDeniedPage())
 		}
 
-		if (centralUser.created) {
-			await setUserAppAccessStatus({
-				status: "enabled",
-				appId: clientID,
-				userId: centralUser.user.userId
-			})
+		await ensureUserAppAccessRecord({
+			userId: centralUser.user.userId,
+			appId: clientID
+		})
+
+		const appSpecificAccessStatus = await getUserAppAccessStatus({
+			userId: centralUser.user.userId,
+			appId: clientID
+		})
+
+		if (appSpecificAccessStatus !== "enabled") {
+			return context.html(AccessDeniedPage())
 		}
 
 		return ctx.subject("user", {
