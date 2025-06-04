@@ -189,7 +189,6 @@ export type Prettify<T> = {
 } & {}
 
 import { cors } from "hono/cors"
-import { logger } from "hono/logger"
 import { CompactEncrypt, SignJWT, compactDecrypt, jwtVerify } from "jose"
 import {
 	MissingParameterError,
@@ -200,7 +199,6 @@ import {
 import { encryptionKeys, signingKeys } from "./keys"
 import { validatePKCE } from "./pkce"
 import { parseScopes, validateScopes } from "./scopes"
-import { MemoryStorage } from "./storage/memory"
 import { Storage, type StorageAdapter } from "./storage/storage"
 import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
@@ -310,7 +308,7 @@ export interface IssuerInput<
 	 * })
 	 * ```
 	 */
-	storage?: StorageAdapter
+	storage: StorageAdapter
 	/**
 	 * The providers that you want your Draft Auth server to support.
 	 *
@@ -571,16 +569,7 @@ export const issuer = <
 			})
 	)
 
-	let storage = input.storage
-	if (process.env.DRAFTAUTH_STORAGE) {
-		const parsed = JSON.parse(process.env.DRAFTAUTH_STORAGE) as { type: string }
-		if (parsed.type === "memory") storage = MemoryStorage()
-	}
-	if (!storage) {
-		throw new Error(
-			"Store is not configured. Either set the `storage` option or set `DRAFTAUTH_STORAGE` environment variable."
-		)
-	}
+	const storage = input.storage
 	const allSigning = lazy(() => signingKeys(storage).then((keys) => keys))
 	const allEncryption = lazy(() => encryptionKeys(storage))
 	const signingKey = lazy(() => allSigning().then((all) => all[0]))
@@ -811,7 +800,7 @@ export const issuer = <
 		Variables: {
 			authorization: AuthorizationState
 		}
-	}>().use(logger())
+	}>()
 
 	for (const [name, value] of Object.entries(input.providers)) {
 		const route = new Hono<{
