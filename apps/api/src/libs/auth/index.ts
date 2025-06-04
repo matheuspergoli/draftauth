@@ -12,6 +12,7 @@ import {
 	linkExternalIdentity,
 	setUserGlobalStatus
 } from "@/services/user-service"
+import { defaultAllowCheck } from "@draftauth/core/allow"
 import { createClient } from "@draftauth/core/client"
 import { issuer } from "@draftauth/core/issuer"
 import { CodeProvider } from "@draftauth/core/provider/code"
@@ -251,10 +252,20 @@ export const auth = issuer({
 			clientSecret: env.GOOGLE_CLIENT_SECRET
 		})
 	},
-	async allow({ clientID, redirectURI }) {
+	async allow(input, req) {
 		const setupComplete = await isSetupComplete()
 		if (!setupComplete) return true
-		return await isValidApplicationClient({ clientId: clientID, redirectUri: redirectURI })
+
+		const isClientAppValid = isValidApplicationClient({
+			clientId: input.clientID,
+			redirectUri: input.redirectURI
+		})
+		if (!isClientAppValid) return false
+
+		const defaultCheck = await defaultAllowCheck(input, req)
+		if (!defaultCheck) return false
+
+		return true
 	},
 	success: async (ctx, value, _req, clientID) => {
 		const context = getContext()

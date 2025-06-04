@@ -4,7 +4,7 @@
  * @example
  *
  * ```ts
- * import { THEME_SST } from "@draftauth/core/ui/theme"
+ * import { THEME_SST } from "@draftauth/core/themes/theme"
  *
  * export default issuer({
  *   theme: THEME_SST,
@@ -15,7 +15,7 @@
  * Or define your own.
  *
  * ```ts
- * import type { Theme } from "@draftauth/core/ui/theme"
+ * import type { Theme } from "@draftauth/core/themes/theme"
  *
  * const MY_THEME: Theme = {
  *   title: "Acne",

@@ -190,6 +190,7 @@ export type Prettify<T> = {
 
 import { cors } from "hono/cors"
 import { CompactEncrypt, SignJWT, compactDecrypt, jwtVerify } from "jose"
+import { type AllowCheckInput, defaultAllowCheck } from "./allow"
 import {
 	MissingParameterError,
 	OauthError,
@@ -202,7 +203,7 @@ import { parseScopes, validateScopes } from "./scopes"
 import { Storage, type StorageAdapter } from "./storage/storage"
 import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
-import { getRelativeUrl, isDomainMatch, lazy } from "./util"
+import { getRelativeUrl, lazy } from "./util"
 
 export interface IssuerInput<
 	Providers extends Record<string, Provider<unknown>>,
@@ -487,6 +488,8 @@ export interface IssuerInput<
 	error?(error: UnknownStateError, req: Request): Promise<Response>
 	/**
 	 * Override the logic for whether a client request is allowed to call the issuer.
+	 * If not provided, `defaultAllowCheck` will be used.
+	 * To extend the default behavior, import and call `defaultAllowCheck` within your custom function.
 	 *
 	 * By default, it uses the following:
 	 *
@@ -504,14 +507,7 @@ export interface IssuerInput<
 	 * }
 	 * ```
 	 */
-	allow?(
-		input: {
-			clientID: string
-			redirectURI: string
-			audience?: string
-		},
-		req: Request
-	): Promise<boolean>
+	allow?(input: AllowCheckInput, req: Request): Promise<boolean>
 }
 
 /**
@@ -549,25 +545,7 @@ export const issuer = <
 	}
 
 	const select = lazy(() => input.select ?? Select())
-	const allow = lazy(
-		() =>
-			input.allow ??
-			(async (
-				allowInput: { clientID: string; redirectURI: string; audience?: string },
-				req: Request
-			) => {
-				const redir = new URL(allowInput.redirectURI).hostname
-				if (redir === "localhost" || redir === "127.0.0.1") {
-					return true
-				}
-				const forwarded = req.headers.get("x-forwarded-host")
-				const host = forwarded
-					? new URL(`https://${forwarded}`).hostname
-					: new URL(req.url).hostname
-
-				return isDomainMatch(redir, host)
-			})
-	)
+	const allow = lazy(() => input.allow ?? defaultAllowCheck)
 
 	const storage = input.storage
 	const allSigning = lazy(() => signingKeys(storage).then((keys) => keys))
