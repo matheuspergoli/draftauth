@@ -682,10 +682,25 @@ export const issuer = <
 
 	const getSsoCookieName = (ctx: Context): string => {
 		if (input.sso?.cookieName) {
-			return input.sso.cookieName
+			const customName = input.sso.cookieName
+
+			if (customName.startsWith("__Host-") && input.sso?.cookieDomain) {
+				console.warn(
+					`Cookie name "${customName}" uses __Host- prefix but cookieDomain is set. __Host- cookies cannot have domain attributes. Using fallback name.`
+				)
+				const isHttps = isHttpsRequest(ctx)
+				return isHttps ? "draftauth-sso-secure" : "draftauth-sso"
+			}
+
+			return customName
 		}
 
 		const isHttps = isHttpsRequest(ctx)
+
+		if (input.sso?.cookieDomain) {
+			return isHttps ? "draftauth-sso-secure" : "draftauth-sso"
+		}
+
 		return isHttps ? DEFAULT_SSO_COOKIE_NAME_SECURE : DEFAULT_SSO_COOKIE_NAME_INSECURE
 	}
 
