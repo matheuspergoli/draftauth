@@ -3,7 +3,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 import { Hono } from "hono/tiny"
 import type { StatusCode } from "hono/utils/http-status"
 /**
- * The `issuer` create an OpentAuth server, a [Hono](https://hono.dev) app that's
+ * The `issuer` create an Draft Auth server, a [Hono](https://hono.dev) app that's
  * designed to run anywhere.
  *
  * The `issuer` function requires a few things:
@@ -209,6 +209,7 @@ import { getRelativeUrl, lazy } from "./util"
 const DEFAULT_SSO_COOKIE_NAME_SECURE = "__Host-draftauth-sso"
 const DEFAULT_SSO_COOKIE_NAME_INSECURE = "draftauth-sso"
 const DEFAULT_SSO_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
+const DEFAULT_OAUTH_STATE_TTL_SECONDS = 60 * 10
 
 /**
  * @interface SsoSessionData
@@ -228,6 +229,8 @@ export interface SsoSessionData<T = string> {
 	expiresAt: number
 	/** The resolved subject string for token invalidation */
 	resolvedSubject: string
+	/** Original properties from the authentication flow for proper refresh handling */
+	originalProperties: Record<string, unknown>
 }
 
 /**
@@ -426,7 +429,8 @@ export interface IssuerInput<
 	 * {
 	 *   ttl: {
 	 *     access: 60 * 60 * 24 * 30,
-	 *     refresh: 60 * 60 * 24 * 365
+	 *     refresh: 60 * 60 * 24 * 365,
+	 *     oauthState: 60 * 10
 	 *   }
 	 * }
 	 * ```
@@ -458,6 +462,11 @@ export interface IssuerInput<
 		 * @default 7 days
 		 */
 		ssoSessionSeconds?: number
+		/**
+		 * Time-to-live in seconds for OAuth state cookies (authorization flow cookies).
+		 * @default 10 minutes
+		 */
+		oauthState?: number
 	}
 	sso?: {
 		/**
@@ -524,6 +533,43 @@ export interface IssuerInput<
 			req: Request,
 			clientID: string
 		) => Promise<Record<string, unknown>>
+		/**
+		 * @callback getSsoIdentifiers
+		 * @description Optional callback to extract user identifiers from properties for SSO session creation.
+		 * If not provided, will fallback to convention-based extraction (properties.id and properties.email).
+		 * This allows you to customize how the userId and email are extracted from the properties object
+		 * when a user completes authentication and an SSO session needs to be created.
+		 *
+		 * @example
+		 * ```ts
+		 * getSsoIdentifiers: (properties, subjectType) => ({
+		 *   userId: properties.userGuid, // Custom field name
+		 *   email: properties.emailAddress // Custom field name
+		 * })
+		 * ```
+		 *
+		 * @example
+		 * ```ts
+		 * // Different extraction logic based on subject type
+		 * getSsoIdentifiers: (properties, subjectType) => {
+		 *   if (subjectType === "admin") {
+		 *     return { userId: properties.adminId, email: properties.adminEmail }
+		 *   }
+		 *   return { userId: properties.id, email: properties.email }
+		 * }
+		 * ```
+		 *
+		 * @param {SubjectPayload<Subjects>["properties"]} properties - The properties object from ctx.subject()
+		 * @param {SubjectPayload<Subjects>["type"]} subjectType - The subject type (e.g., "user", "admin")
+		 * @returns {{ userId: string; email?: string }} Object with userId (required) and email (optional)
+		 */
+		getSsoIdentifiers?: (
+			properties: SubjectPayload<Subjects>["properties"],
+			subjectType: SubjectPayload<Subjects>["type"]
+		) => {
+			userId: string
+			email?: string
+		}
 	}
 	/**
 	 * Optionally, configure the UI that's displayed when the user visits the root URL of the
@@ -645,6 +691,7 @@ export const issuer = <
 	const ttlRefresh = input.ttl?.refresh ?? 60 * 60 * 24 * 365
 	const ttlRefreshReuse = input.ttl?.reuse ?? 60
 	const ttlRefreshRetention = input.ttl?.retention ?? 0
+	const ttlOauthState = input.ttl?.oauthState ?? DEFAULT_OAUTH_STATE_TTL_SECONDS
 	if (input.theme) {
 		setTheme(input.theme)
 	}
@@ -741,7 +788,7 @@ export const issuer = <
 			path: "/",
 			httpOnly: true,
 			secure: isHttps,
-			sameSite: isHttps ? "None" : "Lax",
+			sameSite: "Lax",
 			maxAge: ssoSessionTtlToUse
 		}
 
@@ -806,8 +853,23 @@ export const issuer = <
 						await successOpts?.invalidate?.(await resolveSubject(type, properties))
 
 						if (ssoEnabled) {
-							const userIdForSso = (properties as { id?: string }).id
-							const userEmailForSso = (properties as { email?: string }).email
+							let userIdForSso: string | undefined
+							let userEmailForSso: string | undefined
+
+							if (input.sso?.getSsoIdentifiers) {
+								try {
+									const identifiers = input.sso.getSsoIdentifiers(properties, type)
+									userIdForSso = identifiers.userId
+									userEmailForSso = identifiers.email
+								} catch (error) {
+									console.error("Error extracting SSO identifiers:", error)
+									userIdForSso = (properties as { id?: string }).id
+									userEmailForSso = (properties as { email?: string }).email
+								}
+							} else {
+								userIdForSso = (properties as { id?: string }).id
+								userEmailForSso = (properties as { email?: string }).email
+							}
 
 							if (userIdForSso) {
 								const ssoSessionId = crypto.randomUUID()
@@ -818,7 +880,8 @@ export const issuer = <
 									subjectType: type,
 									authenticatedAt: Date.now(),
 									expiresAt: ssoExpiresAt,
-									resolvedSubject: subject
+									resolvedSubject: subject,
+									originalProperties: properties as Record<string, unknown>
 								}
 								await Storage.set(
 									storage,
@@ -1462,13 +1525,11 @@ export const issuer = <
 									: undefined,
 							audience
 						}
-						await auth.set(c, "authorization", 60 * 5, authorizationForThisApp)
+						await auth.set(c, "authorization", ttlOauthState, authorizationForThisApp)
 						c.set("authorization", authorizationForThisApp)
 
-						let finalSubjectProperties: Record<string, unknown> = {
-							id: ssoSessionData.userId,
-							email: ssoSessionData.email
-						}
+						let finalSubjectProperties: Record<string, unknown> =
+							ssoSessionData.originalProperties
 						let finalScopes = authorizationForThisApp.scopes
 
 						if (input.sso?.getSsoUserProperties) {
@@ -1481,13 +1542,14 @@ export const issuer = <
 								)
 							} catch (error) {
 								console.error("Error getting SSO user properties:", error)
+								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						} else if (input.refresh) {
 							try {
 								const refreshedClaims = await input.refresh(
 									{
 										type: ssoSessionData.subjectType,
-										properties: { id: ssoSessionData.userId, email: ssoSessionData.email },
+										properties: ssoSessionData.originalProperties,
 										subject: ssoSessionData.resolvedSubject,
 										clientID: client_id,
 										scopes: finalScopes
@@ -1507,6 +1569,7 @@ export const issuer = <
 								}
 							} catch (error) {
 								console.error("Error refreshing SSO claims:", error)
+								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						}
 
@@ -1581,7 +1644,7 @@ export const issuer = <
 			))
 		)
 			throw new UnauthorizedClientError(client_id, redirect_uri)
-		await auth.set(c, "authorization", 60 * 60 * 24, authorization)
+		await auth.set(c, "authorization", ttlOauthState, authorization)
 		if (provider) return c.redirect(`/${provider}/authorize`)
 		const providers = Object.keys(input.providers)
 		if (providers.length === 1) return c.redirect(`/${providers[0]}/authorize`)
