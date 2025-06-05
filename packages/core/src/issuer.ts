@@ -189,6 +189,7 @@ export type Prettify<T> = {
 } & {}
 
 import { cors } from "hono/cors"
+import type { CookieOptions } from "hono/utils/cookie"
 import { CompactEncrypt, SignJWT, compactDecrypt, jwtVerify } from "jose"
 import { type AllowCheckInput, defaultAllowCheck } from "./allow"
 import {
@@ -205,9 +206,9 @@ import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
 import { getRelativeUrl, lazy } from "./util"
 
-const DEFAULT_SSO_SESSION_TTL_SECONDS = 60 * 60 * 24
-const DEFAULT_SSO_COOKIE_NAME_INSECURE = "draftauth-sso"
 const DEFAULT_SSO_COOKIE_NAME_SECURE = "__Host-draftauth-sso"
+const DEFAULT_SSO_COOKIE_NAME_INSECURE = "draftauth-sso"
+const DEFAULT_SSO_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
 
 /**
  * @interface SsoSessionData
@@ -479,6 +480,17 @@ export interface IssuerInput<
 		 */
 		allowedLogoutHosts?: string[]
 		/**
+		 * @property Domain for the SSO cookie (for cross-subdomain SSO)
+		 * @example ".draftauth.com.br" for SSO between api.draftauth.com.br and draftauth.com.br
+		 */
+		cookieDomain?: string
+		/**
+		 * @property Force secure cookies even if HTTPS detection fails
+		 * Useful when behind proxies/load balancers that terminate SSL
+		 * @default false
+		 */
+		forceSecure?: boolean
+		/**
 		 * @callback isSsoUserStillValid
 		 * @description Optional callback to perform a live check if the user identified by the SSO session
 		 * is still valid (e.g., not disabled, not locked) before proceeding with SSO for a new client application.
@@ -504,7 +516,7 @@ export interface IssuerInput<
 		 * @param {SsoSessionData} ssoSessionData - The full data of the SSO session.
 		 * @param {Request} req - The incoming Hono request to the /authorize endpoint.
 		 * @param {string} clientID - The clientID of the application requesting authorization via SSO.
-		 * @returns {Promise<Record<string, any>>} The properties to be included in the new token for the client app.
+		 * @returns {Promise<Record<string, unknown>>} The properties to be included in the new token for the client app.
 		 */
 		getSsoUserProperties?: (
 			userId: string,
@@ -652,12 +664,28 @@ export const issuer = <
 
 	const ssoLocks: SsoLockMap = {}
 
+	const isHttpsRequest = (ctx: Context): boolean => {
+		if (input.sso?.forceSecure) {
+			return true
+		}
+
+		if (ctx.req.url.startsWith("https://")) {
+			return true
+		}
+
+		const xForwardedProto = ctx.req.header("x-forwarded-proto")
+		const xForwardedScheme = ctx.req.header("x-forwarded-scheme")
+		const xScheme = ctx.req.header("x-scheme")
+
+		return xForwardedProto === "https" || xForwardedScheme === "https" || xScheme === "https"
+	}
+
 	const getSsoCookieName = (ctx: Context): string => {
 		if (input.sso?.cookieName) {
 			return input.sso.cookieName
 		}
 
-		const isHttps = ctx.req.url.startsWith("https://")
+		const isHttps = isHttpsRequest(ctx)
 		return isHttps ? DEFAULT_SSO_COOKIE_NAME_SECURE : DEFAULT_SSO_COOKIE_NAME_INSECURE
 	}
 
@@ -691,26 +719,40 @@ export const issuer = <
 	}
 
 	const setSsoCookie = (ctx: Context, sessionId: string): void => {
-		const isHttps = ctx.req.url.startsWith("https://")
+		const isHttps = isHttpsRequest(ctx)
 		const cookieName = getSsoCookieName(ctx)
 
-		setCookie(ctx, cookieName, sessionId, {
+		const cookieOptions: CookieOptions = {
 			path: "/",
 			httpOnly: true,
 			secure: isHttps,
 			sameSite: isHttps ? "None" : "Lax",
 			maxAge: ssoSessionTtlToUse
-		})
+		}
+
+		if (input.sso?.cookieDomain) {
+			cookieOptions.domain = input.sso.cookieDomain
+		}
+
+		setCookie(ctx, cookieName, sessionId, cookieOptions)
 	}
 
 	const deleteSsoCookie = (ctx: Context): void => {
 		const cookieName = getSsoCookieName(ctx)
-		deleteCookie(ctx, cookieName, {
+		const isHttps = isHttpsRequest(ctx)
+
+		const cookieOptions: Parameters<typeof deleteCookie>[2] = {
 			path: "/",
 			httpOnly: true,
-			secure: ctx.req.url.startsWith("https://"),
+			secure: isHttps,
 			sameSite: "Lax"
-		})
+		}
+
+		if (input.sso?.cookieDomain) {
+			cookieOptions.domain = input.sso.cookieDomain
+		}
+
+		deleteCookie(ctx, cookieName, cookieOptions)
 	}
 
 	const cleanupExpiredSsoSessions = async (): Promise<void> => {
@@ -842,10 +884,12 @@ export const issuer = <
 			)
 		},
 		async set(ctx, key, maxAge, value) {
+			const isHttps = isHttpsRequest(ctx)
 			setCookie(ctx, key, await encrypt(value), {
 				maxAge,
 				httpOnly: true,
-				...(ctx.req.url.startsWith("https://") ? { secure: true, sameSite: "None" } : {})
+				secure: isHttps,
+				sameSite: isHttps ? "None" : "Lax"
 			})
 		},
 		async get<T>(ctx: Context, key: string): Promise<T> {

@@ -119,7 +119,8 @@ const handlePasswordLogin = async (data: { email: string }) => {
 export const auth = issuer({
 	subjects,
 	sso: {
-		enabled: true
+		enabled: true,
+		cookieDomain: ".draftauth.com.br"
 	},
 	ttl: {
 		access: 60 * 10,
