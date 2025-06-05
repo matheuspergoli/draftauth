@@ -118,6 +118,9 @@ const handlePasswordLogin = async (data: { email: string }) => {
 
 export const auth = issuer({
 	subjects,
+	sso: {
+		enabled: true
+	},
 	ttl: {
 		access: 60 * 10,
 		refresh: 60 * 60 * 8,

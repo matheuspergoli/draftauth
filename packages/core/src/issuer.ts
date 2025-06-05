@@ -205,6 +205,39 @@ import { type Theme, setTheme } from "./themes/theme"
 import { Select } from "./ui/select"
 import { getRelativeUrl, lazy } from "./util"
 
+const DEFAULT_SSO_SESSION_TTL_SECONDS = 60 * 60 * 24
+const DEFAULT_SSO_COOKIE_NAME_INSECURE = "draftauth-sso"
+const DEFAULT_SSO_COOKIE_NAME_SECURE = "__Host-draftauth-sso"
+
+/**
+ * @interface SsoSessionData
+ * @description Data stored for the central SSO session on the server-side.
+ * @internal
+ */
+export interface SsoSessionData<T = string> {
+	/** The unique identifier of the user. */
+	userId: string
+	/** The type of the subject (e.g., "user"). */
+	subjectType: T
+	/** User's email, stored for convenience. */
+	email?: string
+	/** Timestamp (ms) of when this SSO session was initiated. */
+	authenticatedAt: number
+	/** Timestamp (ms) of when this SSO session data should expire in storage. */
+	expiresAt: number
+	/** The resolved subject string for token invalidation */
+	resolvedSubject: string
+}
+
+/**
+ * @interface SsoLockMap
+ * @description Map to store SSO operation locks to prevent race conditions
+ * @internal
+ */
+interface SsoLockMap {
+	[sessionId: string]: Promise<unknown>
+}
+
 export interface IssuerInput<
 	Providers extends Record<string, Provider<unknown>>,
 	Subjects extends SubjectSchema,
@@ -419,6 +452,66 @@ export interface IssuerInput<
 		 * @default 0s
 		 */
 		retention?: number
+		/**
+		 * Time-to-live in seconds for the central SSO session and its cookie.
+		 * @default 7 days
+		 */
+		ssoSessionSeconds?: number
+	}
+	sso?: {
+		/**
+		 * @property Globally enables or disables Single Sign-On functionality.
+		 * @default false
+		 */
+		enabled?: boolean
+		/**
+		 * @property The name of the SSO session cookie.
+		 * If not provided, will use "__Host-draftauth-sso" for HTTPS and "draftauth-sso" for HTTP.
+		 */
+		cookieName?: string
+		/**
+		 * @property Default URL to redirect to after a central logout from the issuer.
+		 * Client applications can override this by providing a validated `post_logout_redirect_uri`.
+		 */
+		postLogoutRedirectUri?: string
+		/**
+		 * @property List of allowed hosts for logout redirect URIs.
+		 */
+		allowedLogoutHosts?: string[]
+		/**
+		 * @callback isSsoUserStillValid
+		 * @description Optional callback to perform a live check if the user identified by the SSO session
+		 * is still valid (e.g., not disabled, not locked) before proceeding with SSO for a new client application.
+		 * @param {string} userId - The user ID from the SSO session.
+		 * @param {SsoSessionData} ssoSessionData - The full data of the SSO session.
+		 * @param {Request} req - The incoming Hono request to the /authorize endpoint.
+		 * @returns {Promise<boolean>} True if the user is still valid for SSO, false to terminate SSO session.
+		 */
+		isSsoUserStillValid?: (
+			userId: string,
+			ssoSessionData: SsoSessionData<SubjectPayload<Subjects>["type"]>,
+			req: Request
+		) => Promise<boolean>
+		/**
+		 * @callback getSsoUserProperties
+		 * @description Optional callback to fetch fresh or application-scoped properties for a user
+		 * during an SSO flow to a new client application. This is called after the SSO session
+		 * is validated and the client application is allowed.
+		 * The returned properties will be used to mint the token for the client application.
+		 * If not provided, properties from the original SSO session establishment (or a minimal set like id/email)
+		 * might be used, or it could fall back to using the main `refresh` (for claims) callback logic if adaptable.
+		 * @param {string} userId - The user ID from the SSO session.
+		 * @param {SsoSessionData} ssoSessionData - The full data of the SSO session.
+		 * @param {Request} req - The incoming Hono request to the /authorize endpoint.
+		 * @param {string} clientID - The clientID of the application requesting authorization via SSO.
+		 * @returns {Promise<Record<string, any>>} The properties to be included in the new token for the client app.
+		 */
+		getSsoUserProperties?: (
+			userId: string,
+			ssoSessionData: SsoSessionData<SubjectPayload<Subjects>["type"]>,
+			req: Request,
+			clientID: string
+		) => Promise<Record<string, unknown>>
 	}
 	/**
 	 * Optionally, configure the UI that's displayed when the user visits the root URL of the
@@ -553,6 +646,97 @@ export const issuer = <
 	const signingKey = lazy(() => allSigning().then((all) => all[0]))
 	const encryptionKey = lazy(() => allEncryption().then((all) => all[0]))
 
+	const ssoEnabled = input.sso?.enabled === true
+	const ssoSessionTtlToUse = input.ttl?.ssoSessionSeconds ?? DEFAULT_SSO_SESSION_TTL_SECONDS
+	const allowedLogoutHosts = input.sso?.allowedLogoutHosts ?? ["localhost"]
+
+	const ssoLocks: SsoLockMap = {}
+
+	const getSsoCookieName = (ctx: Context): string => {
+		if (input.sso?.cookieName) {
+			return input.sso.cookieName
+		}
+
+		const isHttps = ctx.req.url.startsWith("https://")
+		return isHttps ? DEFAULT_SSO_COOKIE_NAME_SECURE : DEFAULT_SSO_COOKIE_NAME_INSECURE
+	}
+
+	const validateLogoutRedirectUri = (uri: string): boolean => {
+		try {
+			const url = new URL(uri)
+			return allowedLogoutHosts.some(
+				(host) => url.hostname === host || url.hostname.endsWith(`.${host}`)
+			)
+		} catch {
+			return false
+		}
+	}
+
+	const acquireSsoLock = async <T>(
+		sessionId: string,
+		operation: () => Promise<T>
+	): Promise<T> => {
+		if (ssoLocks[sessionId]) {
+			await ssoLocks[sessionId]
+		}
+
+		const promise = operation()
+		ssoLocks[sessionId] = promise
+
+		try {
+			return await promise
+		} finally {
+			delete ssoLocks[sessionId]
+		}
+	}
+
+	const setSsoCookie = (ctx: Context, sessionId: string): void => {
+		const isHttps = ctx.req.url.startsWith("https://")
+		const cookieName = getSsoCookieName(ctx)
+
+		setCookie(ctx, cookieName, sessionId, {
+			path: "/",
+			httpOnly: true,
+			secure: isHttps,
+			sameSite: isHttps ? "None" : "Lax",
+			maxAge: ssoSessionTtlToUse
+		})
+	}
+
+	const deleteSsoCookie = (ctx: Context): void => {
+		const cookieName = getSsoCookieName(ctx)
+		deleteCookie(ctx, cookieName, {
+			path: "/",
+			httpOnly: true,
+			secure: ctx.req.url.startsWith("https://"),
+			sameSite: "Lax"
+		})
+	}
+
+	const cleanupExpiredSsoSessions = async (): Promise<void> => {
+		try {
+			const keys = await Array.fromAsync(Storage.scan(storage, ["sso:session"]))
+			const now = Date.now()
+
+			for (const [key] of keys) {
+				try {
+					const session = await Storage.get<SsoSessionData>(storage, key)
+					if (session && session.expiresAt < now) {
+						await Storage.remove(storage, key)
+					}
+				} catch (err) {
+					console.error("Error cleaning up SSO session:", err)
+				}
+			}
+		} catch (err) {
+			console.error("Error during SSO cleanup:", err)
+		}
+	}
+
+	if (ssoEnabled) {
+		setInterval(cleanupExpiredSsoSessions, 60 * 60 * 1000)
+	}
+
 	const auth: Omit<ProviderOptions<unknown>, "name"> = {
 		async success(ctx: Context, properties: unknown, successOpts) {
 			const authorization = await getAuthorization(ctx)
@@ -563,6 +747,32 @@ export const issuer = <
 							? subjectOpts.subject
 							: await resolveSubject(type, properties)
 						await successOpts?.invalidate?.(await resolveSubject(type, properties))
+
+						if (ssoEnabled) {
+							const userIdForSso = (properties as { id?: string }).id
+							const userEmailForSso = (properties as { email?: string }).email
+
+							if (userIdForSso) {
+								const ssoSessionId = crypto.randomUUID()
+								const ssoExpiresAt = Date.now() + ssoSessionTtlToUse * 1000
+								const ssoSessionPayload: SsoSessionData = {
+									userId: userIdForSso,
+									email: userEmailForSso,
+									subjectType: type,
+									authenticatedAt: Date.now(),
+									expiresAt: ssoExpiresAt,
+									resolvedSubject: subject
+								}
+								await Storage.set(
+									storage,
+									["sso:session", ssoSessionId],
+									ssoSessionPayload,
+									ssoSessionTtlToUse
+								)
+								setSsoCookie(ctx, ssoSessionId)
+							}
+						}
+
 						if (authorization.response_type === "token") {
 							const location = new URL(authorization.redirect_uri)
 							const tokens = await generateTokens(ctx, {
@@ -712,7 +922,7 @@ export const issuer = <
 			/**
 			 * Generate and store the next refresh token after the one we are currently returning.
 			 * Reserving these in advance avoids concurrency issues with multiple refreshes.
-			 * Similar treatment should be given to any other values that may have race conditions,
+			 * Similar treatment should be given to other values that may have race conditions,
 			 * for example if a jti claim was added to the access token.
 			 */
 			const { timeUsed, ...refreshValueWithoutTimeUsed } = value
@@ -1139,6 +1349,152 @@ export const issuer = <
 		} as AuthorizationState
 		c.set("authorization", authorization)
 
+		if (ssoEnabled) {
+			const ssoCookieName = getSsoCookieName(c)
+			const ssoSessionIdFromCookie = getCookie(c, ssoCookieName)
+			if (ssoSessionIdFromCookie) {
+				const ssoResult = await acquireSsoLock(ssoSessionIdFromCookie, async () => {
+					const ssoSessionKey = ["sso:session", ssoSessionIdFromCookie]
+					let ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
+
+					let isSsoSessionStructurallyValid =
+						ssoSessionData?.userId && ssoSessionData.expiresAt > Date.now()
+
+					if (isSsoSessionStructurallyValid && input.sso?.isSsoUserStillValid) {
+						try {
+							isSsoSessionStructurallyValid = await input.sso.isSsoUserStillValid(
+								ssoSessionData!.userId,
+								ssoSessionData!,
+								c.req.raw
+							)
+						} catch (error) {
+							isSsoSessionStructurallyValid = false
+						}
+
+						if (!isSsoSessionStructurallyValid) {
+							await Storage.remove(storage, ssoSessionKey)
+							deleteSsoCookie(c)
+							ssoSessionData = null
+						}
+					}
+
+					if (isSsoSessionStructurallyValid && ssoSessionData) {
+						if (!client_id || !redirect_uri || !response_type) {
+							throw new MissingParameterError("client_id, redirect_uri, or response_type")
+						}
+						if (
+							!(await allow()(
+								{ clientID: client_id, redirectURI: redirect_uri, audience },
+								c.req.raw
+							))
+						) {
+							throw new UnauthorizedClientError(client_id, redirect_uri)
+						}
+
+						const authorizationForThisApp: AuthorizationState = {
+							client_id,
+							redirect_uri,
+							response_type,
+							state: state as string,
+							scopes: parseScopes(scope),
+							pkce:
+								code_challenge && code_challenge_method
+									? { challenge: code_challenge, method: code_challenge_method as "S256" }
+									: undefined,
+							audience
+						}
+						await auth.set(c, "authorization", 60 * 5, authorizationForThisApp)
+						c.set("authorization", authorizationForThisApp)
+
+						let finalSubjectProperties: Record<string, unknown> = {
+							id: ssoSessionData.userId,
+							email: ssoSessionData.email
+						}
+						let finalScopes = authorizationForThisApp.scopes
+
+						if (input.sso?.getSsoUserProperties) {
+							try {
+								finalSubjectProperties = await input.sso.getSsoUserProperties(
+									ssoSessionData.userId,
+									ssoSessionData,
+									c.req.raw,
+									client_id
+								)
+							} catch (error) {
+								console.error("Error getting SSO user properties:", error)
+							}
+						} else if (input.refresh) {
+							try {
+								const refreshedClaims = await input.refresh(
+									{
+										type: ssoSessionData.subjectType,
+										properties: { id: ssoSessionData.userId, email: ssoSessionData.email },
+										subject: ssoSessionData.resolvedSubject,
+										clientID: client_id,
+										scopes: finalScopes
+									},
+									c.req.raw
+								)
+								if (refreshedClaims) {
+									finalSubjectProperties = refreshedClaims.properties as Record<
+										string,
+										unknown
+									>
+									finalScopes = refreshedClaims.scopes ?? finalScopes
+								} else {
+									await Storage.remove(storage, ssoSessionKey)
+									deleteSsoCookie(c)
+									return c.redirect(c.req.url, 302)
+								}
+							} catch (error) {
+								console.error("Error refreshing SSO claims:", error)
+							}
+						}
+
+						const resolvedSsoUserJwtSubject =
+							ssoSessionData.resolvedSubject ||
+							(await resolveSubject(ssoSessionData.subjectType, finalSubjectProperties))
+
+						if (authorizationForThisApp.response_type === "code") {
+							const code = crypto.randomUUID()
+							await Storage.set(
+								storage,
+								["oauth:code", code],
+								{
+									type: ssoSessionData.subjectType,
+									properties: finalSubjectProperties,
+									subject: resolvedSsoUserJwtSubject,
+									redirectURI: authorizationForThisApp.redirect_uri,
+									clientID: authorizationForThisApp.client_id,
+									pkce: authorizationForThisApp.pkce,
+									scopes: finalScopes,
+									ttl: { access: ttlAccess, refresh: ttlRefresh }
+								},
+								60
+							)
+							const location = new URL(authorizationForThisApp.redirect_uri)
+							location.searchParams.set("code", code)
+							if (authorizationForThisApp.state)
+								location.searchParams.set("state", authorizationForThisApp.state)
+							await auth.unset(c, "authorization")
+							setSsoCookie(c, ssoSessionIdFromCookie)
+							return c.redirect(location.toString(), 302)
+						}
+						throw new OauthError(
+							"access_denied",
+							`SSO flow for ${client_id} currently only supports 'code' response_type.`
+						)
+					}
+
+					return null
+				})
+
+				if (ssoResult !== null) {
+					return ssoResult as Response
+				}
+			}
+		}
+
 		if (!redirect_uri) {
 			return c.text("Missing redirect_uri", { status: 400 })
 		}
@@ -1180,6 +1536,34 @@ export const issuer = <
 			)
 		)
 	})
+
+	if (ssoEnabled) {
+		app.get("/logout", async (c) => {
+			const ssoCookieName = getSsoCookieName(c)
+			const ssoSessionId = getCookie(c, ssoCookieName)
+			if (ssoSessionId) {
+				const ssoSessionKey = ["sso:session", ssoSessionId]
+				const ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
+				if (ssoSessionData) {
+					await auth.invalidate(ssoSessionData.resolvedSubject)
+				}
+				await Storage.remove(storage, ssoSessionKey)
+			}
+			deleteSsoCookie(c)
+
+			let redirectTo = c.req.query("post_logout_redirect_uri")
+			if (redirectTo && validateLogoutRedirectUri(redirectTo)) {
+				return c.redirect(redirectTo, 302)
+			}
+
+			redirectTo = input.sso?.postLogoutRedirectUri
+			if (redirectTo) {
+				return c.redirect(redirectTo, 302)
+			}
+
+			return c.html("<p>Logout bem-sucedido do Draft Auth.</p>")
+		})
+	}
 
 	app.post(
 		"/revoke",
