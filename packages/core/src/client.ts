@@ -1,4 +1,3 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec"
 /**
  * Use the Draft Auth client kick off your OAuth flows, exchange tokens, refresh tokens,
  * and verify tokens.
@@ -55,6 +54,8 @@ interface TokenResponse {
 	access_token: string
 	refresh_token: string
 	expires_in: number
+	id_token?: string
+	scope?: string
 }
 
 interface FetchResponse {
@@ -86,6 +87,89 @@ export interface WellKnown {
 }
 
 /**
+ * Enhanced OIDC discovery information following OpenID Connect Discovery 1.0 specification.
+ * @internal
+ */
+export interface OidcDiscovery extends WellKnown {
+	/**
+	 * The issuer identifier.
+	 */
+	issuer: string
+	/**
+	 * The URI to the UserInfo endpoint.
+	 */
+	userinfo_endpoint?: string
+	/**
+	 * The URI to the logout endpoint.
+	 */
+	end_session_endpoint?: string
+	/**
+	 * The URI to the token revocation endpoint.
+	 */
+	revocation_endpoint?: string
+	/**
+	 * Array of supported OAuth 2.0 scope values.
+	 */
+	scopes_supported?: string[]
+	/**
+	 * Array of supported claims.
+	 */
+	claims_supported?: string[]
+	/**
+	 * Array of supported response types.
+	 */
+	response_types_supported?: string[]
+	/**
+	 * Array of supported grant types.
+	 */
+	grant_types_supported?: string[]
+	/**
+	 * Array of supported subject types.
+	 */
+	subject_types_supported?: string[]
+	/**
+	 * Array of supported ID token signing algorithms.
+	 */
+	id_token_signing_alg_values_supported?: string[]
+	/**
+	 * Array of supported response modes.
+	 */
+	response_modes_supported?: string[]
+	/**
+	 * Array of supported token endpoint authentication methods.
+	 */
+	token_endpoint_auth_methods_supported?: string[]
+	/**
+	 * Array of supported ACR values.
+	 */
+	acr_values_supported?: string[]
+	/**
+	 * Array of supported AMR values.
+	 */
+	amr_values_supported?: string[]
+	/**
+	 * Boolean indicating if claims parameter is supported.
+	 */
+	claims_parameter_supported?: boolean
+	/**
+	 * Boolean indicating if request parameter is supported.
+	 */
+	request_parameter_supported?: boolean
+	/**
+	 * Boolean indicating if request_uri parameter is supported.
+	 */
+	request_uri_parameter_supported?: boolean
+	/**
+	 * Boolean indicating if request_uri registration is required.
+	 */
+	require_request_uri_registration?: boolean
+	/**
+	 * Array of supported revocation endpoint authentication methods.
+	 */
+	revocation_endpoint_auth_methods_supported?: string[]
+}
+
+/**
  * The tokens returned by the auth server.
  */
 export interface Tokens {
@@ -97,11 +181,18 @@ export interface Tokens {
 	 * The refresh token.
 	 */
 	refresh: string
-
 	/**
 	 * The number of seconds until the access token expires.
 	 */
 	expiresIn: number
+	/**
+	 * The OIDC ID token (when openid scope is requested).
+	 */
+	idToken?: string
+	/**
+	 * The granted scopes as a space-separated string.
+	 */
+	scope?: string
 }
 
 /**
@@ -191,8 +282,97 @@ export interface AuthorizeOptions {
 	 * {
 	 *  scopes: ["read", "write"]
 	 * }
+	 * ```
 	 */
 	scopes?: string[]
+	/**
+	 * OIDC nonce parameter for preventing replay attacks in ID tokens.
+	 * Required when using implicit flow with ID token.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   nonce: "random-nonce-value"
+	 * }
+	 * ```
+	 */
+	nonce?: string
+	/**
+	 * OIDC prompt parameter controlling authentication behavior.
+	 *
+	 * - `none`: No authentication or consent UI should be displayed
+	 * - `login`: Force user to re-authenticate
+	 * - `consent`: Force user to grant consent again
+	 * - `select_account`: Prompt user to select an account
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   prompt: "login"
+	 * }
+	 * ```
+	 */
+	prompt?: "none" | "login" | "consent" | "select_account"
+	/**
+	 * Maximum authentication age in seconds.
+	 * If the user's authentication is older than this, they will be prompted to re-authenticate.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   maxAge: 3600 // 1 hour
+	 * }
+	 * ```
+	 */
+	maxAge?: number
+	/**
+	 * Preferred user interface locales for authentication.
+	 * Space-separated list of BCP47 language tags.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   uiLocales: "en-US es-ES"
+	 * }
+	 * ```
+	 */
+	uiLocales?: string
+	/**
+	 * ID token hint for logout flows or user identification.
+	 * Previously issued ID token that can help identify the user.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   idTokenHint: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+	 * }
+	 * ```
+	 */
+	idTokenHint?: string
+	/**
+	 * Login hint to pre-fill the username field.
+	 * Can be an email address or username.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   loginHint: "user@example.com"
+	 * }
+	 * ```
+	 */
+	loginHint?: string
+	/**
+	 * Authentication Context Class Reference values.
+	 * Indicates the desired strength of authentication.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   acrValues: "1 2" // Basic and two-factor authentication
+	 * }
+	 * ```
+	 */
+	acrValues?: string
 }
 
 export interface AuthorizeResult {
@@ -418,6 +598,183 @@ export interface RevokeError {
 }
 
 /**
+ * OIDC UserInfo endpoint options.
+ */
+export interface UserInfoOptions {
+	/**
+	 * Optionally, override the internally used fetch function.
+	 */
+	fetch?: FetchLike
+}
+
+/**
+ * Successful UserInfo response containing user claims.
+ */
+export interface UserInfoResult {
+	/**
+	 * This is always `undefined` when UserInfo request is successful.
+	 */
+	err?: undefined
+	/**
+	 * User information claims returned by the UserInfo endpoint.
+	 * The claims included depend on the scopes requested during authorization.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   sub: "user123",
+	 *   name: "John Doe",
+	 *   email: "john@example.com",
+	 *   picture: "https://example.com/avatar.jpg"
+	 * }
+	 * ```
+	 */
+	userinfo: Record<string, unknown>
+}
+
+/**
+ * UserInfo request error.
+ */
+export interface UserInfoError {
+	/**
+	 * Error that occurred during UserInfo request.
+	 */
+	err: InvalidAccessTokenError
+}
+
+/**
+ * OIDC ID token claims following OpenID Connect Core 1.0 specification.
+ */
+export interface IdTokenClaims {
+	/**
+	 * Subject identifier - unique identifier for the user.
+	 */
+	sub: string
+	/**
+	 * Audience - client ID for which the token was issued.
+	 */
+	aud: string | string[]
+	/**
+	 * Issuer identifier.
+	 */
+	iss: string
+	/**
+	 * Expiration time (seconds since epoch).
+	 */
+	exp: number
+	/**
+	 * Issued at time (seconds since epoch).
+	 */
+	iat: number
+	/**
+	 * Authentication time (seconds since epoch).
+	 */
+	auth_time?: number
+	/**
+	 * Nonce value used to associate client session with ID token.
+	 */
+	nonce?: string
+	/**
+	 * Session ID for session management.
+	 */
+	sid?: string
+	/**
+	 * User's full name (profile scope).
+	 */
+	name?: string
+	/**
+	 * User's email address (email scope).
+	 */
+	email?: string
+	/**
+	 * Whether the email has been verified (email scope).
+	 */
+	email_verified?: boolean
+	/**
+	 * User's preferred username (profile scope).
+	 */
+	preferred_username?: string
+	/**
+	 * URL of user's profile picture (profile scope).
+	 */
+	picture?: string
+	/**
+	 * Authentication Context Class Reference.
+	 */
+	acr?: string
+	/**
+	 * Authentication Methods References.
+	 */
+	amr?: string[]
+}
+
+/**
+ * Successful ID token verification result.
+ */
+export interface IdTokenVerifyResult {
+	/**
+	 * This is always `undefined` when ID token verification is successful.
+	 */
+	err?: undefined
+	/**
+	 * The verified ID token claims.
+	 */
+	claims: IdTokenClaims
+}
+
+/**
+ * ID token verification error.
+ */
+export interface IdTokenVerifyError {
+	/**
+	 * Error that occurred during ID token verification.
+	 */
+	err: InvalidAccessTokenError
+}
+
+/**
+ * OIDC logout options following RP-Initiated Logout specification.
+ */
+export interface LogoutOptions {
+	/**
+	 * Previously issued ID token to identify the user session.
+	 * This helps the authorization server identify which session to terminate.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   idTokenHint: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+	 * }
+	 * ```
+	 */
+	idTokenHint?: string
+	/**
+	 * URI to redirect to after logout.
+	 * Must be registered with the authorization server.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   postLogoutRedirectUri: "https://myapp.com/logged-out"
+	 * }
+	 * ```
+	 */
+	postLogoutRedirectUri?: string
+	/**
+	 * State parameter for logout request.
+	 * Will be returned to the post-logout redirect URI.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   state: "logout-state-123"
+	 * }
+	 * ```
+	 */
+	state?: string
+}
+
+/**
  * An instance of the Draft Auth client contains the following methods.
  */
 export interface Client {
@@ -452,12 +809,29 @@ export interface Client {
 	 * ```
 	 *
 	 * This returns a redirect URL and a challenge that you need to use later to verify the code.
+	 *
+	 * Enhanced OIDC support with additional parameters:
+	 *
+	 * ```ts
+	 * const { challenge, url } = await client.authorize(
+	 *   "https://myapp.com/callback",
+	 *   "code",
+	 *   {
+	 *     pkce: true,
+	 *     scopes: ["openid", "profile", "email"],
+	 *     nonce: "random-nonce",
+	 *     prompt: "login",
+	 *     maxAge: 3600
+	 *   }
+	 * )
+	 * ```
 	 */
 	authorize(
 		redirectURI: string,
 		response: "code" | "token",
 		opts?: AuthorizeOptions
 	): Promise<AuthorizeResult>
+
 	/**
 	 * Exchange the code for access and refresh tokens.
 	 *
@@ -506,14 +880,17 @@ export interface Client {
 	 *   }
 	 * }
 	 *
-	 * const { access, refresh } = exchanged.tokens
+	 * const { access, refresh, idToken } = exchanged.tokens
 	 * ```
+	 *
+	 * The response now includes ID tokens when the `openid` scope was requested.
 	 */
 	exchange(
 		code: string,
 		redirectURI: string,
 		verifier?: string
 	): Promise<ExchangeSuccess | ExchangeError>
+
 	/**
 	 * Refreshes the tokens if they have expired. This is used in an SPA app to maintain the
 	 * session, without logging the user out.
@@ -536,7 +913,7 @@ export interface Client {
 	 *   // tokens are still valid
 	 * }
 	 * if (next.tokens) {
-	 *   const { access, refresh } = next.tokens
+	 *   const { access, refresh, idToken } = next.tokens
 	 * }
 	 * ```
 	 *
@@ -554,8 +931,11 @@ export interface Client {
 	 *   }
 	 * }
 	 * ```
+	 *
+	 * The response now includes ID tokens when they were originally requested.
 	 */
 	refresh(refresh: string, opts?: RefreshOptions): Promise<RefreshSuccess | RefreshError>
+
 	/**
 	 * Verify the token in the incoming request.
 	 *
@@ -587,7 +967,7 @@ export interface Client {
 	 * console.log(verified.subject.properties.userID)
 	 *
 	 * if (verified.tokens) {
-	 *   const { access, refresh } = verified.tokens
+	 *   const { access, refresh, idToken } = verified.tokens
 	 * }
 	 * ```
 	 *
@@ -652,7 +1032,101 @@ export interface Client {
 	 * ```
 	 */
 	revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError>
+
+	/**
+	 * Fetch user information from the OIDC UserInfo endpoint.
+	 *
+	 * This method calls the UserInfo endpoint to retrieve claims about the authenticated user.
+	 * The claims returned depend on the scopes that were requested during authorization.
+	 *
+	 * ```ts
+	 * const result = await client.userinfo(accessToken)
+	 * if (!result.err) {
+	 *   console.log(result.userinfo.sub) // User ID
+	 *   console.log(result.userinfo.name) // Full name (if profile scope)
+	 *   console.log(result.userinfo.email) // Email (if email scope)
+	 * }
+	 * ```
+	 *
+	 * Error handling:
+	 *
+	 * ```ts
+	 * const result = await client.userinfo(accessToken)
+	 * if (result.err) {
+	 *   // Invalid or expired access token
+	 *   console.error("Failed to fetch user info")
+	 * }
+	 * ```
+	 *
+	 * @param accessToken - Valid access token with appropriate scopes
+	 * @param opts - Optional configuration
+	 * @returns Promise resolving to user information or error
+	 */
+	userinfo(
+		accessToken: string,
+		opts?: UserInfoOptions
+	): Promise<UserInfoResult | UserInfoError>
+
+	/**
+	 * Verify an OIDC ID token.
+	 *
+	 * This method validates and decodes an ID token issued by the authorization server.
+	 * ID tokens contain identity information about the authenticated user.
+	 *
+	 * ```ts
+	 * const result = await client.verifyIdToken(idToken)
+	 * if (!result.err) {
+	 *   console.log(result.claims.sub) // User ID
+	 *   console.log(result.claims.name) // User's name
+	 *   console.log(result.claims.auth_time) // When user authenticated
+	 * }
+	 * ```
+	 *
+	 * Error handling:
+	 *
+	 * ```ts
+	 * const result = await client.verifyIdToken(idToken)
+	 * if (result.err) {
+	 *   // Invalid, expired, or tampered ID token
+	 *   console.error("ID token verification failed")
+	 * }
+	 * ```
+	 *
+	 * @param idToken - The ID token to verify
+	 * @returns Promise resolving to verified claims or error
+	 */
+	verifyIdToken(idToken: string): Promise<IdTokenVerifyResult | IdTokenVerifyError>
+
+	/**
+	 * Generate an OIDC logout URL following the RP-Initiated Logout specification.
+	 *
+	 * This method creates a logout URL that can be used to terminate the user's session
+	 * at the authorization server and optionally redirect to a post-logout page.
+	 *
+	 * ```ts
+	 * // Basic logout
+	 * const logoutUrl = await client.logout()
+	 * window.location.href = logoutUrl
+	 * ```
+	 *
+	 * With ID token hint and redirect:
+	 *
+	 * ```ts
+	 * const logoutUrl = await client.logout({
+	 *   idTokenHint: tokens.idToken,
+	 *   postLogoutRedirectUri: "https://myapp.com/goodbye",
+	 *   state: "logout-state-123"
+	 * })
+	 * window.location.href = logoutUrl
+	 * ```
+	 *
+	 * @param opts - Optional logout parameters
+	 * @returns Promise resolving to the logout URL
+	 */
+	logout(opts?: LogoutOptions): Promise<string>
 }
+
+import type { StandardSchemaV1 } from "@standard-schema/spec"
 
 /**
  * Create an Draft Auth client.
@@ -661,17 +1135,33 @@ export interface Client {
  */
 export const createClient = (input: ClientInput): Client => {
 	const jwksCache = new Map<string, ReturnType<typeof createLocalJWKSet>>()
-	const issuerCache = new Map<string, WellKnown>()
+	const issuerCache = new Map<string, OidcDiscovery>()
 	const issuer = input.issuer || process.env.DRAFTAUTH_ISSUER
 	if (!issuer) throw new Error("No issuer")
 	const f = input.fetch ?? (fetch as FetchLike)
 
-	const getIssuer = async () => {
+	const getIssuer = async (): Promise<OidcDiscovery> => {
 		const cached = issuerCache.get(issuer!)
 		if (cached) return cached
+
+		// Try OIDC discovery first
+		try {
+			const oidcDiscovery = (await f(`${issuer}/.well-known/openid-configuration`).then(
+				(r: FetchResponse) => r.json()
+			)) as OidcDiscovery
+
+			if (oidcDiscovery.authorization_endpoint) {
+				issuerCache.set(issuer!, oidcDiscovery)
+				return oidcDiscovery
+			}
+		} catch {
+			// Fallback to OAuth discovery
+		}
+
+		// Fallback to OAuth 2.0 Authorization Server Metadata
 		const wellKnown = (await f(`${issuer}/.well-known/oauth-authorization-server`).then(
 			(r: FetchResponse) => r.json()
-		)) as WellKnown
+		)) as OidcDiscovery
 		issuerCache.set(issuer!, wellKnown)
 		return wellKnown
 	}
@@ -688,7 +1178,10 @@ export const createClient = (input: ClientInput): Client => {
 
 	const result: Client = {
 		async revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError> {
-			const response = await f(`${issuer}/revoke`, {
+			const wk = await getIssuer()
+			const revokeEndpoint = wk.revocation_endpoint ?? `${issuer}/revoke`
+
+			const response = await f(revokeEndpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"
@@ -721,22 +1214,34 @@ export const createClient = (input: ClientInput): Client => {
 		},
 
 		async authorize(redirectURI: string, response: "code" | "token", opts?: AuthorizeOptions) {
-			const result = new URL(`${issuer}/authorize`)
+			const wk = await getIssuer()
+			const result = new URL(wk.authorization_endpoint)
 			const challenge: Challenge = {
 				state: crypto.randomUUID()
 			}
+
 			result.searchParams.set("client_id", input.clientID)
 			result.searchParams.set("redirect_uri", redirectURI)
 			result.searchParams.set("response_type", response)
 			result.searchParams.set("state", challenge.state)
+
 			if (opts?.provider) result.searchParams.set("provider", opts.provider)
+			if (opts?.scopes) result.searchParams.set("scope", opts.scopes.join(" "))
+			if (opts?.nonce) result.searchParams.set("nonce", opts.nonce)
+			if (opts?.prompt) result.searchParams.set("prompt", opts.prompt)
+			if (opts?.maxAge) result.searchParams.set("max_age", opts.maxAge.toString())
+			if (opts?.uiLocales) result.searchParams.set("ui_locales", opts.uiLocales)
+			if (opts?.idTokenHint) result.searchParams.set("id_token_hint", opts.idTokenHint)
+			if (opts?.loginHint) result.searchParams.set("login_hint", opts.loginHint)
+			if (opts?.acrValues) result.searchParams.set("acr_values", opts.acrValues)
+
 			if (opts?.pkce && response === "code") {
 				const pkce = await generatePKCE()
 				result.searchParams.set("code_challenge_method", "S256")
 				result.searchParams.set("code_challenge", pkce.challenge)
 				challenge.verifier = pkce.verifier
 			}
-			if (opts?.scopes) result.searchParams.set("scope", opts.scopes.join(" "))
+
 			return {
 				challenge,
 				url: result.toString()
@@ -748,7 +1253,8 @@ export const createClient = (input: ClientInput): Client => {
 			redirectURI: string,
 			verifier?: string
 		): Promise<ExchangeSuccess | ExchangeError> {
-			const response = await f(`${issuer}/token`, {
+			const wk = await getIssuer()
+			const response = await f(wk.token_endpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"
@@ -785,7 +1291,9 @@ export const createClient = (input: ClientInput): Client => {
 				tokens: {
 					access: tokenResponse.access_token,
 					refresh: tokenResponse.refresh_token,
-					expiresIn: tokenResponse.expires_in
+					expiresIn: tokenResponse.expires_in,
+					...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
+					...(tokenResponse.scope && { scope: tokenResponse.scope })
 				}
 			}
 		},
@@ -809,7 +1317,8 @@ export const createClient = (input: ClientInput): Client => {
 				}
 			}
 
-			const response = await f(`${issuer}/token`, {
+			const wk = await getIssuer()
+			const response = await f(wk.token_endpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded"
@@ -843,7 +1352,9 @@ export const createClient = (input: ClientInput): Client => {
 				tokens: {
 					access: tokenResponse.access_token,
 					refresh: tokenResponse.refresh_token,
-					expiresIn: tokenResponse.expires_in
+					expiresIn: tokenResponse.expires_in,
+					...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
+					...(tokenResponse.scope && { scope: tokenResponse.scope })
 				}
 			}
 		},
@@ -920,6 +1431,57 @@ export const createClient = (input: ClientInput): Client => {
 					err: new InvalidAccessTokenError()
 				}
 			}
+		},
+
+		async userinfo(
+			accessToken: string,
+			opts?: UserInfoOptions
+		): Promise<UserInfoResult | UserInfoError> {
+			const wk = await getIssuer()
+			if (!wk.userinfo_endpoint) {
+				return { err: new InvalidAccessTokenError() }
+			}
+
+			const fetchFn = opts?.fetch ?? f
+			const response = await fetchFn(wk.userinfo_endpoint, {
+				headers: {
+					Authorization: `Bearer ${accessToken}`
+				}
+			})
+
+			if (!response.ok) {
+				return { err: new InvalidAccessTokenError() }
+			}
+
+			const userinfo = (await response.json()) as Record<string, unknown>
+			return { err: undefined, userinfo }
+		},
+
+		async verifyIdToken(idToken: string): Promise<IdTokenVerifyResult | IdTokenVerifyError> {
+			const jwks = await getJWKS()
+			try {
+				const result = await jwtVerify<IdTokenClaims>(idToken, jwks, { issuer })
+				return { err: undefined, claims: result.payload }
+			} catch {
+				return { err: new InvalidAccessTokenError() }
+			}
+		},
+
+		async logout(opts?: LogoutOptions): Promise<string> {
+			const wk = await getIssuer()
+			const logoutUrl = new URL(wk.end_session_endpoint ?? `${issuer}/logout`)
+
+			if (opts?.idTokenHint) {
+				logoutUrl.searchParams.set("id_token_hint", opts.idTokenHint)
+			}
+			if (opts?.postLogoutRedirectUri) {
+				logoutUrl.searchParams.set("post_logout_redirect_uri", opts.postLogoutRedirectUri)
+			}
+			if (opts?.state) {
+				logoutUrl.searchParams.set("state", opts.state)
+			}
+
+			return logoutUrl.toString()
 		}
 	}
 	return result
