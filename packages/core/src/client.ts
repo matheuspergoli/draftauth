@@ -140,14 +140,6 @@ export interface OidcDiscovery extends WellKnown {
 	 */
 	token_endpoint_auth_methods_supported?: string[]
 	/**
-	 * Array of supported ACR values.
-	 */
-	acr_values_supported?: string[]
-	/**
-	 * Array of supported AMR values.
-	 */
-	amr_values_supported?: string[]
-	/**
 	 * Boolean indicating if claims parameter is supported.
 	 */
 	claims_parameter_supported?: boolean
@@ -361,18 +353,6 @@ export interface AuthorizeOptions {
 	 * ```
 	 */
 	loginHint?: string
-	/**
-	 * Authentication Context Class Reference values.
-	 * Indicates the desired strength of authentication.
-	 *
-	 * @example
-	 * ```ts
-	 * {
-	 *   acrValues: "1 2" // Basic and two-factor authentication
-	 * }
-	 * ```
-	 */
-	acrValues?: string
 }
 
 export interface AuthorizeResult {
@@ -698,14 +678,6 @@ export interface IdTokenClaims {
 	 * URL of user's profile picture (profile scope).
 	 */
 	picture?: string
-	/**
-	 * Authentication Context Class Reference.
-	 */
-	acr?: string
-	/**
-	 * Authentication Methods References.
-	 */
-	amr?: string[]
 }
 
 /**
@@ -1233,7 +1205,6 @@ export const createClient = (input: ClientInput): Client => {
 			if (opts?.uiLocales) result.searchParams.set("ui_locales", opts.uiLocales)
 			if (opts?.idTokenHint) result.searchParams.set("id_token_hint", opts.idTokenHint)
 			if (opts?.loginHint) result.searchParams.set("login_hint", opts.loginHint)
-			if (opts?.acrValues) result.searchParams.set("acr_values", opts.acrValues)
 
 			if (opts?.pkce && response === "code") {
 				const pkce = await generatePKCE()

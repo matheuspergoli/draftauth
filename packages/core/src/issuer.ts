@@ -189,8 +189,6 @@ export interface AuthorizationState {
 	id_token_hint?: string
 	/** OIDC login_hint parameter for user identification */
 	login_hint?: string
-	/** OIDC acr_values parameter for authentication context */
-	acr_values?: string
 	/** Legacy scopes array for backward compatibility */
 	scopes?: string[]
 	pkce?: {
@@ -254,10 +252,6 @@ export interface SsoSessionData<T = string> {
 	exp: number
 	/** Session ID for OIDC Session Management - OIDC 'sid'. */
 	sid: string
-	/** Authentication Context Class Reference used - OIDC 'acr'. */
-	acr?: string
-	/** Authentication Methods References used - OIDC 'amr'. */
-	amr?: string[]
 	/** The resolved subject string for token invalidation */
 	resolvedSubject: string
 	/** Original properties from the authentication flow for proper refresh handling */
@@ -621,26 +615,6 @@ export interface IssuerInput<
 		 * ```
 		 */
 		claimsSupported?: string[]
-		/**
-		 * @property Supported Authentication Context Class References.
-		 * These values describe the strength of authentication performed.
-		 *
-		 * @example
-		 * ```ts
-		 * acrValuesSupported: ["0", "1", "2"] // 0=basic, 1=password, 2=MFA
-		 * ```
-		 */
-		acrValuesSupported?: string[]
-		/**
-		 * @property Supported Authentication Methods References.
-		 * These values describe the methods used for authentication.
-		 *
-		 * @example
-		 * ```ts
-		 * amrValuesSupported: ["pwd", "mfa", "otp", "sms"]
-		 * ```
-		 */
-		amrValuesSupported?: string[]
 		/**
 		 * @callback isSsoUserStillValid
 		 * @description Optional callback to perform a live check if the user identified by the SSO session
@@ -1582,13 +1556,7 @@ export const issuer = <
 					claims_parameter_supported: false,
 					request_parameter_supported: false,
 					request_uri_parameter_supported: false,
-					require_request_uri_registration: false,
-					...(input.sso?.acrValuesSupported && {
-						acr_values_supported: input.sso.acrValuesSupported
-					}),
-					...(input.sso?.amrValuesSupported && {
-						amr_values_supported: input.sso.amrValuesSupported
-					})
+					require_request_uri_registration: false
 				})
 			}
 		)
@@ -1903,7 +1871,6 @@ export const issuer = <
 		const ui_locales = c.req.query("ui_locales")
 		const id_token_hint = c.req.query("id_token_hint")
 		const login_hint = c.req.query("login_hint")
-		const acr_values = c.req.query("acr_values")
 
 		// Enhanced authorization state with OIDC parameters
 		const authorization: AuthorizationState = {
@@ -1919,7 +1886,6 @@ export const issuer = <
 			ui_locales,
 			id_token_hint,
 			login_hint,
-			acr_values,
 			scopes: parseScopes(scope), // Legacy support
 			pkce:
 				code_challenge && code_challenge_method
@@ -2038,7 +2004,6 @@ export const issuer = <
 							ui_locales,
 							id_token_hint,
 							login_hint,
-							acr_values,
 							scopes: parseScopes(scope),
 							pkce:
 								code_challenge && code_challenge_method
