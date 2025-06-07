@@ -1,5 +1,8 @@
-export const parseScopes = (scope: string | null | undefined) => {
-	return scope?.split(" ").filter((s) => s)
+export const parseScopes = (scope: string | string[] | null | undefined) => {
+	if (Array.isArray(scope)) {
+		return scope.filter(Boolean)
+	}
+	return scope?.split(" ").filter(Boolean) ?? []
 }
 
 export const validateScopes = (tokenReq?: string | null, authorizeReq?: string[]) => {

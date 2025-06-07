@@ -175,21 +175,12 @@ export interface AuthorizationState {
 	state?: string
 	client_id: string
 	audience?: string
-	/** OIDC scope parameter containing space-separated scopes including 'openid' */
-	scope?: string
-	/** OIDC nonce parameter for ID token validation */
 	nonce?: string
-	/** OIDC prompt parameter controlling authentication behavior */
 	prompt?: string
-	/** OIDC max_age parameter for session age validation */
 	max_age?: number
-	/** OIDC ui_locales parameter for internationalization */
 	ui_locales?: string
-	/** OIDC id_token_hint parameter for logout flows */
 	id_token_hint?: string
-	/** OIDC login_hint parameter for user identification */
 	login_hint?: string
-	/** Legacy scopes array for backward compatibility */
 	scopes?: string[]
 	pkce?: {
 		challenge: string
@@ -1210,7 +1201,7 @@ export const issuer = <
 
 						if (authorization.response_type === "token") {
 							const location = new URL(authorization.redirect_uri)
-							const scopes = parseScopes(authorization.scope) || authorization.scopes
+							const scopes = parseScopes(authorization.scopes)
 							const tokens = await generateTokens(ctx, {
 								subject,
 								type: type as string,
@@ -1248,7 +1239,7 @@ export const issuer = <
 								redirectURI: authorization.redirect_uri,
 								clientID: authorization.client_id,
 								pkce: authorization.pkce,
-								scopes: parseScopes(authorization.scope) || authorization.scopes,
+								scopes: parseScopes(authorization.scopes),
 								nonce: authorization.nonce,
 								sessionId: crypto.randomUUID(),
 								authTime: Math.floor(Date.now() / 1000),
@@ -1978,7 +1969,6 @@ export const issuer = <
 							redirect_uri,
 							response_type,
 							state: state as string,
-							scope,
 							nonce,
 							prompt,
 							max_age: authorization.max_age,
