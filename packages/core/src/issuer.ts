@@ -555,7 +555,7 @@ export interface IssuerInput<
 		/**
 		 * @property Default URL to redirect to after a central logout from the issuer.
 		 * Client applications can override this by providing a validated `post_logout_redirect_uri`.
-		 * This should be registered in `allowedLogoutHosts` or `postLogoutRedirectUris`.
+		 * This should be registered in `postLogoutRedirectUris`.
 		 *
 		 * @example
 		 * ```ts
@@ -563,16 +563,6 @@ export interface IssuerInput<
 		 * ```
 		 */
 		postLogoutRedirectUri?: string
-		/**
-		 * @property List of allowed hosts for logout redirect URIs.
-		 * @deprecated Use `postLogoutRedirectUris` for better OIDC compliance.
-		 *
-		 * @example
-		 * ```ts
-		 * allowedLogoutHosts: ["myapp.com", "admin.myapp.com"]
-		 * ```
-		 */
-		allowedLogoutHosts?: string[]
 		/**
 		 * @property OIDC-compliant list of allowed post-logout redirect URIs.
 		 * Each URI should be a complete URL that clients can redirect to after logout.
@@ -929,7 +919,6 @@ export const issuer = <
 	const ssoEnabled = input.sso?.enabled === true
 	const oidcCompliant = input.sso?.oidcCompliant !== false // Default to true when SSO is enabled
 	const ssoSessionTtlToUse = input.ttl?.ssoSessionSeconds ?? DEFAULT_SSO_SESSION_TTL_SECONDS
-	const allowedLogoutHosts = input.sso?.allowedLogoutHosts ?? ["localhost"]
 	const postLogoutRedirectUris = input.sso?.postLogoutRedirectUris ?? []
 	const claimsSupported = input.sso?.claimsSupported ?? [
 		"sub",
@@ -1008,15 +997,7 @@ export const issuer = <
 			})
 		}
 
-		// Fallback to legacy allowedLogoutHosts
-		try {
-			const url = new URL(uri)
-			return allowedLogoutHosts.some(
-				(host) => url.hostname === host || url.hostname.endsWith(`.${host}`)
-			)
-		} catch {
-			return false
-		}
+		return false
 	}
 
 	const acquireSsoLock = async <T>(
