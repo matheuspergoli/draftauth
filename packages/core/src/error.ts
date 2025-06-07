@@ -26,6 +26,7 @@ export type OauthErrorType =
 	| "unsupported_grant_type"
 	| "server_error"
 	| "temporarily_unavailable"
+	| "unsupported_response_type"
 
 export class OauthError extends Error {
 	public error: OauthErrorType
