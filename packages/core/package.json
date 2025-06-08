@@ -1,6 +1,6 @@
 {
 	"name": "@draftauth/core",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"type": "module",
 	"description": "Draft Auth Core",
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
@@ -31,7 +31,7 @@
 	},
 	"license": "MIT",
 	"scripts": {
-		"build": "tsdown",
+		"build": "tsup",
 		"deploy": "tsup && changeset publish",
 		"clean": "rm -rf dist .turbo node_modules"
 	},
@@ -39,7 +39,7 @@
 		"@changesets/cli": "^2.29.4",
 		"@draftauth/tsconfig": "workspace:*",
 		"@types/node": "^22.15.30",
-		"tsdown": "^0.12.7",
+		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
