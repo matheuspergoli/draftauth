@@ -1,26 +1,25 @@
 {
 	"name": "@draftauth/core",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"type": "module",
 	"description": "Draft Auth Core",
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
-	"files": ["dist"],
+	"files": ["src", "dist"],
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"import": "./dist/esm/index.js",
+			"types": "./dist/types/index.d.ts"
 		},
 		"./*": {
-			"import": "./dist/*.js",
-			"types": "./dist/*.d.ts"
+			"import": "./dist/esm/*.js",
+			"types": "./dist/types/*.d.ts"
 		},
-		"./ui/*": {
-			"import": "./dist/ui/*.js",
-			"types": "./dist/ui/*.d.ts"
-		},
-		"./package.json": "./package.json"
+		"./ui": {
+			"import": "./dist/esm/ui/index.js",
+			"types": "./dist/types/ui/index.d.ts"
+		}
 	},
 	"repository": {
 		"type": "git",
