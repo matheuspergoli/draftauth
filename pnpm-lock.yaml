@@ -55,7 +55,7 @@ importers:
         version: 1.35.0
       drizzle-orm:
         specifier: ^0.44.2
-        version: 0.44.2(@libsql/client@0.15.8)(@upstash/redis@1.35.0)
+        version: 0.44.2(@libsql/client@0.15.8)(@upstash/redis@1.35.0)(bun-types@1.2.15)
       hono:
         specifier: ^4.7.11
         version: 4.7.11
@@ -282,12 +282,12 @@ importers:
       '@draftauth/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/bun':
+        specifier: ^1.2.15
+        version: 1.2.15
       '@types/node':
         specifier: ^22.15.30
         version: 22.15.30
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(jiti@2.4.2)(postcss@8.5.4)(tsx@4.19.4)(typescript@5.8.3)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -2295,6 +2295,9 @@ packages:
   '@types/babel__traverse@7.20.7':
     resolution: {integrity: sha512-dkO5fhS7+/oos4ciWxyEyjWe48zmG6wbCheo/G2ZnHx4fs3EU6YC6UM8rk56gAjNJ9P3MTH2jo5jb92/K6wbng==}
 
+  '@types/bun@1.2.15':
+    resolution: {integrity: sha512-U1ljPdBEphF0nw1MIk0hI7kPg7dFdPyM7EenHsp6W5loNHl7zqy6JQf/RKCgnUn2KDzUpkBwHPnEJEjII594bA==}
+
   '@types/cors@2.8.19':
     resolution: {integrity: sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==}
 
@@ -2589,6 +2592,9 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
+
+  bun-types@1.2.15:
+    resolution: {integrity: sha512-NarRIaS+iOaQU1JPfyKhZm4AsUOrwUOqRNHY0XxI8GI8jYxiLXLcdjYMG9UKS+fwWasc1uw1htV9AX24dD+p4w==}
 
   bundle-require@5.1.0:
     resolution: {integrity: sha512-3WrrOuZiyaaZPWiEt4G3+IffISVC9HYlWueJEBWED4ZH4aIAC2PnkdnuRrR94M+w6yGWn4AglWtJtBI8YqvgoA==}
@@ -7339,6 +7345,10 @@ snapshots:
     dependencies:
       '@babel/types': 7.27.6
 
+  '@types/bun@1.2.15':
+    dependencies:
+      bun-types: 1.2.15
+
   '@types/cors@2.8.19':
     dependencies:
       '@types/node': 22.15.30
@@ -7727,6 +7737,10 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
+  bun-types@1.2.15:
+    dependencies:
+      '@types/node': 22.15.30
+
   bundle-require@5.1.0(esbuild@0.25.5):
     dependencies:
       esbuild: 0.25.5
@@ -8055,10 +8069,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.2(@libsql/client@0.15.8)(@upstash/redis@1.35.0):
+  drizzle-orm@0.44.2(@libsql/client@0.15.8)(@upstash/redis@1.35.0)(bun-types@1.2.15):
     optionalDependencies:
       '@libsql/client': 0.15.8
       '@upstash/redis': 1.35.0
+      bun-types: 1.2.15
 
   dset@3.1.4: {}
 
