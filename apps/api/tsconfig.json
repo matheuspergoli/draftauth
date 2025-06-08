@@ -3,7 +3,9 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@draftauth/core": ["../../packages/core/src/index.ts"],
+			"@draftauth/core/*": ["../../packages/core/src/*"]
 		},
 		"jsxImportSource": "hono/jsx",
 		"types": ["@draftauth/tsconfig/reset", "node"]
