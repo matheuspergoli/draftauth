@@ -1,6 +1,6 @@
 {
 	"name": "@draftauth/core",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"type": "module",
 	"description": "Draft Auth Core",
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
