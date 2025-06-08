@@ -2149,7 +2149,6 @@ export const issuer = <
 
 		let sessionSub: string | undefined
 
-		// Verify ID token hint if provided (OIDC RP-Initiated Logout)
 		if (idTokenHint) {
 			try {
 				const signingKeyData = await signingKey()
@@ -2170,14 +2169,14 @@ export const issuer = <
 			const ssoSessionKey = ["sso:session", ssoSessionId]
 			const ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
 			if (ssoSessionData) {
-				// Invalidate all refresh tokens for this user
-				await auth.invalidate(ssoSessionData.resolvedSubject)
+				if (!sessionSub || ssoSessionData.resolvedSubject === sessionSub) {
+					await auth.invalidate(ssoSessionData.resolvedSubject)
+					await Storage.remove(storage, ssoSessionKey)
+				}
 			}
-			await Storage.remove(storage, ssoSessionKey)
+			deleteSsoCookie(c)
 		}
-		deleteSsoCookie(c)
 
-		// Handle post_logout_redirect_uri with state parameter
 		let redirectTo = postLogoutRedirectUri
 		if (redirectTo && validateLogoutRedirectUri(redirectTo)) {
 			const redirectUrl = new URL(redirectTo)
@@ -2287,7 +2286,6 @@ export const issuer = <
 					)
 				}
 
-				// Check if openid scope is present
 				if (!result.payload.scopes?.includes("openid")) {
 					return c.json(
 						{
@@ -2388,13 +2386,11 @@ export const issuer = <
 					await Storage.remove(storage, key)
 
 					if (revokeAll) {
-						// Revoke all refresh tokens for this subject
 						const keys = await Array.fromAsync(
 							Storage.scan(storage, ["oauth:refresh", subject])
 						)
 						await Promise.all(keys.map(([scanKey]) => Storage.remove(storage, scanKey)))
 
-						// Also remove SSO sessions for this subject
 						if (ssoEnabled) {
 							const sessionKeys = await Array.fromAsync(Storage.scan(storage, ["sso:session"]))
 							for (const [sessionKey] of sessionKeys) {
@@ -2450,7 +2446,6 @@ export const issuer = <
 			}
 			return c.redirect(url.toString())
 		} catch {
-			// If we can't get authorization state, return JSON error
 			return c.json(
 				{
 					error: "server_error",
