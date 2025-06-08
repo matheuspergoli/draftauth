@@ -506,7 +506,6 @@ export interface IssuerInput<
 	 * {
 	 *   sso: {
 	 *     enabled: true,
-	 *     oidcCompliant: true,
 	 *     postLogoutRedirectUris: [
 	 *       "https://myapp.com/logged-out",
 	 *       "https://admin.myapp.com/logout"
@@ -579,12 +578,6 @@ export interface IssuerInput<
 		 * @default false
 		 */
 		forceSecure?: boolean
-		/**
-		 * @property Enable OIDC-compliant features including ID tokens, UserInfo endpoint, and discovery.
-		 * When enabled, adds OIDC discovery endpoint, ID token generation, and UserInfo endpoint.
-		 * @default true
-		 */
-		oidcCompliant?: boolean
 		/**
 		 * @property Supported OIDC claims for the claims_supported discovery field.
 		 * These claims will be advertised in the OIDC discovery document and can be included in ID tokens.
@@ -908,7 +901,6 @@ export const issuer = <
 	const encryptionKey = lazy(() => allEncryption().then((all) => all[0]))
 
 	const ssoEnabled = input.sso?.enabled === true
-	const oidcCompliant = input.sso?.oidcCompliant !== false // Default to true when SSO is enabled
 	const ssoSessionTtlToUse = input.ttl?.ssoSessionSeconds ?? DEFAULT_SSO_SESSION_TTL_SECONDS
 	const postLogoutRedirectUris = input.sso?.postLogoutRedirectUris ?? []
 	const claimsSupported = input.sso?.claimsSupported ?? [
@@ -926,11 +918,11 @@ export const issuer = <
 	]
 
 	// Enhanced scopes for OIDC
+
 	const standardOidcScopes = ["openid", "profile", "email", "address", "phone"]
-	const allSupportedScopes =
-		ssoEnabled && oidcCompliant
-			? [...standardOidcScopes, ...(input.scopes_supported ?? [])]
-			: input.scopes_supported
+	const allSupportedScopes = [
+		...new Set([...standardOidcScopes, ...(input.scopes_supported ?? [])])
+	]
 
 	const ssoLocks: SsoLockMap = {}
 
@@ -975,7 +967,6 @@ export const issuer = <
 	}
 
 	const validateLogoutRedirectUri = (uri: string): boolean => {
-		// Check OIDC-compliant post_logout_redirect_uris first
 		if (postLogoutRedirectUris.length > 0) {
 			return postLogoutRedirectUris.some((allowedUri) => {
 				try {
@@ -1411,8 +1402,7 @@ export const issuer = <
 			refresh: [value.subject, refreshToken].join(":")
 		}
 
-		// Generate ID token if openid scope is present and OIDC is enabled
-		if (ssoEnabled && oidcCompliant && value.scopes?.includes("openid")) {
+		if (value.scopes?.includes("openid")) {
 			tokens.id_token = await generateIdToken(ctx, {
 				sub: value.subject,
 				aud: value.clientID,
@@ -1489,50 +1479,47 @@ export const issuer = <
 		}
 	)
 
-	// OIDC Discovery endpoint
-	if (ssoEnabled && oidcCompliant) {
-		app.get(
-			"/.well-known/openid-configuration",
-			cors({
-				origin: "*",
-				allowHeaders: ["*"],
-				allowMethods: ["GET"],
-				credentials: false
-			}),
-			async (c) => {
-				const iss = issuer(c)
-				return c.json({
-					issuer: iss,
-					authorization_endpoint: `${iss}/authorize`,
-					token_endpoint: `${iss}/token`,
-					userinfo_endpoint: `${iss}/userinfo`,
-					jwks_uri: `${iss}/.well-known/jwks.json`,
-					end_session_endpoint: `${iss}/logout`,
-					revocation_endpoint: `${iss}/revoke`,
-					response_types_supported: [
-						"code",
-						"token",
-						"id_token",
-						"code id_token",
-						"code token",
-						"id_token token",
-						"code id_token token"
-					],
-					response_modes_supported: ["query", "fragment"],
-					grant_types_supported: ["authorization_code", "refresh_token"],
-					subject_types_supported: ["public"],
-					id_token_signing_alg_values_supported: ["RS256"],
-					scopes_supported: allSupportedScopes,
-					claims_supported: claimsSupported,
-					token_endpoint_auth_methods_supported: ["none"],
-					claims_parameter_supported: false,
-					request_parameter_supported: false,
-					request_uri_parameter_supported: false,
-					require_request_uri_registration: false
-				})
-			}
-		)
-	}
+	app.get(
+		"/.well-known/openid-configuration",
+		cors({
+			origin: "*",
+			allowHeaders: ["*"],
+			allowMethods: ["GET"],
+			credentials: false
+		}),
+		async (c) => {
+			const iss = issuer(c)
+			return c.json({
+				issuer: iss,
+				authorization_endpoint: `${iss}/authorize`,
+				token_endpoint: `${iss}/token`,
+				userinfo_endpoint: `${iss}/userinfo`,
+				jwks_uri: `${iss}/.well-known/jwks.json`,
+				end_session_endpoint: `${iss}/logout`,
+				revocation_endpoint: `${iss}/revoke`,
+				response_types_supported: [
+					"code",
+					"token",
+					"id_token",
+					"code id_token",
+					"code token",
+					"id_token token",
+					"code id_token token"
+				],
+				response_modes_supported: ["query", "fragment"],
+				grant_types_supported: ["authorization_code", "refresh_token"],
+				subject_types_supported: ["public"],
+				id_token_signing_alg_values_supported: ["RS256"],
+				scopes_supported: allSupportedScopes,
+				claims_supported: claimsSupported,
+				token_endpoint_auth_methods_supported: ["none"],
+				claims_parameter_supported: false,
+				request_parameter_supported: false,
+				request_uri_parameter_supported: false,
+				require_request_uri_registration: false
+			})
+		}
+	)
 
 	app.get(
 		"/.well-known/oauth-authorization-server",
@@ -1844,7 +1831,6 @@ export const issuer = <
 		const id_token_hint = c.req.query("id_token_hint")
 		const login_hint = c.req.query("login_hint")
 
-		// Enhanced authorization state with OIDC parameters
 		const authorization: AuthorizationState = {
 			response_type,
 			redirect_uri,
@@ -1869,14 +1855,7 @@ export const issuer = <
 		} as AuthorizationState
 		c.set("authorization", authorization)
 
-		// OIDC validation: nonce required for implicit flow with id_token
-		if (
-			ssoEnabled &&
-			oidcCompliant &&
-			scope?.includes("openid") &&
-			response_type?.includes("id_token") &&
-			!nonce
-		) {
+		if (scope?.includes("openid") && response_type?.includes("id_token") && !nonce) {
 			throw new OauthError(
 				"invalid_request",
 				"nonce is required for implicit flow with id_token"
@@ -2163,63 +2142,61 @@ export const issuer = <
 		)
 	})
 
-	// Enhanced logout endpoint with OIDC RP-Initiated Logout support
-	if (ssoEnabled) {
-		app.get("/logout", async (c) => {
-			const idTokenHint = c.req.query("id_token_hint")
-			const postLogoutRedirectUri = c.req.query("post_logout_redirect_uri")
-			const state = c.req.query("state")
+	app.get("/logout", async (c) => {
+		const idTokenHint = c.req.query("id_token_hint")
+		const postLogoutRedirectUri = c.req.query("post_logout_redirect_uri")
+		const state = c.req.query("state")
 
-			let sessionSub: string | undefined
+		let sessionSub: string | undefined
 
-			// Verify ID token hint if provided (OIDC RP-Initiated Logout)
-			if (idTokenHint) {
-				try {
-					const signingKeyData = await signingKey()
-					if (signingKeyData) {
-						const result = await jwtVerify(idTokenHint, signingKeyData.public, {
-							issuer: issuer(c)
-						})
-						sessionSub = result.payload.sub as string
-					}
-				} catch (error) {
-					console.error("Invalid ID token hint:", error)
+		// Verify ID token hint if provided (OIDC RP-Initiated Logout)
+		if (idTokenHint) {
+			try {
+				const signingKeyData = await signingKey()
+				if (signingKeyData) {
+					const result = await jwtVerify(idTokenHint, signingKeyData.public, {
+						issuer: issuer(c)
+					})
+					sessionSub = result.payload.sub as string
 				}
+			} catch (error) {
+				console.error("Invalid ID token hint:", error)
 			}
+		}
 
-			const ssoCookieName = getSsoCookieName(c)
-			const ssoSessionId = getCookie(c, ssoCookieName)
-			if (ssoSessionId) {
-				const ssoSessionKey = ["sso:session", ssoSessionId]
-				const ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
-				if (ssoSessionData) {
-					// Invalidate all refresh tokens for this user
-					await auth.invalidate(ssoSessionData.resolvedSubject)
-				}
-				await Storage.remove(storage, ssoSessionKey)
+		const ssoCookieName = getSsoCookieName(c)
+		const ssoSessionId = getCookie(c, ssoCookieName)
+		if (ssoSessionId) {
+			const ssoSessionKey = ["sso:session", ssoSessionId]
+			const ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
+			if (ssoSessionData) {
+				// Invalidate all refresh tokens for this user
+				await auth.invalidate(ssoSessionData.resolvedSubject)
 			}
-			deleteSsoCookie(c)
+			await Storage.remove(storage, ssoSessionKey)
+		}
+		deleteSsoCookie(c)
 
-			// Handle post_logout_redirect_uri with state parameter
-			let redirectTo = postLogoutRedirectUri
-			if (redirectTo && validateLogoutRedirectUri(redirectTo)) {
-				const redirectUrl = new URL(redirectTo)
-				if (state) {
-					redirectUrl.searchParams.set("state", state)
-				}
-				return c.redirect(redirectUrl.toString(), 302)
+		// Handle post_logout_redirect_uri with state parameter
+		let redirectTo = postLogoutRedirectUri
+		if (redirectTo && validateLogoutRedirectUri(redirectTo)) {
+			const redirectUrl = new URL(redirectTo)
+			if (state) {
+				redirectUrl.searchParams.set("state", state)
 			}
+			return c.redirect(redirectUrl.toString(), 302)
+		}
 
-			redirectTo = input.sso?.postLogoutRedirectUri
-			if (redirectTo) {
-				const redirectUrl = new URL(redirectTo)
-				if (state) {
-					redirectUrl.searchParams.set("state", state)
-				}
-				return c.redirect(redirectUrl.toString(), 302)
+		redirectTo = input.sso?.postLogoutRedirectUri
+		if (redirectTo) {
+			const redirectUrl = new URL(redirectTo)
+			if (state) {
+				redirectUrl.searchParams.set("state", state)
 			}
+			return c.redirect(redirectUrl.toString(), 302)
+		}
 
-			return c.html(`
+		return c.html(`
 				<!DOCTYPE html>
 				<html>
 				<head>
@@ -2234,130 +2211,125 @@ export const issuer = <
 				</body>
 				</html>
 			`)
-		})
-	}
+	})
 
-	// OIDC UserInfo endpoint
-	if (ssoEnabled && oidcCompliant) {
-		app.get(
-			"/userinfo",
-			cors({
-				origin: "*",
-				allowHeaders: ["*"],
-				allowMethods: ["GET"],
-				credentials: false
-			}),
-			async (c) => {
-				const header = c.req.header("Authorization")
+	app.get(
+		"/userinfo",
+		cors({
+			origin: "*",
+			allowHeaders: ["*"],
+			allowMethods: ["GET"],
+			credentials: false
+		}),
+		async (c) => {
+			const header = c.req.header("Authorization")
 
-				if (!header) {
-					return c.json(
-						{
-							error: "invalid_request",
-							error_description: "Missing Authorization header"
-						},
-						400
-					)
-				}
+			if (!header) {
+				return c.json(
+					{
+						error: "invalid_request",
+						error_description: "Missing Authorization header"
+					},
+					400
+				)
+			}
 
-				const [type, token] = header.split(" ")
+			const [type, token] = header.split(" ")
 
-				if (type !== "Bearer") {
-					return c.json(
-						{
-							error: "invalid_request",
-							error_description: "Missing or invalid Authorization header"
-						},
-						400
-					)
-				}
+			if (type !== "Bearer") {
+				return c.json(
+					{
+						error: "invalid_request",
+						error_description: "Missing or invalid Authorization header"
+					},
+					400
+				)
+			}
 
-				if (!token) {
-					return c.json(
-						{
-							error: "invalid_request",
-							error_description: "Missing token"
-						},
-						400
-					)
-				}
+			if (!token) {
+				return c.json(
+					{
+						error: "invalid_request",
+						error_description: "Missing token"
+					},
+					400
+				)
+			}
 
-				try {
-					const signingKeyData = await signingKey()
-					if (!signingKeyData) {
-						return c.json(
-							{
-								error: "invalid_token",
-								error_description: "Signing key not available"
-							},
-							401
-						)
-					}
-
-					const result = await jwtVerify<{
-						mode: "access"
-						type: string
-						properties: Record<string, unknown>
-						scopes?: string[]
-					}>(token, signingKeyData.public, {
-						issuer: issuer(c)
-					})
-
-					if (result.payload.mode !== "access") {
-						return c.json(
-							{
-								error: "invalid_token",
-								error_description: "Invalid token type"
-							},
-							401
-						)
-					}
-
-					// Check if openid scope is present
-					if (!result.payload.scopes?.includes("openid")) {
-						return c.json(
-							{
-								error: "insufficient_scope",
-								error_description: "Token does not have openid scope"
-							},
-							403
-						)
-					}
-
-					const userinfo: Record<string, unknown> = {
-						sub: result.payload.sub
-					}
-
-					const props = result.payload.properties
-					const scopes = result.payload.scopes || []
-
-					// Add claims based on scopes
-					if (scopes.includes("profile")) {
-						if (props.name) userinfo.name = props.name
-						if (props.preferred_username)
-							userinfo.preferred_username = props.preferred_username
-						if (props.picture) userinfo.picture = props.picture
-					}
-
-					if (scopes.includes("email")) {
-						if (props.email) userinfo.email = props.email
-						if (props.email_verified !== undefined)
-							userinfo.email_verified = props.email_verified
-					}
-
-					return c.json(userinfo)
-				} catch (error) {
+			try {
+				const signingKeyData = await signingKey()
+				if (!signingKeyData) {
 					return c.json(
 						{
 							error: "invalid_token",
-							error_description: "Token verification failed"
+							error_description: "Signing key not available"
 						},
 						401
 					)
 				}
+
+				const result = await jwtVerify<{
+					mode: "access"
+					type: string
+					properties: Record<string, unknown>
+					scopes?: string[]
+				}>(token, signingKeyData.public, {
+					issuer: issuer(c)
+				})
+
+				if (result.payload.mode !== "access") {
+					return c.json(
+						{
+							error: "invalid_token",
+							error_description: "Invalid token type"
+						},
+						401
+					)
+				}
+
+				// Check if openid scope is present
+				if (!result.payload.scopes?.includes("openid")) {
+					return c.json(
+						{
+							error: "insufficient_scope",
+							error_description: "Token does not have openid scope"
+						},
+						403
+					)
+				}
+
+				const userinfo: Record<string, unknown> = {
+					sub: result.payload.sub
+				}
+
+				const props = result.payload.properties
+				const scopes = result.payload.scopes || []
+
+				// Add claims based on scopes
+				if (scopes.includes("profile")) {
+					if (props.name) userinfo.name = props.name
+					if (props.preferred_username) userinfo.preferred_username = props.preferred_username
+					if (props.picture) userinfo.picture = props.picture
+				}
+
+				if (scopes.includes("email")) {
+					if (props.email) userinfo.email = props.email
+					if (props.email_verified !== undefined)
+						userinfo.email_verified = props.email_verified
+				}
+
+				return c.json(userinfo)
+			} catch (error) {
+				return c.json(
+					{
+						error: "invalid_token",
+						error_description: "Token verification failed"
+					},
+					401
+				)
 			}
-		)
-	}
+		}
+	)
 
 	app.post(
 		"/revoke",
@@ -2459,86 +2431,6 @@ export const issuer = <
 			}
 		}
 	)
-
-	// Keep the original userinfo endpoint for backward compatibility when OIDC is not enabled
-	app.get("/userinfo", async (c) => {
-		const header = c.req.header("Authorization")
-
-		if (!header) {
-			return c.json(
-				{
-					error: "invalid_request",
-					error_description: "Missing Authorization header"
-				},
-				400
-			)
-		}
-
-		const [type, token] = header.split(" ")
-
-		if (type !== "Bearer") {
-			return c.json(
-				{
-					error: "invalid_request",
-					error_description: "Missing or invalid Authorization header"
-				},
-				400
-			)
-		}
-
-		if (!token) {
-			return c.json(
-				{
-					error: "invalid_request",
-					error_description: "Missing token"
-				},
-				400
-			)
-		}
-
-		try {
-			const signingKeyData = await signingKey()
-			if (!signingKeyData) {
-				return c.json({
-					error: "invalid_token",
-					error_description: "Signing key not available"
-				})
-			}
-
-			const result = await jwtVerify<{
-				mode: "access"
-				type: string
-				properties: unknown
-			}>(token, signingKeyData.public, {
-				issuer: issuer(c)
-			})
-
-			const subjectType = result.payload.type as keyof Subjects
-			const subjectSchema = input.subjects[subjectType]
-			if (!subjectSchema) {
-				return c.json({
-					error: "invalid_token",
-					error_description: "Invalid subject type"
-				})
-			}
-
-			const validated = await subjectSchema["~standard"].validate(result.payload.properties)
-
-			if (!validated.issues && result.payload.mode === "access") {
-				return c.json(validated.value as Record<string, unknown>)
-			}
-
-			return c.json({
-				error: "invalid_token",
-				error_description: "Invalid token"
-			})
-		} catch (error) {
-			return c.json({
-				error: "invalid_token",
-				error_description: "Token verification failed"
-			})
-		}
-	})
 
 	app.onError(async (err, c) => {
 		console.error(err)
