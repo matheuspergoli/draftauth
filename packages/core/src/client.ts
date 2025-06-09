@@ -1457,16 +1457,3 @@ export const createClient = (input: ClientInput): Client => {
 	}
 	return result
 }
-
-const zap = createClient({
-	clientID: "",
-	issuer: ""
-})
-
-const pinga = await zap.revoke("")
-
-if (pinga.err) {
-	console.log(pinga.err)
-} else {
-	pinga.err
-}
