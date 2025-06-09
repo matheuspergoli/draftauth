@@ -555,7 +555,7 @@ export interface RevokeSuccess {
 	/**
 	 * This is always `false` when the revocation is successful.
 	 */
-	err: false
+	err: boolean
 }
 
 /**
