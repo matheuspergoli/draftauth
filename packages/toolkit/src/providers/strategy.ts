@@ -6,6 +6,5 @@ export interface ClientStrategy {
 	readonly name: string
 	readonly authorizationEndpoint: string
 	readonly tokenEndpoint: string
-	readonly userinfoEndpoint: string
 	readonly defaultScopes: string[]
 }
