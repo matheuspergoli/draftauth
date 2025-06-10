@@ -4,4 +4,3 @@ export type {
 	LoginOptions,
 	HandleRedirectResult
 } from "./client"
-export type { UserProfile } from "./providers/strategy"

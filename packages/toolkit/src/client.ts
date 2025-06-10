@@ -1,11 +1,12 @@
 import { generatePKCE } from "./pkce"
-import type { ClientStrategy, OAuth2TokenResponse, UserProfile } from "./providers/strategy"
+import type { ClientStrategy, OAuth2TokenResponse } from "./providers/strategy"
 import { type AuthStorage, createBrowserSessionStorage } from "./storage"
 
 export type ClientConfig<TStrategies extends Record<string, ClientStrategy>> = {
 	[K in keyof TStrategies]: {
 		clientId: string
 		redirectUri: string
+		clientSecret: string
 	}
 }
 
@@ -16,7 +17,6 @@ export interface LoginOptions {
 export interface HandleRedirectResult {
 	provider: string
 	accessToken: string
-	profile: UserProfile
 }
 
 export const createClient = <TStrategies extends Record<string, ClientStrategy>>({
@@ -95,7 +95,7 @@ export const createClient = <TStrategies extends Record<string, ClientStrategy>>
 				redirect_uri: providerConfig.redirectUri,
 				client_id: providerConfig.clientId,
 				code_verifier: storedPkce.verifier,
-				client_secret: "f185643b7718ea7fa85fbbdd33be2093de5cf679"
+				client_secret: providerConfig.clientSecret
 			})
 		})
 
@@ -106,29 +106,14 @@ export const createClient = <TStrategies extends Record<string, ClientStrategy>>
 		const tokenData = (await tokenResponse.json()) as OAuth2TokenResponse
 		const accessToken = tokenData.access_token
 
-		const profileResponse = await fetch(strategy.userinfoEndpoint, {
-			headers: { Authorization: `Bearer ${accessToken}` }
-		})
-
-		if (!profileResponse.ok) {
-			throw new Error(`User profile fetch failed: ${await profileResponse.text()}`)
+		if (!accessToken) {
+			throw new Error("Access token not found in the provider's response.")
 		}
 
-		const rawProfile = await profileResponse.json()
-
-		if (strategy.isProfile(rawProfile)) {
-			const profile = strategy.normalizeProfile(rawProfile)
-
-			return {
-				provider: storedPkce.provider,
-				accessToken,
-				profile
-			}
+		return {
+			provider: storedPkce.provider,
+			accessToken
 		}
-
-		throw new Error(
-			`Received profile data for '${storedPkce.provider}' does not match expected format.`
-		)
 	}
 
 	return { login, handleRedirect }

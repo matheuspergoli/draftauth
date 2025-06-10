@@ -35,6 +35,9 @@ importers:
       '@draftauth/events':
         specifier: workspace:*
         version: link:../../packages/events
+      '@draftauth/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
       '@draftauth/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -332,7 +335,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  packages/poc:
+  packages/toolkit:
     devDependencies:
       '@draftauth/tsconfig':
         specifier: workspace:*
