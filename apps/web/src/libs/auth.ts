@@ -12,8 +12,7 @@ const ChallengeSchema = z.object({ verifier: z.string(), state: z.string() })
 
 const client = createClient({
 	issuer: env.VITE_BACKEND_URL,
-	clientID: env.VITE_APPLICATION_ID,
-	audience: "my-app"
+	clientID: env.VITE_APPLICATION_ID
 })
 
 const tokenStorage = {

@@ -1,27 +1,58 @@
 /**
- * Configure the UI that's used by the Code provider.
+ * Pre-built UI component for PIN code authentication flow.
+ * Provides a complete interface for collecting user claims and verifying PIN codes.
  *
- * ```ts {1,7-12}
+ * ## Quick Setup
+ *
+ * ```ts
  * import { CodeUI } from "@draftauth/core/ui/code"
  * import { CodeProvider } from "@draftauth/core/provider/code"
  *
  * export default issuer({
  *   providers: {
- *     code: CodeAdapter(
+ *     email: CodeProvider(
  *       CodeUI({
- *         copy: {
- *           code_info: "We'll send a pin code to your email"
- *         },
- *         sendCode: (claims, code) => console.log(claims.email, code)
+ *         sendCode: async (claims, code) => {
+ *           await emailService.send(claims.email, `Your code: ${code}`)
+ *         }
  *       })
  *     )
- *   },
- *   // ...
+ *   }
  * })
  * ```
  *
+ * ## Customization
+ *
+ * ```ts
+ * const customCodeUI = CodeUI({
+ *   mode: "phone", // Switch to phone number input
+ *   copy: {
+ *     email_placeholder: "Enter your phone number",
+ *     code_info: "We'll send a verification code via SMS",
+ *     button_continue: "Send Code"
+ *   },
+ *   sendCode: async (claims, code) => {
+ *     if (claims.phone) {
+ *       await smsService.send(claims.phone, `Verification code: ${code}`)
+ *     } else {
+ *       return { type: "invalid_claim", key: "phone", value: "Phone number required" }
+ *     }
+ *   }
+ * })
+ * ```
+ *
+ * ## Features
+ *
+ * - **Email/Phone Mode**: Switch between email and phone number collection
+ * - **Custom Copy**: Fully customizable text and messaging
+ * - **Responsive Design**: Works on all device sizes
+ * - **Accessibility**: ARIA labels, proper input types, and keyboard navigation
+ * - **Error Handling**: Clear error states for invalid codes and claims
+ * - **Resend Functionality**: Built-in code resend capability
+ *
  * @packageDocumentation
  */
+
 /** @jsxImportSource hono/jsx */
 
 import { UnknownStateError } from "../error"
@@ -29,65 +60,75 @@ import type { CodeProviderError, CodeProviderOptions } from "../provider/code"
 import { Layout } from "./base"
 import { FormAlert } from "./form"
 
+/**
+ * Default text copy for the PIN code authentication UI.
+ * All text can be customized via the copy prop.
+ */
 const DEFAULT_COPY = {
-	/**
-	 * Copy for the email input.
-	 */
+	/** Placeholder text for the email/contact input field */
 	email_placeholder: "Email",
-	/**
-	 * Error message when the email is invalid.
-	 */
+	/** Error message displayed when the entered email/contact is invalid */
 	email_invalid: "Email address is not valid",
-	/**
-	 * Copy for the continue button.
-	 */
+	/** Text for the primary action button */
 	button_continue: "Continue",
-	/**
-	 * Copy informing that the pin code will be emailed.
-	 */
+	/** Informational text explaining that a PIN code will be sent */
 	code_info: "We'll send a pin code to your email.",
-	/**
-	 * Copy for the pin code input.
-	 */
+	/** Placeholder text for the PIN code input field */
 	code_placeholder: "Code",
-	/**
-	 * Error message when the code is invalid.
-	 */
+	/** Error message displayed when the entered PIN code is incorrect */
 	code_invalid: "Invalid code",
-	/**
-	 * Copy for when the code was sent.
-	 */
+	/** Success message prefix when code is initially sent */
 	code_sent: "Code sent to ",
-	/**
-	 * Copy for when the code was resent.
-	 */
+	/** Success message prefix when code is resent */
 	code_resent: "Code resent to ",
-	/**
-	 * Copy for the link to resend the code.
-	 */
+	/** Text asking if user didn't receive the code */
 	code_didnt_get: "Didn't get code?",
-	/**
-	 * Copy for the resend button.
-	 */
+	/** Text for the resend code button */
 	code_resend: "Resend"
 }
 
+/**
+ * Type for customizable UI copy text.
+ * All properties are optional to allow partial customization.
+ */
 export type CodeUICopy = typeof DEFAULT_COPY
 
 /**
- * Configure the password UI.
+ * Input mode for the contact field.
+ * Determines the input type and validation behavior.
+ */
+export type CodeUIMode = "email" | "phone"
+
+/**
+ * Configuration options for the CodeUI component.
  */
 export interface CodeUIOptions {
 	/**
-	 * Callback to send the pin code to the user.
+	 * Callback function for sending PIN codes to users.
+	 * Should handle delivery via email, SMS, or other channels based on the claims.
 	 *
-	 * The `claims` object contains the email or phone number of the user. You can send the code
-	 * using this.
+	 * @param claims - User contact information (email, phone, etc.)
+	 * @param code - The generated PIN code to send
+	 * @returns Promise resolving to undefined on success, or error object on failure
 	 *
 	 * @example
 	 * ```ts
-	 * async (claims, code) => {
-	 *   // Send the code via the claim
+	 * sendCode: async (claims, code) => {
+	 *   if (claims.email) {
+	 *     await emailService.send({
+	 *       to: claims.email,
+	 *       subject: 'Your verification code',
+	 *       text: `Your PIN code is: ${code}`
+	 *     })
+	 *   } else if (claims.phone) {
+	 *     await smsService.send(claims.phone, `PIN: ${code}`)
+	 *   } else {
+	 *     return {
+	 *       type: "invalid_claim",
+	 *       key: "contact",
+	 *       value: "Email or phone required"
+	 *     }
+	 *   }
 	 * }
 	 * ```
 	 */
@@ -95,101 +136,225 @@ export interface CodeUIOptions {
 		claims: Record<string, string>,
 		code: string
 	) => Promise<CodeProviderError | undefined>
+
 	/**
-	 * Custom copy for the UI.
+	 * Custom text copy for UI labels and messages.
+	 * Allows full customization of all displayed text.
+	 *
+	 * @example
+	 * ```ts
+	 * copy: {
+	 *   email_placeholder: "Enter your email address",
+	 *   code_info: "Check your email for a 6-digit verification code",
+	 *   button_continue: "Verify",
+	 *   code_invalid: "The code you entered is incorrect"
+	 * }
+	 * ```
 	 */
-	copy?: Partial<CodeUICopy>
+	readonly copy?: Partial<CodeUICopy>
+
 	/**
-	 * The mode to use for the input.
+	 * Input mode determining the type of contact information to collect.
+	 *
 	 * @default "email"
+	 *
+	 * @example
+	 * ```ts
+	 * mode: "phone" // Collect phone numbers instead of emails
+	 * ```
 	 */
-	mode?: "email" | "phone"
+	readonly mode?: CodeUIMode
 }
 
 /**
- * Creates a UI for the Code provider flow.
- * @param props - Configure the UI.
+ * Creates a complete UI configuration for PIN code authentication.
+ * Provides pre-built forms for collecting user contact info and verifying PIN codes.
+ *
+ * @param options - Configuration options for the UI
+ * @returns Complete CodeProvider configuration with UI handlers
+ *
+ * @example
+ * ```ts
+ * // Basic email-based PIN authentication
+ * const emailCodeUI = CodeUI({
+ *   sendCode: async (claims, code) => {
+ *     await emailService.send(claims.email, `Code: ${code}`)
+ *   }
+ * })
+ *
+ * // Phone-based PIN authentication with custom copy
+ * const phoneCodeUI = CodeUI({
+ *   mode: "phone",
+ *   copy: {
+ *     email_placeholder: "Phone number",
+ *     code_info: "We'll send a verification code via SMS",
+ *     email_invalid: "Please enter a valid phone number"
+ *   },
+ *   sendCode: async (claims, code) => {
+ *     await smsService.send(claims.phone, `Verification: ${code}`)
+ *   }
+ * })
+ *
+ * // Multi-mode authentication
+ * const flexibleCodeUI = CodeUI({
+ *   copy: {
+ *     email_placeholder: "Email or phone number",
+ *     code_info: "We'll send a code to your email or phone"
+ *   },
+ *   sendCode: async (claims, code) => {
+ *     if (claims.email && claims.email.includes('@')) {
+ *       await emailService.send(claims.email, `Code: ${code}`)
+ *     } else if (claims.email) {
+ *       // Treat as phone number if no @ symbol
+ *       await smsService.send(claims.email, `Code: ${code}`)
+ *     } else {
+ *       return {
+ *         type: "invalid_claim",
+ *         key: "contact",
+ *         value: "Email or phone required"
+ *       }
+ *     }
+ *   }
+ * })
+ * ```
  */
-export const CodeUI = (props: CodeUIOptions): CodeProviderOptions => {
+export const CodeUI = (options: CodeUIOptions): CodeProviderOptions => {
 	const copy = {
 		...DEFAULT_COPY,
-		...props.copy
+		...options.copy
 	}
 
-	const mode = props.mode ?? "email"
+	const inputMode = options.mode ?? "email"
+
+	/**
+	 * Determines the appropriate input field attributes based on the selected mode.
+	 */
+	const getInputAttributes = () => {
+		switch (inputMode) {
+			case "email":
+				return {
+					type: "email" as const,
+					name: "email",
+					inputmode: "email" as const,
+					autocomplete: "email" as const
+				}
+			case "phone":
+				return {
+					type: "tel" as const,
+					name: "phone",
+					inputmode: "tel" as const,
+					autocomplete: "tel" as const
+				}
+		}
+	}
+
+	/**
+	 * Gets the appropriate contact value from claims for display purposes.
+	 */
+	const getContactValue = (claims: Record<string, string>): string => {
+		return claims.email || claims.phone || Object.values(claims)[0] || ""
+	}
 
 	return {
-		sendCode: props.sendCode,
+		sendCode: options.sendCode,
 		length: 6,
+
 		request: async (_req, state, _form, error): Promise<Response> => {
+			// Render contact information collection form
 			if (state.type === "start") {
+				const inputAttrs = getInputAttributes()
+
 				const jsx = (
 					<Layout>
 						<form data-component="form" method="post">
+							{/* Display validation error if present */}
 							{error?.type === "invalid_claim" && <FormAlert message={copy.email_invalid} />}
+
+							{/* Form action identifier */}
 							<input type="hidden" name="action" value="request" />
+
+							{/* Contact input field */}
 							<input
 								data-component="input"
 								autofocus
-								type={mode === "email" ? "email" : "tel"}
-								name={mode === "email" ? "email" : "phone"}
-								inputmode={mode === "email" ? "email" : "numeric"}
 								required
 								placeholder={copy.email_placeholder}
+								{...inputAttrs}
 							/>
+
+							{/* Submit button */}
 							<button type="submit" data-component="button">
 								{copy.button_continue}
 							</button>
 						</form>
+
+						{/* Informational text */}
 						<p data-component="form-footer">{copy.code_info}</p>
 					</Layout>
 				)
+
 				return new Response(jsx.toString(), {
-					headers: {
-						"Content-Type": "text/html"
-					}
+					headers: { "Content-Type": "text/html" }
 				})
 			}
 
+			// Render PIN code verification form
 			if (state.type === "code") {
+				const contactValue = getContactValue(state.claims)
+
 				const jsx = (
 					<Layout>
-						<form data-component="form" class="form" method="post">
+						{/* Main verification form */}
+						<form data-component="form" method="post">
+							{/* Display code error if present */}
 							{error?.type === "invalid_code" && <FormAlert message={copy.code_invalid} />}
-							{state.type === "code" && (
-								<FormAlert
-									message={
-										(state.resend ? copy.code_resent : copy.code_sent) + state.claims.email
-									}
-									color="success"
-								/>
-							)}
+
+							{/* Display success message */}
+							<FormAlert
+								message={(state.resend ? copy.code_resent : copy.code_sent) + contactValue}
+								color="success"
+							/>
+
+							{/* Form action identifier */}
 							<input type="hidden" name="action" value="verify" />
+
+							{/* PIN code input */}
 							<input
 								data-component="input"
 								autofocus
-								minLength={6}
-								maxLength={6}
+								required
 								type="text"
 								name="code"
-								required
+								placeholder={copy.code_placeholder}
+								minLength={6}
+								maxLength={6}
 								inputmode="numeric"
 								autocomplete="one-time-code"
-								placeholder={copy.code_placeholder}
+								pattern="[0-9]{6}"
+								aria-label="6-digit verification code"
 							/>
+
+							{/* Verify button */}
 							<button type="submit" data-component="button">
 								{copy.button_continue}
 							</button>
 						</form>
+
+						{/* Resend code form */}
 						<form method="post">
+							{/* Preserve claims as hidden inputs */}
 							{Object.entries(state.claims).map(([key, value]) => (
-								<input key={key} type="hidden" name={key} value={value} className="hidden" />
+								<input key={key} type="hidden" name={key} value={value} />
 							))}
-							<input type="hidden" name="action" value="request" />
+
+							{/* Resend action identifier */}
+							<input type="hidden" name="action" value="resend" />
+
+							{/* Resend link */}
 							<div data-component="form-footer">
 								<span>
 									{copy.code_didnt_get}{" "}
-									<button type="button" data-component="link">
+									<button type="submit" data-component="link">
 										{copy.code_resend}
 									</button>
 								</span>
@@ -197,10 +362,9 @@ export const CodeUI = (props: CodeUIOptions): CodeProviderOptions => {
 						</form>
 					</Layout>
 				)
+
 				return new Response(jsx.toString(), {
-					headers: {
-						"Content-Type": "text/html"
-					}
+					headers: { "Content-Type": "text/html" }
 				})
 			}
 

@@ -31,6 +31,7 @@
  */
 /** @jsxImportSource hono/jsx */
 
+import type { JSX } from "hono/jsx/jsx-runtime"
 import { Layout } from "./base"
 import { ICON_GITHUB, ICON_GOOGLE } from "./icon"
 
@@ -119,53 +120,15 @@ export interface SelectProps {
 	displays?: Partial<Record<KnownProviderType, string>> & Record<string, string>
 }
 
-export const Select = (props?: SelectProps) => {
-	return async (providers: Record<string, string>, _req: Request): Promise<Response> => {
-		const copy = {
-			...DEFAULT_COPY,
-			...props?.copy
-		}
+/**
+ * Type for JSX elements used as icons
+ */
+type IconElement = JSX.Element
 
-		const displays: Record<string, string> = {
-			...DEFAULT_DISPLAY,
-			...props?.displays
-		}
-
-		const jsx = (
-			<Layout>
-				<div data-component="form">
-					{Object.entries(providers).map(([key, type]) => {
-						const match = props?.providers?.[key]
-						if (match?.hide) return
-						const icon = ICON[key]
-
-						const displayName = match?.display || displays[type] || type
-
-						return (
-							<a
-								key={`${key}-${type}`}
-								href={`/${key}/authorize`}
-								data-component="button"
-								data-color="ghost"
-							>
-								{icon && <i data-slot="icon">{icon}</i>}
-								{copy.button_provider} {displayName}
-							</a>
-						)
-					})}
-				</div>
-			</Layout>
-		)
-
-		return new Response(jsx.toString(), {
-			headers: {
-				"Content-Type": "text/html"
-			}
-		})
-	}
-}
-
-const ICON: Record<string, unknown> = {
+/**
+ * Icon mapping with proper type safety
+ */
+const ICON: Record<string, IconElement> = {
 	steam: (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -282,4 +245,52 @@ const ICON: Record<string, unknown> = {
 			</g>
 		</svg>
 	)
+} as const
+
+export const Select = (props?: SelectProps) => {
+	return async (providers: Record<string, string>, _req: Request): Promise<Response> => {
+		const copy = {
+			...DEFAULT_COPY,
+			...props?.copy
+		}
+
+		const displays: Record<string, string> = {
+			...DEFAULT_DISPLAY,
+			...props?.displays
+		}
+
+		const jsx = (
+			<Layout>
+				<div data-component="form">
+					{Object.entries(providers)
+						.map(([key, type]) => {
+							const match = props?.providers?.[key]
+							if (match?.hide) return null
+
+							const icon = ICON[key]
+							const displayName = match?.display || displays[type] || type
+
+							return (
+								<a
+									key={`${key}-${type}`}
+									href={`/${key}/authorize`}
+									data-component="button"
+									data-color="ghost"
+								>
+									{icon && <i data-slot="icon">{icon}</i>}
+									{copy.button_provider} {displayName}
+								</a>
+							)
+						})
+						.filter((element): element is JSX.Element => element !== null)}
+				</div>
+			</Layout>
+		)
+
+		return new Response(jsx.toString(), {
+			headers: {
+				"Content-Type": "text/html"
+			}
+		})
+	}
 }

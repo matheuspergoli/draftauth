@@ -1,88 +1,53 @@
 /**
- * Subjects are what the access token generated at the end of the auth flow will map to. Under
- * the hood, the access token is a JWT that contains this data.
+ * Subjects define the structure of data stored in access tokens after successful authentication.
+ * They represent the different types of entities that can be authenticated (users, admins, etc.)
+ * and are encoded as JWT claims in the resulting access tokens.
  *
- * #### Define subjects
+ * ## Quick Start
  *
+ * ### 1. Define your subjects
  * ```ts title="subjects.ts"
  * import { object, string } from "valibot"
+ * import { createSubjects } from "@draftauth/core/subject"
  *
- * const subjects = createSubjects({
+ * export const subjects = createSubjects({
  *   user: object({
  *     userID: string()
+ *   }),
+ *   admin: object({
+ *     userID: string(),
+ *     workspaceID: string()
  *   })
  * })
  * ```
  *
- * We are using [valibot](https://github.com/fabian-hiller/valibot) here. You can use any
- * validation library that's following the
- * [standard-schema specification](https://github.com/standard-schema/standard-schema).
- *
- * :::tip
- * You typically want to place subjects in its own file so it can be imported by all of your apps.
- * :::
- *
- * You can start with one subject. Later you can add more for different types of users.
- *
- * #### Set the subjects
- *
- * Then you can pass it to the `issuer`.
- *
+ * ### 2. Use in your issuer
  * ```ts title="issuer.ts"
  * import { subjects } from "./subjects"
  *
  * const app = issuer({
- *   providers: { ... },
- *   subjects,
- *   // ...
- * })
- * ```
- *
- * #### Add the subject payload
- *
- * When your user completes the flow, you can add the subject payload in the `success` callback.
- *
- * ```ts title="issuer.ts"
- * const app = issuer({
- *   providers: { ... },
+ *   providers: { github: GithubProvider({...}) },
  *   subjects,
  *   async success(ctx, value) {
- *     let userID
- *     if (value.provider === "password") {
- *       console.log(value.email)
- *       userID = ... // lookup user or create them
- *     }
- *     return ctx.subject("user", {
- *       userID
- *     })
- *   },
- *   // ...
+ *     const userID = await lookupUser(value.email)
+ *     return ctx.subject("user", { userID })
+ *   }
  * })
  * ```
  *
- * Here we are looking up the userID from our database and adding it to the subject payload.
+ * ### 3. Verify tokens in your app
+ * ```ts title="middleware.ts"
+ * import { subjects } from "./subjects"
  *
- * :::caution
- * You should only store properties that won't change for the lifetime of the user.
- * :::
- *
- * Since these will be stored in the access token, you should avoid storing information
- * that'll change often. For example, if you store the user's username, you'll need to
- * revoke the access token when the user changes their username.
- *
- * #### Decode the subject
- *
- * Now when your user logs in, you can use the Draft Auth client to decode the subject. For
- * example, in our SSR app we can do the following.
- *
- * ```ts title="app/page.tsx"
- * import { subjects } from "../subjects"
- *
- * const verified = await client.verify(subjects, cookies.get("access_token")!)
- * console.log(verified.subject.properties.userID)
+ * const verified = await client.verify(subjects, accessToken)
+ * console.log(verified.subject.properties.userID) // Fully typed!
  * ```
  *
- * All this is typesafe based on the shape of the subjects you defined.
+ * ## Important Notes
+ *
+ * - Only store data that doesn't change frequently (avoid usernames, emails that might change)
+ * - Keep payload small as it's embedded in every access token
+ * - Use any validation library compatible with standard-schema specification
  *
  * @packageDocumentation
  */
@@ -90,43 +55,70 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
 import type { Prettify } from "./util"
 
 /**
- * Subject schema is a map of types that are used to define the subjects.
+ * Schema definition for subjects, mapping subject type names to their validation schemas.
+ * Each key represents a subject type, and each value is a schema that validates
+ * the properties for that subject type.
+ *
+ * @example
+ * ```ts
+ * const schema: SubjectSchema = {
+ *   user: object({ userID: string() }),
+ *   admin: object({ userID: string(), workspaceID: string() })
+ * }
+ * ```
  */
 export type SubjectSchema = Record<string, StandardSchemaV1>
 
-/** @internal */
+/**
+ * Internal type that transforms a SubjectSchema into a union of subject payload objects.
+ * Each payload contains the subject type and its validated properties.
+ *
+ * @template T - The subject schema to transform
+ * @internal
+ */
 export type SubjectPayload<T extends SubjectSchema> = Prettify<
 	{
-		[type in keyof T & string]: {
-			type: type
-			properties: StandardSchemaV1.InferOutput<T[type]>
+		[K in keyof T & string]: {
+			type: K
+			properties: StandardSchemaV1.InferOutput<T[K]>
 		}
 	}[keyof T & string]
 >
 
 /**
- * Create a subject schema.
+ * Creates a strongly-typed subject schema that can be used throughout your application.
+ * The returned schema maintains type information for excellent IDE support and runtime validation.
+ *
+ * @template Schema - The subject schema type being created
+ * @param types - Object mapping subject type names to their validation schemas
+ * @returns The same schema object with preserved type information
  *
  * @example
  * ```ts
+ * import { object, string, number } from "valibot"
+ *
  * const subjects = createSubjects({
  *   user: object({
- *     userID: string()
+ *     userID: string(),
+ *     createdAt: number()
  *   }),
  *   admin: object({
- *     workspaceID: string()
+ *     userID: string(),
+ *     workspaceID: string(),
+ *     permissions: array(string())
+ *   }),
+ *   service: object({
+ *     serviceID: string(),
+ *     apiVersion: string()
  *   })
  * })
- * ```
  *
- * This is using [valibot](https://github.com/fabian-hiller/valibot) to define the shape of the
- * subjects. You can use any validation library that's following the
- * [standard-schema specification](https://github.com/standard-schema/standard-schema).
+ * // Now subjects is fully typed and can be used for:
+ * // - Type checking in success callbacks
+ * // - Token verification with proper type inference
+ * // - IDE autocompletion for subject types and properties
+ * ```
  */
-export const createSubjects = <
-	Schema extends SubjectSchema = Record<string, StandardSchemaV1>
->(
-	types: Schema
-): Schema => {
+export const createSubjects = <Schema extends SubjectSchema>(types: Schema): Schema => {
 	return { ...types }
 }
