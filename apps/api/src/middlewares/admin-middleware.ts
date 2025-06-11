@@ -76,15 +76,15 @@ export const adminMiddleware = createMiddleware<AdminEnv>(async (c, next) => {
 		})
 	}
 
-	const verified = await authClient.verify(subjects, token)
+	const verifyResult = await authClient.verify(subjects, token)
 
-	if (verified.err) {
+	if (!verifyResult.success) {
 		throw new HTTPException(401, {
-			message: `Verificação do token falhou: ${verified.err.name}`
+			message: `Verificação do token falhou: ${verifyResult.error.name}`
 		})
 	}
 
-	const verifiedUser = verified.subject.properties
+	const verifiedUser = verifyResult.data.subject.properties
 
 	const currentStatus = await getUserGlobalStatus({ userId: verifiedUser.id })
 	if (!currentStatus || currentStatus !== "active") {

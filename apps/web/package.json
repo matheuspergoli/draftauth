@@ -35,14 +35,14 @@
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
 		"@draftauth/types": "workspace:*",
-		"@tailwindcss/vite": "^4.1.9",
+		"@tailwindcss/vite": "^4.1.10",
 		"@tanstack/react-query-devtools": "^5.80.6",
 		"@tanstack/react-router-devtools": "^1.121.2",
 		"@tanstack/router-plugin": "^1.121.2",
 		"@types/react": "^19.1.8",
 		"@types/react-dom": "^19.1.6",
 		"@vitejs/plugin-react": "^4.5.2",
-		"tailwindcss": "^4.1.9",
+		"tailwindcss": "^4.1.10",
 		"typescript": "^5.8.3",
 		"vite": "^6.3.5",
 		"vite-tsconfig-paths": "^5.1.4"

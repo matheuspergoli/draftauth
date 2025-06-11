@@ -1,14 +1,16 @@
 import { env } from "@/environment/env"
 import { createClient } from "@draftauth/core/client"
 import { z } from "zod"
-
 import { queryClient } from "./query-client"
 
 const ACCESS_KEY = "access_token"
 const REFRESH_KEY = "refresh_token"
 const CHALLENGE_KEY = "challenge_token"
 
-const ChallengeSchema = z.object({ verifier: z.string(), state: z.string() })
+const ChallengeSchema = z.object({
+	state: z.string(),
+	verifier: z.string()
+})
 
 const client = createClient({
 	issuer: env.VITE_BACKEND_URL,
@@ -36,28 +38,27 @@ const tokenStorage = {
 }
 
 const login = async () => {
-	const { challenge, url } = await client.authorize(location.origin, "code", {
+	const result = await client.authorize(location.origin, "code", {
 		pkce: true
 	})
 
-	tokenStorage.setChallengeToken(JSON.stringify(challenge))
+	if (!result.success) return null
 
-	location.href = url
+	tokenStorage.setChallengeToken(JSON.stringify(result.data.challenge))
+	location.href = result.data.url
+	return
 }
 
 const logout = async () => {
 	tokenStorage.clearTokens()
-
 	await queryClient.invalidateQueries()
 }
 
 const callback = async ({ code, state }: { code: string; state: string }) => {
 	const unparsedChallenge = JSON.parse(tokenStorage.getChallengeToken() ?? "{}")
-
 	tokenStorage.removeChallengeToken()
 
 	const parsedChallenge = ChallengeSchema.safeParse(unparsedChallenge)
-
 	if (!parsedChallenge.success) {
 		return { success: false, error: "challenge_parse_error" }
 	}
@@ -67,20 +68,17 @@ const callback = async ({ code, state }: { code: string; state: string }) => {
 	}
 
 	const { data: challenge } = parsedChallenge
-
 	if (state !== challenge.state || !challenge.verifier) {
 		return { success: false, error: "invalid_callback_state" }
 	}
 
 	const exchanged = await client.exchange(code, location.origin, challenge.verifier)
-
-	if (exchanged.err) {
+	if (!exchanged.success) {
 		return { success: false, error: "token_exchange_failed" }
 	}
 
-	tokenStorage.setAccessToken(exchanged.tokens.access)
-	tokenStorage.setRefreshToken(exchanged.tokens.refresh)
-
+	tokenStorage.setAccessToken(exchanged.data.access)
+	tokenStorage.setRefreshToken(exchanged.data.refresh)
 	await queryClient.invalidateQueries()
 
 	return { success: true }
@@ -93,21 +91,17 @@ const refreshTokens = async () => {
 	if (!storedRefreshToken) return null
 
 	try {
-		const next = await client.refresh(storedRefreshToken, {
+		const result = await client.refresh(storedRefreshToken, {
 			access: storedAccessToken ?? undefined
 		})
 
-		if (next.err) {
-			return null
-		}
+		if (!result.success) return null
 
-		if (next.tokens) {
-			tokenStorage.setAccessToken(next.tokens.access)
-			tokenStorage.setRefreshToken(next.tokens.refresh)
-
+		if (result.data.tokens) {
+			tokenStorage.setAccessToken(result.data.tokens.access)
+			tokenStorage.setRefreshToken(result.data.tokens.refresh)
 			await queryClient.invalidateQueries()
-
-			return next.tokens.access
+			return result.data.tokens.access
 		}
 
 		return storedAccessToken
@@ -121,21 +115,17 @@ const checkAuthStatus = async (): Promise<
 	| { isAuthenticated: false; accessToken: null }
 > => {
 	const storedRefreshToken = tokenStorage.getRefreshToken()
-
 	if (!storedRefreshToken) {
 		tokenStorage.clearTokens()
-
 		return { isAuthenticated: false, accessToken: null }
 	}
 
 	const currentValidAccessToken = await refreshTokens()
-
 	if (currentValidAccessToken) {
 		return { isAuthenticated: true, accessToken: currentValidAccessToken }
 	}
 
 	tokenStorage.clearTokens()
-
 	return { isAuthenticated: false, accessToken: null }
 }
 

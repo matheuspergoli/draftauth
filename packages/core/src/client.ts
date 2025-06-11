@@ -1,6 +1,8 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec"
 /**
- * Use the Draft Auth client kick off your OAuth flows, exchange tokens, refresh tokens,
- * and verify tokens.
+ * Draft Auth client for OAuth 2.0 and OpenID Connect authentication.
+ *
+ * ## Quick Start
  *
  * First, create a client.
  *
@@ -13,32 +15,40 @@
  * })
  * ```
  *
- * Kick off the OAuth flow by calling `authorize`.
+ * Start the OAuth flow by calling `authorize`.
  *
  * ```ts
- * const redirect_uri = "https://myserver.com/callback"
- *
- * const { url } = await client.authorize(
- *   redirect_uri,
+ * const result = await client.authorize(
+ *   "https://myapp.com/callback",
  *   "code"
  * )
+ * if (result.success) {
+ *   window.location.href = result.data.url
+ * }
  * ```
  *
- * When the user completes the flow, `exchange` the code for tokens.
+ * When the user completes the flow, exchange the code for tokens.
  *
  * ```ts
- * const tokens = await client.exchange(query.get("code"), redirect_uri)
+ * const result = await client.exchange(code, redirectUri)
+ * if (result.success) {
+ *   const { access, refresh } = result.data
+ *   // Store tokens securely
+ * }
  * ```
  *
- * And `verify` the tokens.
+ * Verify tokens to get user information.
  *
  * ```ts
- * const verified = await client.verify(subjects, tokens.access)
+ * const result = await client.verify(subjects, accessToken)
+ * if (result.success) {
+ *   console.log(result.data.subject.properties)
+ * }
  * ```
  *
  * @packageDocumentation
  */
-import { type JSONWebKeySet, createLocalJWKSet, decodeJwt, errors, jwtVerify } from "jose"
+import { type JSONWebKeySet, createLocalJWKSet, errors, jwtVerify } from "jose"
 import {
 	InvalidAccessTokenError,
 	InvalidAuthorizationCodeError,
@@ -49,6 +59,24 @@ import {
 } from "./error"
 import { generatePKCE } from "./pkce"
 import type { SubjectSchema } from "./subject"
+
+/**
+ * Result type for operations that can succeed or fail.
+ *
+ * @template T - The success data type
+ * @template E - The error type
+ *
+ * @example
+ * ```ts
+ * const result = await client.exchange(code, redirectUri)
+ * if (result.success) {
+ *   console.log(result.data.access)
+ * } else {
+ *   console.error(result.error.message)
+ * }
+ * ```
+ */
+export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E }
 
 interface TokenResponse {
 	access_token: string
@@ -68,158 +96,150 @@ interface FetchResponse {
 type FetchLike = (url: string, init?: RequestInit) => Promise<FetchResponse>
 
 /**
- * The well-known information for an OAuth 2.0 authorization server.
- * @internal
+ * Authorization server metadata from well-known endpoints.
  */
 export interface WellKnown {
 	/**
-	 * The URI to the JWKS endpoint.
+	 * URI to the JWKS endpoint for token verification.
 	 */
 	jwks_uri: string
 	/**
-	 * The URI to the token endpoint.
+	 * URI to the token endpoint for authorization code exchange.
 	 */
 	token_endpoint: string
 	/**
-	 * The URI to the authorization endpoint.
+	 * URI to the authorization endpoint for starting flows.
 	 */
 	authorization_endpoint: string
-}
-
-/**
- * Enhanced OIDC discovery information following OpenID Connect Discovery 1.0 specification.
- * @internal
- */
-export interface OidcDiscovery extends WellKnown {
 	/**
 	 * The issuer identifier.
 	 */
 	issuer: string
 	/**
-	 * The URI to the UserInfo endpoint.
+	 * URI to the UserInfo endpoint.
 	 */
 	userinfo_endpoint?: string
 	/**
-	 * The URI to the logout endpoint.
+	 * URI to the logout endpoint.
 	 */
 	end_session_endpoint?: string
 	/**
-	 * The URI to the token revocation endpoint.
+	 * URI to the token revocation endpoint.
 	 */
 	revocation_endpoint?: string
 	/**
-	 * Array of supported OAuth 2.0 scope values.
+	 * Supported OAuth 2.0 scope values.
 	 */
 	scopes_supported?: string[]
 	/**
-	 * Array of supported claims.
+	 * Supported claims.
 	 */
 	claims_supported?: string[]
 	/**
-	 * Array of supported response types.
+	 * Supported OAuth 2.0 response types.
 	 */
 	response_types_supported?: string[]
 	/**
-	 * Array of supported grant types.
+	 * Supported OAuth 2.0 grant types.
 	 */
 	grant_types_supported?: string[]
 	/**
-	 * Array of supported subject types.
+	 * Supported subject identifier types.
 	 */
 	subject_types_supported?: string[]
 	/**
-	 * Array of supported ID token signing algorithms.
+	 * Supported ID token signing algorithms.
 	 */
 	id_token_signing_alg_values_supported?: string[]
 	/**
-	 * Array of supported response modes.
+	 * Supported OAuth 2.0 response modes.
 	 */
 	response_modes_supported?: string[]
 	/**
-	 * Array of supported token endpoint authentication methods.
+	 * Supported token endpoint authentication methods.
 	 */
 	token_endpoint_auth_methods_supported?: string[]
 	/**
-	 * Boolean indicating if claims parameter is supported.
+	 * Whether the claims parameter is supported.
 	 */
 	claims_parameter_supported?: boolean
 	/**
-	 * Boolean indicating if request parameter is supported.
+	 * Whether the request parameter is supported.
 	 */
 	request_parameter_supported?: boolean
 	/**
-	 * Boolean indicating if request_uri parameter is supported.
+	 * Whether the request_uri parameter is supported.
 	 */
 	request_uri_parameter_supported?: boolean
 	/**
-	 * Boolean indicating if request_uri registration is required.
+	 * Whether request_uri registration is required.
 	 */
 	require_request_uri_registration?: boolean
 	/**
-	 * Array of supported revocation endpoint authentication methods.
+	 * Supported revocation endpoint authentication methods.
 	 */
 	revocation_endpoint_auth_methods_supported?: string[]
 }
 
 /**
- * The tokens returned by the auth server.
+ * Tokens returned by the authorization server.
  */
 export interface Tokens {
 	/**
-	 * The access token.
+	 * Access token for making authenticated API requests.
 	 */
 	access: string
 	/**
-	 * The refresh token.
+	 * Refresh token for obtaining new access tokens.
 	 */
 	refresh: string
 	/**
-	 * The number of seconds until the access token expires.
+	 * Number of seconds until the access token expires.
 	 */
 	expiresIn: number
 	/**
-	 * The OIDC ID token (when openid scope is requested).
+	 * OIDC ID token (when openid scope is requested).
 	 */
 	idToken?: string
 	/**
-	 * The granted scopes as a space-separated string.
+	 * Granted scopes as a space-separated string.
 	 */
 	scope?: string
 }
 
 /**
- * The challenge that you can use to verify the code.
+ * Challenge data for PKCE flows.
  */
 export type Challenge = {
 	/**
-	 * The state that was sent to the redirect URI.
+	 * State parameter for CSRF protection.
 	 */
 	state: string
 	/**
-	 * The verifier that was sent to the redirect URI.
+	 * PKCE code verifier for token exchange.
 	 */
 	verifier?: string
 }
 
 /**
- * Configure the client.
+ * Client configuration options.
  */
 export interface ClientInput {
 	/**
-	 * The client ID. This is just a string to identify your app.
-	 *
-	 * If you have a web app and a mobile app, you want to use different client IDs both.
+	 * Client ID that identifies your application.
 	 *
 	 * @example
 	 * ```ts
 	 * {
-	 *   clientID: "my-client"
+	 *   clientID: "my-web-app"
 	 * }
 	 * ```
 	 */
 	clientID: string
 	/**
-	 * The URL of your Draft Auth server.
+	 * Base URL of your Draft Auth server.
+	 *
+	 * Can also be set via DRAFTAUTH_ISSUER environment variable.
 	 *
 	 * @example
 	 * ```ts
@@ -230,72 +250,79 @@ export interface ClientInput {
 	 */
 	issuer?: string
 	/**
-	 * Optionally, override the internally used fetch function.
+	 * Custom fetch implementation for HTTP requests.
 	 *
-	 * This is useful if you are using a polyfilled fetch function in your application and you
-	 * want the client to use it too.
+	 * @example
+	 * ```ts
+	 * {
+	 *   fetch: customFetch
+	 * }
+	 * ```
 	 */
 	fetch?: FetchLike
 }
 
+/**
+ * Options for starting an authorization flow.
+ */
 export interface AuthorizeOptions {
 	/**
-	 * Enable the PKCE flow. This is for SPA apps.
+	 * Enable PKCE flow for enhanced security.
 	 *
+	 * Recommended for single-page applications and mobile apps.
+	 *
+	 * @default false
+	 * @example
 	 * ```ts
 	 * {
 	 *   pkce: true
 	 * }
 	 * ```
-	 *
-	 * @default false
 	 */
 	pkce?: boolean
 	/**
-	 * The provider you want to use for the OAuth flow.
+	 * Specific authentication provider to use.
 	 *
+	 * If not specified, users see a provider selection screen
+	 * or are redirected to the single configured provider.
+	 *
+	 * @example
 	 * ```ts
 	 * {
 	 *   provider: "google"
 	 * }
 	 * ```
-	 *
-	 * If no provider is specified, the user is directed to a page where they can select from the
-	 * list of configured providers.
-	 *
-	 * If there's only one provider configured, the user will be redirected to that.
 	 */
 	provider?: string
 	/**
-	 * The scopes you want to request.
+	 * OAuth 2.0 scopes to request.
+	 *
+	 * Determines what data your application can access.
 	 *
 	 * @example
 	 * ```ts
 	 * {
-	 *  scopes: ["read", "write"]
+	 *   scopes: ["openid", "profile", "email"]
 	 * }
 	 * ```
 	 */
 	scopes?: string[]
 	/**
-	 * OIDC nonce parameter for preventing replay attacks in ID tokens.
-	 * Required when using implicit flow with ID token.
+	 * Nonce parameter for preventing replay attacks in ID tokens.
 	 *
 	 * @example
 	 * ```ts
 	 * {
-	 *   nonce: "random-nonce-value"
+	 *   nonce: crypto.randomUUID()
 	 * }
 	 * ```
 	 */
 	nonce?: string
 	/**
-	 * OIDC prompt parameter controlling authentication behavior.
+	 * Prompt parameter controlling authentication behavior.
 	 *
-	 * - `none`: No authentication or consent UI should be displayed
-	 * - `login`: Force user to re-authenticate
-	 * - `consent`: Force user to grant consent again
-	 * - `select_account`: Prompt user to select an account
+	 * - `none`: No authentication UI. Fails if user not authenticated.
+	 * - `login`: Force user to re-authenticate.
 	 *
 	 * @example
 	 * ```ts
@@ -304,10 +331,11 @@ export interface AuthorizeOptions {
 	 * }
 	 * ```
 	 */
-	prompt?: "none" | "login" | "consent" | "select_account"
+	prompt?: "none" | "login"
 	/**
 	 * Maximum authentication age in seconds.
-	 * If the user's authentication is older than this, they will be prompted to re-authenticate.
+	 *
+	 * If user's session is older, they'll be prompted to re-authenticate.
 	 *
 	 * @example
 	 * ```ts
@@ -318,32 +346,18 @@ export interface AuthorizeOptions {
 	 */
 	maxAge?: number
 	/**
-	 * Preferred user interface locales for authentication.
-	 * Space-separated list of BCP47 language tags.
-	 *
-	 * @example
-	 * ```ts
-	 * {
-	 *   uiLocales: "en-US es-ES"
-	 * }
-	 * ```
-	 */
-	uiLocales?: string
-	/**
 	 * ID token hint for logout flows or user identification.
-	 * Previously issued ID token that can help identify the user.
 	 *
 	 * @example
 	 * ```ts
 	 * {
-	 *   idTokenHint: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+	 *   idTokenHint: previousIdToken
 	 * }
 	 * ```
 	 */
 	idTokenHint?: string
 	/**
-	 * Login hint to pre-fill the username field.
-	 * Can be an email address or username.
+	 * Login hint to pre-populate the username field.
 	 *
 	 * @example
 	 * ```ts
@@ -355,249 +369,157 @@ export interface AuthorizeOptions {
 	loginHint?: string
 }
 
+/**
+ * Result of starting an authorization flow.
+ */
 export interface AuthorizeResult {
 	/**
-	 * The challenge that you can use to verify the code. This is for the PKCE flow for SPA apps.
+	 * Challenge data needed for PKCE flows.
 	 *
-	 * This is an object that you _stringify_ and store it in session storage.
+	 * Store this securely and use when exchanging the code.
 	 *
+	 * @example
 	 * ```ts
 	 * sessionStorage.setItem("challenge", JSON.stringify(challenge))
 	 * ```
 	 */
 	challenge: Challenge
 	/**
-	 * The URL to redirect the user to. This starts the OAuth flow.
+	 * Authorization URL to redirect the user to.
 	 *
-	 * For example, for SPA apps.
-	 *
+	 * @example
 	 * ```ts
-	 * location.href = url
+	 * window.location.href = url
 	 * ```
 	 */
 	url: string
 }
 
 /**
- * Returned when the exchange is successful.
+ * Options for token refresh operations.
  */
-export interface ExchangeSuccess {
+export interface RefreshOptions {
 	/**
-	 * This is always `false` when the exchange is successful.
-	 */
-	err: false
-	/**
-	 * The access and refresh tokens.
-	 */
-	tokens: Tokens
-}
-
-/**
- * Returned when the exchange fails.
- */
-export interface ExchangeError {
-	/**
-	 * The type of error that occurred. You can handle this by checking the type.
+	 * Current access token to check before refreshing.
+	 *
+	 * Helps avoid unnecessary refresh requests.
 	 *
 	 * @example
 	 * ```ts
-	 * import { InvalidAuthorizationCodeError } from "@draftauth/core/error"
-	 *
-	 * console.log(err instanceof InvalidAuthorizationCodeError)
-	 *```
-	 */
-	err: InvalidAuthorizationCodeError
-}
-
-export interface RefreshOptions {
-	/**
-	 * Optionally, pass in the access token.
+	 * {
+	 *   access: currentAccessToken
+	 * }
+	 * ```
 	 */
 	access?: string
 }
 
 /**
- * Returned when the refresh is successful.
+ * Options for token verification.
  */
-export interface RefreshSuccess {
+export interface VerifyOptions {
 	/**
-	 * This is always `false` when the refresh is successful.
-	 */
-	err: false
-	/**
-	 * Returns the refreshed tokens only if they've been refreshed.
-	 *
-	 * If they are still valid, this will be `undefined`.
-	 */
-	tokens?: Tokens
-}
-
-/**
- * Returned when the refresh fails.
- */
-export interface RefreshError {
-	/**
-	 * The type of error that occurred. You can handle this by checking the type.
+	 * Refresh token for automatic refresh if access token is expired.
 	 *
 	 * @example
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
-	 *
-	 * console.log(err instanceof InvalidRefreshTokenError)
-	 *```
-	 */
-	err: InvalidRefreshTokenError | InvalidAccessTokenError
-}
-
-export interface VerifyOptions {
-	/**
-	 * Optionally, pass in the refresh token.
-	 *
-	 * If passed in, this will automatically refresh the access token if it has expired.
+	 * {
+	 *   refresh: refreshToken
+	 * }
+	 * ```
 	 */
 	refresh?: string
 	/**
+	 * Expected issuer for validation.
 	 * @internal
 	 */
 	issuer?: string
 	/**
+	 * Expected audience for validation.
 	 * @internal
 	 */
 	audience?: string
 	/**
-	 * Optionally, override the internally used fetch function.
-	 *
-	 * This is useful if you are using a polyfilled fetch function in your application and you
-	 * want the client to use it too.
+	 * Custom fetch for HTTP requests.
 	 */
 	fetch?: FetchLike
 }
 
+/**
+ * Result of successful token verification.
+ */
 export interface VerifyResult<T extends SubjectSchema> {
 	/**
-	 * This is always `undefined` when the verify is successful.
-	 */
-	err?: undefined
-	/**
-	 * Returns the refreshed tokens only if they've been refreshed.
-	 *
-	 * If they are still valid, this will be undefined.
+	 * New tokens if access token was refreshed during verification.
 	 */
 	tokens?: Tokens
 	/**
+	 * Audience (client ID) the token was issued for.
 	 * @internal
 	 */
 	aud: string
 	/**
-	 * The decoded subjects from the access token.
+	 * Decoded subject information from the access token.
 	 *
-	 * Has the same shape as the subjects you defined when creating the issuer.
+	 * Contains user data that was encoded when the token was issued.
 	 */
 	subject: {
-		[type in keyof T]: { type: type; properties: StandardSchemaV1.InferOutput<T[type]> }
+		[type in keyof T]: {
+			type: type
+			properties: T[type] extends StandardSchemaV1<unknown, infer Output> ? Output : unknown
+		}
 	}[keyof T]
 	/**
-	 * The scopes of the token.
+	 * OAuth 2.0 scopes granted for this token.
 	 */
 	scopes?: string[]
 }
 
 /**
- * Returned when the verify call fails.
+ * Options for token revocation.
  */
-export interface VerifyError {
-	/**
-	 * The type of error that occurred. You can handle this by checking the type.
-	 *
-	 * @example
-	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
-	 *
-	 * console.log(err instanceof InvalidRefreshTokenError)
-	 *```
-	 */
-	err: InvalidRefreshTokenError | InvalidAccessTokenError
-}
-
 export interface RevokeOptions {
 	/**
-	 * Revoke all refresh tokens for the subject.
+	 * Revoke all refresh tokens for the user.
 	 *
-	 * When set to `true`, all refresh tokens for the subject will be revoked,
-	 * effectively logging the user out from all devices/sessions.
+	 * Logs the user out from all devices and applications.
 	 *
+	 * @default false
 	 * @example
 	 * ```ts
-	 * // Revoke all tokens for the user
-	 * await client.revoke(refreshToken, { all: true })
+	 * { all: true }
 	 * ```
 	 */
 	all?: boolean
 	/**
-	 * The client ID to revoke tokens for (admin operation).
-	 *
-	 * When specified, only tokens issued for this specific client will be revoked.
-	 * This is useful for admin operations to revoke tokens for a specific application.
+	 * Revoke tokens only for a specific client (admin operation).
 	 *
 	 * @example
 	 * ```ts
-	 * // Revoke tokens only for a specific client
-	 * await client.revoke(refreshToken, { clientID: "mobile-app" })
+	 * { clientID: "mobile-app" }
 	 * ```
 	 */
 	clientID?: string
 }
 
 /**
- * Returned when token revocation is successful.
- */
-export interface RevokeSuccess {
-	/**
-	 * This is always `false` when the revocation is successful.
-	 */
-	err: false
-}
-
-/**
- * Returned when token revocation fails.
- */
-export interface RevokeError {
-	/**
-	 * The type of error that occurred during revocation.
-	 *
-	 * @example
-	 * ```ts
-	 * import { UnsupportedTokenTypeError } from "@draftauth/core/error"
-	 *
-	 * if (result.err instanceof UnsupportedTokenTypeError) {
-	 *   // Token type is not supported for revocation
-	 * }
-	 * ```
-	 */
-	err: UnsupportedTokenTypeError | TokenRevocationError
-}
-
-/**
- * OIDC UserInfo endpoint options.
+ * Options for UserInfo requests.
  */
 export interface UserInfoOptions {
 	/**
-	 * Optionally, override the internally used fetch function.
+	 * Custom fetch for the UserInfo request.
 	 */
 	fetch?: FetchLike
 }
 
 /**
- * Successful UserInfo response containing user claims.
+ * UserInfo response containing user claims.
  */
 export interface UserInfoResult {
 	/**
-	 * This is always `undefined` when UserInfo request is successful.
-	 */
-	err?: undefined
-	/**
-	 * User information claims returned by the UserInfo endpoint.
-	 * The claims included depend on the scopes requested during authorization.
+	 * User information claims from the UserInfo endpoint.
+	 *
+	 * Claims depend on scopes requested during authorization.
 	 *
 	 * @example
 	 * ```ts
@@ -613,25 +535,15 @@ export interface UserInfoResult {
 }
 
 /**
- * UserInfo request error.
- */
-export interface UserInfoError {
-	/**
-	 * Error that occurred during UserInfo request.
-	 */
-	err: InvalidAccessTokenError
-}
-
-/**
- * OIDC ID token claims following OpenID Connect Core 1.0 specification.
+ * ID token claims following OpenID Connect specification.
  */
 export interface IdTokenClaims {
 	/**
-	 * Subject identifier - unique identifier for the user.
+	 * Subject identifier - unique user ID.
 	 */
 	sub: string
 	/**
-	 * Audience - client ID for which the token was issued.
+	 * Audience - client ID the token was issued for.
 	 */
 	aud: string | string[]
 	/**
@@ -639,19 +551,19 @@ export interface IdTokenClaims {
 	 */
 	iss: string
 	/**
-	 * Expiration time (seconds since epoch).
+	 * Expiration time (seconds since Unix epoch).
 	 */
 	exp: number
 	/**
-	 * Issued at time (seconds since epoch).
+	 * Issued at time (seconds since Unix epoch).
 	 */
 	iat: number
 	/**
-	 * Authentication time (seconds since epoch).
+	 * Authentication time (seconds since Unix epoch).
 	 */
 	auth_time?: number
 	/**
-	 * Nonce value used to associate client session with ID token.
+	 * Nonce for associating client session with ID token.
 	 */
 	nonce?: string
 	/**
@@ -667,7 +579,7 @@ export interface IdTokenClaims {
 	 */
 	email?: string
 	/**
-	 * Whether the email has been verified (email scope).
+	 * Whether email has been verified (email scope).
 	 */
 	email_verified?: boolean
 	/**
@@ -681,48 +593,24 @@ export interface IdTokenClaims {
 }
 
 /**
- * Successful ID token verification result.
- */
-export interface IdTokenVerifyResult {
-	/**
-	 * This is always `undefined` when ID token verification is successful.
-	 */
-	err?: undefined
-	/**
-	 * The verified ID token claims.
-	 */
-	claims: IdTokenClaims
-}
-
-/**
- * ID token verification error.
- */
-export interface IdTokenVerifyError {
-	/**
-	 * Error that occurred during ID token verification.
-	 */
-	err: InvalidAccessTokenError
-}
-
-/**
- * OIDC logout options following RP-Initiated Logout specification.
+ * Options for logout flows.
  */
 export interface LogoutOptions {
 	/**
 	 * Previously issued ID token to identify the user session.
-	 * This helps the authorization server identify which session to terminate.
 	 *
 	 * @example
 	 * ```ts
 	 * {
-	 *   idTokenHint: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+	 *   idTokenHint: storedIdToken
 	 * }
 	 * ```
 	 */
 	idTokenHint?: string
 	/**
 	 * URI to redirect to after logout.
-	 * Must be registered with the authorization server.
+	 *
+	 * Must be pre-registered with the authorization server.
 	 *
 	 * @example
 	 * ```ts
@@ -733,8 +621,7 @@ export interface LogoutOptions {
 	 */
 	postLogoutRedirectUri?: string
 	/**
-	 * State parameter for logout request.
-	 * Will be returned to the post-logout redirect URI.
+	 * State parameter returned to the post-logout redirect URI.
 	 *
 	 * @example
 	 * ```ts
@@ -747,214 +634,151 @@ export interface LogoutOptions {
 }
 
 /**
- * An instance of the Draft Auth client contains the following methods.
+ * Draft Auth client with all OAuth and OIDC operations.
  */
 export interface Client {
 	/**
-	 * Start the autorization flow. For example, in SSR sites.
+	 * Start an OAuth authorization flow.
 	 *
+	 * @param redirectURI - Where users will be sent after authorization
+	 * @param response - Response type ("code" or "token")
+	 * @param opts - Additional authorization options
+	 * @returns Authorization URL and challenge data
+	 *
+	 * @example Basic flow
 	 * ```ts
-	 * const { url } = await client.authorize(<redirect_uri>, "code")
-	 * ```
-	 *
-	 * This takes a redirect URI and the type of flow you want to use. The redirect URI is the
-	 * location where the user will be redirected to after the flow is complete.
-	 *
-	 * Supports both the _code_ and _token_ flows. We recommend using the _code_ flow as it's more
-	 * secure.
-	 *
-	 * :::tip
-	 * This returns a URL to redirect the user to. This starts the OAuth flow.
-	 * :::
-	 *
-	 * This returns a URL to the auth server. You can redirect the user to the URL to start the
-	 * OAuth flow.
-	 *
-	 * For SPA apps, we recommend using the PKCE flow.
-	 *
-	 * ```ts {4}
-	 * const { challenge, url } = await client.authorize(
-	 *   <redirect_uri>,
-	 *   "code",
-	 *   { pkce: true }
-	 * )
-	 * ```
-	 *
-	 * This returns a redirect URL and a challenge that you need to use later to verify the code.
-	 *
-	 * Enhanced OIDC support with additional parameters:
-	 *
-	 * ```ts
-	 * const { challenge, url } = await client.authorize(
+	 * const result = await client.authorize(
 	 *   "https://myapp.com/callback",
-	 *   "code",
-	 *   {
-	 *     pkce: true,
-	 *     scopes: ["openid", "profile", "email"],
-	 *     nonce: "random-nonce",
-	 *     prompt: "login",
-	 *     maxAge: 3600
-	 *   }
+	 *   "code"
 	 * )
+	 * if (result.success) {
+	 *   window.location.href = result.data.url
+	 * }
+	 * ```
+	 *
+	 * @example PKCE flow
+	 * ```ts
+	 * const result = await client.authorize(
+	 *   "https://spa.example.com/callback",
+	 *   "code",
+	 *   { pkce: true, scopes: ["openid", "profile"] }
+	 * )
+	 * if (result.success) {
+	 *   sessionStorage.setItem("challenge", JSON.stringify(result.data.challenge))
+	 *   window.location.href = result.data.url
+	 * }
 	 * ```
 	 */
 	authorize(
 		redirectURI: string,
 		response: "code" | "token",
 		opts?: AuthorizeOptions
-	): Promise<AuthorizeResult>
+	): Promise<Result<AuthorizeResult>>
 
 	/**
-	 * Exchange the code for access and refresh tokens.
+	 * Exchange authorization code for tokens.
 	 *
+	 * @param code - Authorization code from the callback
+	 * @param redirectURI - Same redirect URI used in authorization
+	 * @param verifier - PKCE code verifier (required for PKCE flows)
+	 * @returns Access tokens and metadata
+	 *
+	 * @example Basic exchange
 	 * ```ts
-	 * const exchanged = await client.exchange(<code>, <redirect_uri>)
-	 * ```
+	 * const urlParams = new URLSearchParams(window.location.search)
+	 * const code = urlParams.get('code')
 	 *
-	 * You call this after the user has been redirected back to your app after the OAuth flow.
-	 *
-	 * :::tip
-	 * For SSR sites, the code is returned in the query parameter.
-	 * :::
-	 *
-	 * So the code comes from the query parameter in the redirect URI. The redirect URI here is
-	 * the one that you passed in to the `authorize` call when starting the flow.
-	 *
-	 * :::tip
-	 * For SPA sites, the code is returned through the URL hash.
-	 * :::
-	 *
-	 * If you used the PKCE flow for an SPA app, the code is returned as a part of the redirect URL
-	 * hash.
-	 *
-	 * ```ts {4}
-	 * const exchanged = await client.exchange(
-	 *   <code>,
-	 *   <redirect_uri>,
-	 *   <challenge.verifier>
-	 * )
-	 * ```
-	 *
-	 * You also need to pass in the previously stored challenge verifier.
-	 *
-	 * This method returns the access and refresh tokens. Or if it fails, it returns an error that
-	 * you can handle depending on the error.
-	 *
-	 * ```ts
-	 * import { InvalidAuthorizationCodeError } from "@draftauth/core/error"
-	 *
-	 * if (exchanged.err) {
-	 *   if (exchanged.err instanceof InvalidAuthorizationCodeError) {
-	 *     // handle invalid code error
-	 *   }
-	 *   else {
-	 *     // handle other errors
+	 * if (code) {
+	 *   const result = await client.exchange(code, "https://myapp.com/callback")
+	 *   if (result.success) {
+	 *     const { access, refresh } = result.data
+	 *     // Store tokens securely
 	 *   }
 	 * }
-	 *
-	 * const { access, refresh, idToken } = exchanged.tokens
 	 * ```
 	 *
-	 * The response now includes ID tokens when the `openid` scope was requested.
+	 * @example PKCE exchange
+	 * ```ts
+	 * const challenge = JSON.parse(sessionStorage.getItem("challenge") || "{}")
+	 * const code = new URLSearchParams(window.location.search).get('code')
+	 *
+	 * if (code && challenge.verifier) {
+	 *   const result = await client.exchange(
+	 *     code,
+	 *     "https://spa.example.com/callback",
+	 *     challenge.verifier
+	 *   )
+	 *   if (result.success) {
+	 *     sessionStorage.removeItem("challenge")
+	 *     // Handle tokens
+	 *   }
+	 * }
+	 * ```
 	 */
 	exchange(
 		code: string,
 		redirectURI: string,
 		verifier?: string
-	): Promise<ExchangeSuccess | ExchangeError>
+	): Promise<Result<Tokens, InvalidAuthorizationCodeError>>
 
 	/**
-	 * Refreshes the tokens if they have expired. This is used in an SPA app to maintain the
-	 * session, without logging the user out.
+	 * Refresh an access token using a refresh token.
 	 *
+	 * @param refresh - Refresh token to use
+	 * @param opts - Additional refresh options
+	 * @returns New tokens if refresh was needed
+	 *
+	 * @example Basic refresh
 	 * ```ts
-	 * const next = await client.refresh(<refresh_token>)
-	 * ```
+	 * const result = await client.refresh(storedRefreshToken)
 	 *
-	 * Can optionally take the access token as well. If passed in, this will skip the refresh
-	 * if the access token is still valid.
-	 *
-	 * ```ts
-	 * const next = await client.refresh(<refresh_token>, { access: <access_token> })
-	 * ```
-	 *
-	 * This returns the refreshed tokens only if they've been refreshed.
-	 *
-	 * ```ts
-	 * if (!next.err) {
-	 *   // tokens are still valid
-	 * }
-	 * if (next.tokens) {
-	 *   const { access, refresh, idToken } = next.tokens
+	 * if (result.success && result.data.tokens) {
+	 *   const { access, refresh: newRefresh } = result.data.tokens
+	 *   updateStoredTokens(access, newRefresh)
+	 * } else if (result.success) {
+	 *   console.log('Token still valid')
+	 * } else {
+	 *   redirectToLogin()
 	 * }
 	 * ```
-	 *
-	 * Or if it fails, it returns an error that you can handle depending on the error.
-	 *
-	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
-	 *
-	 * if (next.err) {
-	 *   if (next.err instanceof InvalidRefreshTokenError) {
-	 *     // handle invalid refresh token error
-	 *   }
-	 *   else {
-	 *     // handle other errors
-	 *   }
-	 * }
-	 * ```
-	 *
-	 * The response now includes ID tokens when they were originally requested.
 	 */
-	refresh(refresh: string, opts?: RefreshOptions): Promise<RefreshSuccess | RefreshError>
+	refresh(
+		refresh: string,
+		opts?: RefreshOptions
+	): Promise<Result<{ tokens?: Tokens }, InvalidRefreshTokenError | InvalidAccessTokenError>>
 
 	/**
-	 * Verify the token in the incoming request.
+	 * Verify and decode an access token.
 	 *
-	 * This is typically used for SSR sites where the token is stored in an HTTP only cookie. And
-	 * is passed to the server on every request.
+	 * @param subjects - Subject schema used when creating the issuer
+	 * @param token - Access token to verify
+	 * @param options - Additional verification options
+	 * @returns Decoded token data and user information
 	 *
+	 * @example Basic verification
 	 * ```ts
-	 * const verified = await client.verify(<subjects>, <token>)
-	 * ```
+	 * const result = await client.verify(subjects, accessToken)
 	 *
-	 * This takes the subjects that you had previously defined when creating the issuer.
-	 *
-	 * :::tip
-	 * If the refresh token is passed in, it'll automatically refresh the access token.
-	 * :::
-	 *
-	 * This can optionally take the refresh token as well. If passed in, it'll automatically
-	 * refresh the access token if it has expired.
-	 *
-	 * ```ts
-	 * const verified = await client.verify(<subjects>, <token>, { refresh: <refresh_token> })
-	 * ```
-	 *
-	 * This returns the decoded subjects from the access token. And the tokens if they've been
-	 * refreshed.
-	 *
-	 * ```ts
-	 * // based on the subjects you defined earlier
-	 * console.log(verified.subject.properties.userID)
-	 *
-	 * if (verified.tokens) {
-	 *   const { access, refresh, idToken } = verified.tokens
+	 * if (result.success) {
+	 *   const { subject, scopes } = result.data
+	 *   console.log(`User: ${subject.properties.userID}`)
+	 *   console.log(`Scopes: ${scopes?.join(', ')}`)
 	 * }
 	 * ```
 	 *
-	 * Or if it fails, it returns an error that you can handle depending on the error.
-	 *
+	 * @example With automatic refresh
 	 * ```ts
-	 * import { InvalidRefreshTokenError } from "@draftauth/core/error"
+	 * const result = await client.verify(subjects, accessToken, {
+	 *   refresh: refreshToken
+	 * })
 	 *
-	 * if (verified.err) {
-	 *   if (verified.err instanceof InvalidRefreshTokenError) {
-	 *     // handle invalid refresh token error
+	 * if (result.success) {
+	 *   if (result.data.tokens) {
+	 *     // Tokens were refreshed
+	 *     updateStoredTokens(result.data.tokens.access, result.data.tokens.refresh)
 	 *   }
-	 *   else {
-	 *     // handle other errors
-	 *   }
+	 *   // Use verified subject data
+	 *   const user = result.data.subject.properties
 	 * }
 	 * ```
 	 */
@@ -962,179 +786,153 @@ export interface Client {
 		subjects: T,
 		token: string,
 		options?: VerifyOptions
-	): Promise<VerifyResult<T> | VerifyError>
+	): Promise<
+		Result<
+			VerifyResult<T>,
+			InvalidRefreshTokenError | InvalidAccessTokenError | InvalidSubjectError
+		>
+	>
 
 	/**
-	 * Revoke a refresh token.
+	 * Revoke a refresh token to invalidate sessions.
 	 *
-	 * This method allows you to revoke refresh tokens, which is useful for implementing
-	 * logout functionality and managing token lifecycle.
+	 * @param token - Refresh token to revoke
+	 * @param opts - Revocation options
+	 * @returns Success indicator or error
 	 *
+	 * @example Single device logout
 	 * ```ts
 	 * const result = await client.revoke(refreshToken)
+	 * if (result.success) {
+	 *   console.log('Logged out from this device')
+	 *   clearStoredTokens()
+	 * }
 	 * ```
 	 *
-	 * Can optionally revoke all tokens for the subject:
-	 *
+	 * @example Global logout
 	 * ```ts
-	 * // Revoke all tokens for the user (logout from all devices)
 	 * const result = await client.revoke(refreshToken, { all: true })
-	 * ```
-	 *
-	 * Or revoke tokens for a specific client (admin operation):
-	 *
-	 * ```ts
-	 * // Revoke tokens only for a specific client
-	 * const result = await client.revoke(refreshToken, { clientID: "mobile-app" })
-	 * ```
-	 *
-	 * Error handling:
-	 *
-	 * ```ts
-	 * import { UnsupportedTokenTypeError, TokenRevocationError } from "@draftauth/core/error"
-	 *
-	 * const result = await client.revoke(token)
-	 * if (result.err) {
-	 *   if (result.err instanceof UnsupportedTokenTypeError) {
-	 *     // Token type not supported for revocation
-	 *   } else if (result.err instanceof TokenRevocationError) {
-	 *     // General revocation error
-	 *   }
+	 * if (result.success) {
+	 *   console.log('Logged out from all devices')
+	 *   redirectToLogin()
 	 * }
 	 * ```
 	 */
-	revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError>
+	revoke(
+		token: string,
+		opts?: RevokeOptions
+	): Promise<Result<void, UnsupportedTokenTypeError | TokenRevocationError>>
 
 	/**
-	 * Fetch user information from the OIDC UserInfo endpoint.
-	 *
-	 * This method calls the UserInfo endpoint to retrieve claims about the authenticated user.
-	 * The claims returned depend on the scopes that were requested during authorization.
-	 *
-	 * ```ts
-	 * const result = await client.userinfo(accessToken)
-	 * if (!result.err) {
-	 *   console.log(result.userinfo.sub) // User ID
-	 *   console.log(result.userinfo.name) // Full name (if profile scope)
-	 *   console.log(result.userinfo.email) // Email (if email scope)
-	 * }
-	 * ```
-	 *
-	 * Error handling:
-	 *
-	 * ```ts
-	 * const result = await client.userinfo(accessToken)
-	 * if (result.err) {
-	 *   // Invalid or expired access token
-	 *   console.error("Failed to fetch user info")
-	 * }
-	 * ```
+	 * Fetch user information from the UserInfo endpoint.
 	 *
 	 * @param accessToken - Valid access token with appropriate scopes
-	 * @param opts - Optional configuration
-	 * @returns Promise resolving to user information or error
+	 * @param opts - UserInfo request options
+	 * @returns User claims from the UserInfo endpoint
+	 *
+	 * @example Basic UserInfo request
+	 * ```ts
+	 * const result = await client.userinfo(accessToken)
+	 *
+	 * if (result.success) {
+	 *   const { userinfo } = result.data
+	 *   console.log(`Name: ${userinfo.name}`)
+	 *   console.log(`Email: ${userinfo.email}`)
+	 * }
+	 * ```
 	 */
 	userinfo(
 		accessToken: string,
 		opts?: UserInfoOptions
-	): Promise<UserInfoResult | UserInfoError>
+	): Promise<Result<UserInfoResult, InvalidAccessTokenError>>
 
 	/**
-	 * Verify an OIDC ID token.
+	 * Verify and decode an OIDC ID token.
 	 *
-	 * This method validates and decodes an ID token issued by the authorization server.
-	 * ID tokens contain identity information about the authenticated user.
+	 * @param idToken - ID token to verify
+	 * @returns Verified ID token claims
 	 *
+	 * @example ID token verification
 	 * ```ts
 	 * const result = await client.verifyIdToken(idToken)
-	 * if (!result.err) {
-	 *   console.log(result.claims.sub) // User ID
-	 *   console.log(result.claims.name) // User's name
-	 *   console.log(result.claims.auth_time) // When user authenticated
+	 *
+	 * if (result.success) {
+	 *   const { claims } = result.data
+	 *   console.log(`User ID: ${claims.sub}`)
+	 *   console.log(`Email: ${claims.email}`)
 	 * }
 	 * ```
-	 *
-	 * Error handling:
-	 *
-	 * ```ts
-	 * const result = await client.verifyIdToken(idToken)
-	 * if (result.err) {
-	 *   // Invalid, expired, or tampered ID token
-	 *   console.error("ID token verification failed")
-	 * }
-	 * ```
-	 *
-	 * @param idToken - The ID token to verify
-	 * @returns Promise resolving to verified claims or error
 	 */
-	verifyIdToken(idToken: string): Promise<IdTokenVerifyResult | IdTokenVerifyError>
+	verifyIdToken(
+		idToken: string
+	): Promise<Result<{ claims: IdTokenClaims }, InvalidAccessTokenError>>
 
 	/**
-	 * Generate an OIDC logout URL following the RP-Initiated Logout specification.
+	 * Generate a logout URL for ending user sessions.
 	 *
-	 * This method creates a logout URL that can be used to terminate the user's session
-	 * at the authorization server and optionally redirect to a post-logout page.
+	 * @param opts - Logout options
+	 * @returns Logout URL to redirect the user to
 	 *
+	 * @example Basic logout
 	 * ```ts
-	 * // Basic logout
 	 * const logoutUrl = await client.logout()
 	 * window.location.href = logoutUrl
 	 * ```
 	 *
-	 * With ID token hint and redirect:
-	 *
+	 * @example Logout with redirect
 	 * ```ts
 	 * const logoutUrl = await client.logout({
-	 *   idTokenHint: tokens.idToken,
 	 *   postLogoutRedirectUri: "https://myapp.com/goodbye",
-	 *   state: "logout-state-123"
+	 *   state: "logout-completed"
 	 * })
 	 * window.location.href = logoutUrl
 	 * ```
-	 *
-	 * @param opts - Optional logout parameters
-	 * @returns Promise resolving to the logout URL
 	 */
 	logout(opts?: LogoutOptions): Promise<string>
 }
 
-import type { StandardSchemaV1 } from "@standard-schema/spec"
-
 /**
- * Create an Draft Auth client.
+ * Create a Draft Auth client.
  *
- * @param input - Configure the client.
+ * @param input - Client configuration
+ * @returns Configured client instance
+ *
+ * @example Basic setup
+ * ```ts
+ * const client = createClient({
+ *   clientID: "my-web-app",
+ *   issuer: "https://auth.mycompany.com"
+ * })
+ * ```
  */
 export const createClient = (input: ClientInput): Client => {
 	const jwksCache = new Map<string, ReturnType<typeof createLocalJWKSet>>()
-	const issuerCache = new Map<string, OidcDiscovery>()
+	const issuerCache = new Map<string, WellKnown>()
 	const issuer = input.issuer || process.env.DRAFTAUTH_ISSUER
-	if (!issuer) throw new Error("No issuer")
+	if (!issuer) throw new Error("No issuer configured")
 	const f = input.fetch ?? (fetch as FetchLike)
 
-	const getIssuer = async (): Promise<OidcDiscovery> => {
-		const cached = issuerCache.get(issuer!)
+	const getIssuer = async (): Promise<WellKnown> => {
+		const cached = issuerCache.get(issuer)
 		if (cached) return cached
 
 		// Try OIDC discovery first
 		try {
 			const oidcDiscovery = (await f(`${issuer}/.well-known/openid-configuration`).then(
 				(r: FetchResponse) => r.json()
-			)) as OidcDiscovery
+			)) as WellKnown
 
 			if (oidcDiscovery.authorization_endpoint) {
-				issuerCache.set(issuer!, oidcDiscovery)
+				issuerCache.set(issuer, oidcDiscovery)
 				return oidcDiscovery
 			}
-		} catch {
-			// Fallback to OAuth discovery
-		}
+		} catch {}
 
 		// Fallback to OAuth 2.0 Authorization Server Metadata
 		const wellKnown = (await f(`${issuer}/.well-known/oauth-authorization-server`).then(
 			(r: FetchResponse) => r.json()
-		)) as OidcDiscovery
-		issuerCache.set(issuer!, wellKnown)
+		)) as WellKnown
+		issuerCache.set(issuer, wellKnown)
 		return wellKnown
 	}
 
@@ -1148,74 +946,48 @@ export const createClient = (input: ClientInput): Client => {
 		return result
 	}
 
-	const result: Client = {
-		async revoke(token: string, opts?: RevokeOptions): Promise<RevokeSuccess | RevokeError> {
-			const wk = await getIssuer()
-			const revokeEndpoint = wk.revocation_endpoint ?? `${issuer}/revoke`
-
-			const response = await f(revokeEndpoint, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded"
-				},
-				body: new URLSearchParams({
-					token: token,
-					token_type_hint: "refresh_token",
-					...(opts?.all ? { revoke_all: "true" } : {}),
-					...(opts?.clientID ? { client_id: opts.clientID } : {})
-				}).toString()
-			})
-
-			if (!response.ok) {
-				const errorText = await response.text()
-				try {
-					const errorJson = JSON.parse(errorText) as {
-						error?: string
-						error_description?: string
-					}
-					if (errorJson.error === "unsupported_token_type") {
-						return { err: new UnsupportedTokenTypeError() }
-					}
-				} catch {
-					// Continue to generic error
+	const client: Client = {
+		async authorize(
+			redirectURI: string,
+			response: "code" | "token",
+			opts?: AuthorizeOptions
+		): Promise<Result<AuthorizeResult>> {
+			try {
+				const wk = await getIssuer()
+				const authUrl = new URL(wk.authorization_endpoint)
+				const challenge: Challenge = {
+					state: crypto.randomUUID()
 				}
-				return { err: new TokenRevocationError(`Revocation failed: ${errorText}`) }
-			}
 
-			return { err: false }
-		},
+				authUrl.searchParams.set("client_id", input.clientID)
+				authUrl.searchParams.set("redirect_uri", redirectURI)
+				authUrl.searchParams.set("response_type", response)
+				authUrl.searchParams.set("state", challenge.state)
 
-		async authorize(redirectURI: string, response: "code" | "token", opts?: AuthorizeOptions) {
-			const wk = await getIssuer()
-			const result = new URL(wk.authorization_endpoint)
-			const challenge: Challenge = {
-				state: crypto.randomUUID()
-			}
+				if (opts?.provider) authUrl.searchParams.set("provider", opts.provider)
+				if (opts?.scopes) authUrl.searchParams.set("scope", opts.scopes.join(" "))
+				if (opts?.nonce) authUrl.searchParams.set("nonce", opts.nonce)
+				if (opts?.prompt) authUrl.searchParams.set("prompt", opts.prompt)
+				if (opts?.maxAge) authUrl.searchParams.set("max_age", opts.maxAge.toString())
+				if (opts?.idTokenHint) authUrl.searchParams.set("id_token_hint", opts.idTokenHint)
+				if (opts?.loginHint) authUrl.searchParams.set("login_hint", opts.loginHint)
 
-			result.searchParams.set("client_id", input.clientID)
-			result.searchParams.set("redirect_uri", redirectURI)
-			result.searchParams.set("response_type", response)
-			result.searchParams.set("state", challenge.state)
+				if (opts?.pkce && response === "code") {
+					const pkce = await generatePKCE()
+					authUrl.searchParams.set("code_challenge_method", "S256")
+					authUrl.searchParams.set("code_challenge", pkce.challenge)
+					challenge.verifier = pkce.verifier
+				}
 
-			if (opts?.provider) result.searchParams.set("provider", opts.provider)
-			if (opts?.scopes) result.searchParams.set("scope", opts.scopes.join(" "))
-			if (opts?.nonce) result.searchParams.set("nonce", opts.nonce)
-			if (opts?.prompt) result.searchParams.set("prompt", opts.prompt)
-			if (opts?.maxAge) result.searchParams.set("max_age", opts.maxAge.toString())
-			if (opts?.uiLocales) result.searchParams.set("ui_locales", opts.uiLocales)
-			if (opts?.idTokenHint) result.searchParams.set("id_token_hint", opts.idTokenHint)
-			if (opts?.loginHint) result.searchParams.set("login_hint", opts.loginHint)
-
-			if (opts?.pkce && response === "code") {
-				const pkce = await generatePKCE()
-				result.searchParams.set("code_challenge_method", "S256")
-				result.searchParams.set("code_challenge", pkce.challenge)
-				challenge.verifier = pkce.verifier
-			}
-
-			return {
-				challenge,
-				url: result.toString()
+				return {
+					success: true,
+					data: {
+						challenge,
+						url: authUrl.toString()
+					}
+				}
+			} catch (error) {
+				return { success: false, error: error as Error }
 			}
 		},
 
@@ -1223,48 +995,56 @@ export const createClient = (input: ClientInput): Client => {
 			code: string,
 			redirectURI: string,
 			verifier?: string
-		): Promise<ExchangeSuccess | ExchangeError> {
-			const wk = await getIssuer()
-			const response = await f(wk.token_endpoint, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded"
-				},
-				body: new URLSearchParams({
-					code,
-					redirect_uri: redirectURI,
-					grant_type: "authorization_code",
-					client_id: input.clientID,
-					...(verifier ? { code_verifier: verifier } : {})
-				}).toString()
-			})
-
-			const responseText = await response.text()
-
-			if (!response.ok) {
-				return {
-					err: new InvalidAuthorizationCodeError()
-				}
-			}
-
-			let json: unknown
+		): Promise<Result<Tokens, InvalidAuthorizationCodeError>> {
 			try {
-				json = JSON.parse(responseText)
-			} catch (error) {
-				return {
-					err: new InvalidAuthorizationCodeError()
-				}
-			}
+				const wk = await getIssuer()
+				const response = await f(wk.token_endpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					body: new URLSearchParams({
+						code,
+						redirect_uri: redirectURI,
+						grant_type: "authorization_code",
+						client_id: input.clientID,
+						...(verifier ? { code_verifier: verifier } : {})
+					}).toString()
+				})
 
-			const tokenResponse = json as TokenResponse
-			return {
-				err: false,
-				tokens: {
-					access: tokenResponse.access_token,
-					refresh: tokenResponse.refresh_token,
-					expiresIn: tokenResponse.expires_in,
-					...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
-					...(tokenResponse.scope && { scope: tokenResponse.scope })
+				if (!response.ok) {
+					return {
+						success: false,
+						error: new InvalidAuthorizationCodeError()
+					}
+				}
+
+				const responseText = await response.text()
+				let json: unknown
+				try {
+					json = JSON.parse(responseText)
+				} catch {
+					return {
+						success: false,
+						error: new InvalidAuthorizationCodeError()
+					}
+				}
+
+				const tokenResponse = json as TokenResponse
+				return {
+					success: true,
+					data: {
+						access: tokenResponse.access_token,
+						refresh: tokenResponse.refresh_token,
+						expiresIn: tokenResponse.expires_in,
+						...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
+						...(tokenResponse.scope && { scope: tokenResponse.scope })
+					}
+				}
+			} catch {
+				return {
+					success: false,
+					error: new InvalidAuthorizationCodeError()
 				}
 			}
 		},
@@ -1272,60 +1052,56 @@ export const createClient = (input: ClientInput): Client => {
 		async refresh(
 			refresh: string,
 			opts?: RefreshOptions
-		): Promise<RefreshSuccess | RefreshError> {
-			if (opts?.access) {
-				const decoded = decodeJwt(opts.access)
-				if (!decoded) {
-					return {
-						err: new InvalidAccessTokenError()
-					}
-				}
-				// allow 30s window for expiration
-				if ((decoded.exp || 0) > Date.now() / 1000 + 30) {
-					return {
-						err: false
-					}
-				}
-			}
-
-			const wk = await getIssuer()
-			const response = await f(wk.token_endpoint, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded"
-				},
-				body: new URLSearchParams({
-					grant_type: "refresh_token",
-					refresh_token: refresh
-				}).toString()
-			})
-
-			const responseText = await response.text()
-
-			if (!response.ok) {
-				return {
-					err: new InvalidRefreshTokenError()
-				}
-			}
-
-			let json: unknown
+		): Promise<
+			Result<{ tokens?: Tokens }, InvalidRefreshTokenError | InvalidAccessTokenError>
+		> {
 			try {
-				json = JSON.parse(responseText)
-			} catch (error) {
-				return {
-					err: new InvalidRefreshTokenError()
-				}
-			}
+				if (opts?.access) {
+					try {
+						const jwks = await getJWKS()
+						await jwtVerify(opts.access, jwks, { issuer })
 
-			const tokenResponse = json as TokenResponse
-			return {
-				err: false,
-				tokens: {
-					access: tokenResponse.access_token,
-					refresh: tokenResponse.refresh_token,
-					expiresIn: tokenResponse.expires_in,
-					...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
-					...(tokenResponse.scope && { scope: tokenResponse.scope })
+						return { success: true, data: {} }
+					} catch {}
+				}
+
+				const wk = await getIssuer()
+				const response = await f(wk.token_endpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					body: new URLSearchParams({
+						refresh_token: refresh,
+						grant_type: "refresh_token",
+						client_id: input.clientID
+					}).toString()
+				})
+
+				if (!response.ok) {
+					return {
+						success: false,
+						error: new InvalidRefreshTokenError()
+					}
+				}
+
+				const tokenResponse = (await response.json()) as TokenResponse
+				return {
+					success: true,
+					data: {
+						tokens: {
+							access: tokenResponse.access_token,
+							refresh: tokenResponse.refresh_token,
+							expiresIn: tokenResponse.expires_in,
+							...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
+							...(tokenResponse.scope && { scope: tokenResponse.scope })
+						}
+					}
+				}
+			} catch {
+				return {
+					success: false,
+					error: new InvalidRefreshTokenError()
 				}
 			}
 		},
@@ -1334,72 +1110,128 @@ export const createClient = (input: ClientInput): Client => {
 			subjects: T,
 			token: string,
 			options?: VerifyOptions
-		): Promise<VerifyResult<T> | VerifyError> {
-			const jwks = await getJWKS()
+		): Promise<
+			Result<
+				VerifyResult<T>,
+				InvalidRefreshTokenError | InvalidAccessTokenError | InvalidSubjectError
+			>
+		> {
 			try {
-				const jwtResult = await jwtVerify<{
-					mode: "access"
-					type: keyof T
-					properties: StandardSchemaV1.InferInput<T[keyof T]>
-					scopes?: string[]
-				}>(token, jwks, {
-					issuer
-				})
+				const jwks = await getJWKS()
+				const jwtResult = await jwtVerify(token, jwks, { issuer })
 
-				const subjectType = jwtResult.payload.type
-				const subjectSchema = subjects[subjectType]
-
-				if (!subjectSchema) {
+				if (jwtResult.payload.mode !== "access") {
 					return {
-						err: new InvalidSubjectError()
+						success: false,
+						error: new InvalidAccessTokenError()
 					}
 				}
 
-				const validated = await subjectSchema["~standard"].validate(
-					jwtResult.payload.properties
-				)
-
-				if (!validated.issues && jwtResult.payload.mode === "access") {
+				const subjectType = jwtResult.payload.type as keyof T
+				if (subjectType && subjects[subjectType]) {
 					return {
-						aud: jwtResult.payload.aud as string,
-						subject: {
-							type: jwtResult.payload.type,
-							properties: validated.value
-						} as VerifyResult<T>["subject"],
-						...(jwtResult.payload.scopes ? { scopes: jwtResult.payload.scopes } : {})
+						success: true,
+						data: {
+							aud: jwtResult.payload.aud as string,
+							subject: {
+								type: subjectType,
+								properties: jwtResult.payload.properties
+							} as VerifyResult<T>["subject"],
+							...(jwtResult.payload.scopes
+								? { scopes: jwtResult.payload.scopes as string[] }
+								: {})
+						}
 					}
 				}
 
 				return {
-					err: new InvalidSubjectError()
+					success: false,
+					error: new InvalidSubjectError()
 				}
 			} catch (e) {
 				if (e instanceof errors.JWTExpired && options?.refresh) {
-					const refreshed = await result.refresh(options.refresh)
-					if (refreshed.err) return refreshed
+					const refreshed = await client.refresh(options.refresh)
+					if (!refreshed.success)
+						return refreshed as Result<
+							VerifyResult<T>,
+							InvalidRefreshTokenError | InvalidAccessTokenError | InvalidSubjectError
+						>
 
-					if (!refreshed.tokens) {
+					if (!refreshed.data.tokens) {
 						return {
-							err: new InvalidAccessTokenError()
+							success: false,
+							error: new InvalidAccessTokenError()
 						}
 					}
 
-					const verified = await result.verify(subjects, refreshed.tokens.access, {
-						refresh: refreshed.tokens.refresh,
+					const verified = await client.verify(subjects, refreshed.data.tokens.access, {
+						refresh: refreshed.data.tokens.refresh,
 						issuer: options?.issuer,
 						audience: options?.audience,
 						fetch: options?.fetch
 					})
 
-					if (verified.err) return verified
+					if (!verified.success) return verified
 
 					return {
-						...verified,
-						tokens: refreshed.tokens
+						success: true,
+						data: {
+							...verified.data,
+							tokens: refreshed.data.tokens
+						}
 					}
 				}
 				return {
-					err: new InvalidAccessTokenError()
+					success: false,
+					error: new InvalidAccessTokenError()
+				}
+			}
+		},
+
+		async revoke(
+			token: string,
+			opts?: RevokeOptions
+		): Promise<Result<void, UnsupportedTokenTypeError | TokenRevocationError>> {
+			try {
+				const wk = await getIssuer()
+				const revokeEndpoint = wk.revocation_endpoint ?? `${issuer}/revoke`
+
+				const response = await f(revokeEndpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					body: new URLSearchParams({
+						token: token,
+						token_type_hint: "refresh_token",
+						...(opts?.all ? { revoke_all: "true" } : {}),
+						...(opts?.clientID ? { client_id: opts.clientID } : {})
+					}).toString()
+				})
+
+				if (!response.ok) {
+					const errorText = await response.text()
+					try {
+						const errorJson = JSON.parse(errorText) as {
+							error?: string
+							error_description?: string
+						}
+						if (errorJson.error === "unsupported_token_type") {
+							return { success: false, error: new UnsupportedTokenTypeError() }
+						}
+					} catch {}
+
+					return {
+						success: false,
+						error: new TokenRevocationError(`Revocation failed: ${errorText}`)
+					}
+				}
+
+				return { success: true, data: undefined }
+			} catch (error) {
+				return {
+					success: false,
+					error: new TokenRevocationError(`Revocation error: ${error}`)
 				}
 			}
 		},
@@ -1407,34 +1239,40 @@ export const createClient = (input: ClientInput): Client => {
 		async userinfo(
 			accessToken: string,
 			opts?: UserInfoOptions
-		): Promise<UserInfoResult | UserInfoError> {
-			const wk = await getIssuer()
-			if (!wk.userinfo_endpoint) {
-				return { err: new InvalidAccessTokenError() }
-			}
-
-			const fetchFn = opts?.fetch ?? f
-			const response = await fetchFn(wk.userinfo_endpoint, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`
+		): Promise<Result<UserInfoResult, InvalidAccessTokenError>> {
+			try {
+				const wk = await getIssuer()
+				if (!wk.userinfo_endpoint) {
+					return { success: false, error: new InvalidAccessTokenError() }
 				}
-			})
 
-			if (!response.ok) {
-				return { err: new InvalidAccessTokenError() }
+				const fetchFn = opts?.fetch ?? f
+				const response = await fetchFn(wk.userinfo_endpoint, {
+					headers: {
+						Authorization: `Bearer ${accessToken}`
+					}
+				})
+
+				if (!response.ok) {
+					return { success: false, error: new InvalidAccessTokenError() }
+				}
+
+				const userinfo = (await response.json()) as Record<string, unknown>
+				return { success: true, data: { userinfo } }
+			} catch {
+				return { success: false, error: new InvalidAccessTokenError() }
 			}
-
-			const userinfo = (await response.json()) as Record<string, unknown>
-			return { err: undefined, userinfo }
 		},
 
-		async verifyIdToken(idToken: string): Promise<IdTokenVerifyResult | IdTokenVerifyError> {
-			const jwks = await getJWKS()
+		async verifyIdToken(
+			idToken: string
+		): Promise<Result<{ claims: IdTokenClaims }, InvalidAccessTokenError>> {
 			try {
-				const result = await jwtVerify<IdTokenClaims>(idToken, jwks, { issuer })
-				return { err: undefined, claims: result.payload }
+				const jwks = await getJWKS()
+				const verifyResult = await jwtVerify<IdTokenClaims>(idToken, jwks, { issuer })
+				return { success: true, data: { claims: verifyResult.payload } }
 			} catch {
-				return { err: new InvalidAccessTokenError() }
+				return { success: false, error: new InvalidAccessTokenError() }
 			}
 		},
 
@@ -1445,9 +1283,11 @@ export const createClient = (input: ClientInput): Client => {
 			if (opts?.idTokenHint) {
 				logoutUrl.searchParams.set("id_token_hint", opts.idTokenHint)
 			}
+
 			if (opts?.postLogoutRedirectUri) {
 				logoutUrl.searchParams.set("post_logout_redirect_uri", opts.postLogoutRedirectUri)
 			}
+
 			if (opts?.state) {
 				logoutUrl.searchParams.set("state", opts.state)
 			}
@@ -1455,5 +1295,6 @@ export const createClient = (input: ClientInput): Client => {
 			return logoutUrl.toString()
 		}
 	}
-	return result
+
+	return client
 }
