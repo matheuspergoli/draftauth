@@ -14,7 +14,7 @@ import {
 } from "@/services/user-service"
 import { defaultAllowCheck } from "@draftauth/core/allow"
 import { createClient } from "@draftauth/core/client"
-import { issuer } from "@draftauth/core/issuer"
+import { issuer } from "@draftauth/core"
 import { CodeProvider } from "@draftauth/core/provider/code"
 import { GithubProvider } from "@draftauth/core/provider/github"
 import { GoogleProvider } from "@draftauth/core/provider/google"
