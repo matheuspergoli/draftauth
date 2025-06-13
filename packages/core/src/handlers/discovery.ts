@@ -180,8 +180,8 @@ export const registerDiscoveryEndpoints = <T>(
 					"id_token token",
 					"code id_token token"
 				],
-				response_modes_supported: ["query", "fragment"],
-				grant_types_supported: ["authorization_code", "refresh_token"],
+				response_modes_supported: ["query", "fragment", "form_post"],
+				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				subject_types_supported: ["public"],
 				id_token_signing_alg_values_supported: ["RS256"],
 				scopes_supported: allSupportedScopes,
@@ -221,6 +221,7 @@ export const registerDiscoveryEndpoints = <T>(
 				revocation_endpoint: `${iss}/revoke`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				response_types_supported: ["code", "token"],
+				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				scopes_supported: allSupportedScopes,
 				revocation_endpoint_auth_methods_supported: ["none"]
 			}
