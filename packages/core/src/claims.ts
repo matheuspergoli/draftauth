@@ -44,9 +44,10 @@ export interface ClaimsTransformResult {
 /**
  * Function type for transforming user properties into claims.
  * Allows for dynamic, context-aware claim generation.
+ * @template TProperties - The strongly-typed properties from subject schemas
  */
-export type ClaimsTransformFunction = (
-	properties: Record<string, unknown>,
+export type ClaimsTransformFunction<TProperties = Record<string, unknown>> = (
+	properties: TProperties,
 	context: ClaimsTransformContext
 ) => ClaimsTransformResult | Promise<ClaimsTransformResult>
 
@@ -66,39 +67,59 @@ export interface EssentialClaimsConfig {
 /**
  * Comprehensive claims configuration for the Draft Auth issuer.
  * Supports both simple and advanced claim transformation scenarios.
+ * @template TProperties - The strongly-typed properties from subject schemas
  */
-export interface ClaimsConfiguration {
+export interface ClaimsConfiguration<TProperties = Record<string, unknown>> {
 	/**
 	 * Function to transform user properties into claims for tokens and UserInfo.
 	 * This function is called for both ID tokens and UserInfo responses.
 	 *
-	 * @example
+	 * @example With proper TypeScript autocomplete
 	 * ```typescript
-	 * transform: async (properties, context) => {
-	 *   const claims: Record<string, unknown> = {}
+	 * // First define your subjects
+	 * const subjects = createSubjects({
+	 *   user: object({
+	 *     userID: string(),
+	 *     fullName: string(),
+	 *     username: string(),
+	 *     emailAddress: string(),
+	 *     emailVerified: boolean(),
+	 *     tenantId: optional(string()),
+	 *     roles: optional(array(string()))
+	 *   })
+	 * })
 	 *
-	 *   // Add standard claims based on scopes
-	 *   if (context.scopes.includes('profile')) {
-	 *     claims.name = properties.fullName
-	 *     claims.preferred_username = properties.username
+	 * // Then use in issuer with full typing
+	 * const app = issuer({
+	 *   subjects,
+	 *   claims: {
+	 *     transform: async (properties, context) => {
+	 *       const claims: Record<string, unknown> = {}
+	 *
+	 *       // properties is now fully typed - autocomplete works!
+	 *       if (context.scopes.includes('profile')) {
+	 *         claims.name = properties.fullName // ✅ TypeScript knows this exists
+	 *         claims.preferred_username = properties.username // ✅ Autocomplete works
+	 *       }
+	 *
+	 *       if (context.scopes.includes('email')) {
+	 *         claims.email = properties.emailAddress // ✅ Type-safe
+	 *         claims.email_verified = properties.emailVerified // ✅ Boolean type enforced
+	 *       }
+	 *
+	 *       // Conditional claims with full type safety
+	 *       if (context.clientID.startsWith('tenant_') && properties.tenantId) {
+	 *         claims.tenant_id = properties.tenantId // ✅ Optional properly handled
+	 *         claims.roles = properties.roles || [] // ✅ Array type preserved
+	 *       }
+	 *
+	 *       return { claims, success: true }
+	 *     }
 	 *   }
-	 *
-	 *   if (context.scopes.includes('email')) {
-	 *     claims.email = properties.emailAddress
-	 *     claims.email_verified = properties.emailVerified
-	 *   }
-	 *
-	 *   // Add tenant-specific claims
-	 *   if (context.clientID.startsWith('tenant_')) {
-	 *     claims.tenant_id = properties.tenantId
-	 *     claims.roles = properties.roles
-	 *   }
-	 *
-	 *   return { claims, success: true }
-	 * }
+	 * })
 	 * ```
 	 */
-	transform?: ClaimsTransformFunction
+	transform?: ClaimsTransformFunction<TProperties>
 
 	/**
 	 * Configuration for essential claims validation.
@@ -201,19 +222,20 @@ export const validateEssentialClaims = (
  * Applies simple property mapping to claims.
  * Maps property names to claim names based on the provided mapping.
  *
- * @param properties - Original properties object
+ * @template TProperties - The strongly-typed properties from subject schemas
+ * @param properties - Original properties object (strongly typed)
  * @param mapping - Mapping of property names to claim names
  * @returns Mapped claims object
  */
-export const applyClaimsMapping = (
-	properties: Record<string, unknown>,
+export const applyClaimsMapping = <TProperties = Record<string, unknown>>(
+	properties: TProperties,
 	mapping: Record<string, string>
 ): Record<string, unknown> => {
 	const mappedClaims: Record<string, unknown> = {}
 
 	for (const [propertyName, claimName] of Object.entries(mapping)) {
-		if (propertyName in properties) {
-			mappedClaims[claimName] = properties[propertyName]
+		if (propertyName in (properties as Record<string, unknown>)) {
+			mappedClaims[claimName] = (properties as Record<string, unknown>)[propertyName]
 		}
 	}
 
@@ -224,15 +246,16 @@ export const applyClaimsMapping = (
  * Filters claims based on target (ID token vs UserInfo).
  * Removes claims that are restricted to specific targets.
  *
+ * @template TProperties - The strongly-typed properties from subject schemas
  * @param claims - Claims object to filter
  * @param target - Target for the claims
  * @param config - Claims configuration with target restrictions
  * @returns Filtered claims object
  */
-export const filterClaimsByTarget = (
+export const filterClaimsByTarget = <TProperties = Record<string, unknown>>(
 	claims: Record<string, unknown>,
 	target: "id_token" | "userinfo" | "access_token",
-	config: ClaimsConfiguration
+	config: ClaimsConfiguration<TProperties>
 ): Record<string, unknown> => {
 	const filteredClaims = { ...claims }
 
@@ -255,15 +278,16 @@ export const filterClaimsByTarget = (
  * Main function to transform user properties into claims.
  * Applies all configured transformations, mappings, and validations.
  *
- * @param properties - Original user properties
+ * @template TProperties - The strongly-typed properties from subject schemas
+ * @param properties - Original user properties (strongly typed)
  * @param context - Transform context
  * @param config - Claims configuration
  * @returns Promise resolving to transformed claims or null if validation fails
  */
-export const transformClaims = async (
-	properties: Record<string, unknown>,
+export const transformClaims = async <TProperties = Record<string, unknown>>(
+	properties: TProperties,
 	context: ClaimsTransformContext,
-	config: ClaimsConfiguration
+	config: ClaimsConfiguration<TProperties>
 ): Promise<Record<string, unknown> | null> => {
 	let finalClaims: Record<string, unknown> = {}
 
@@ -317,30 +341,34 @@ export const transformClaims = async (
  * Creates a default claims configuration with standard OIDC behavior.
  * Useful as a starting point or fallback configuration.
  *
- * @returns Default claims configuration
+ * @template TProperties - The strongly-typed properties from subject schemas
+ * @returns Default claims configuration with proper typing
  */
-export const createDefaultClaimsConfig = (): ClaimsConfiguration => {
+export const createDefaultClaimsConfig = <
+	TProperties = Record<string, unknown>
+>(): ClaimsConfiguration<TProperties> => {
 	return {
 		transform: (properties, context) => {
 			const claims: Record<string, unknown> = {}
+			const props = properties as Record<string, unknown>
 
 			// Always include sub claim if available
-			if (properties.sub) {
-				claims.sub = properties.sub
+			if ("sub" in props && props.sub) {
+				claims.sub = props.sub
 			}
 
 			// Standard OIDC claims based on scopes
 			if (context.scopes.includes("profile")) {
-				if (properties.name) claims.name = properties.name
-				if (properties.preferred_username)
-					claims.preferred_username = properties.preferred_username
-				if (properties.picture) claims.picture = properties.picture
+				if ("name" in props && props.name) claims.name = props.name
+				if ("preferred_username" in props && props.preferred_username)
+					claims.preferred_username = props.preferred_username
+				if ("picture" in props && props.picture) claims.picture = props.picture
 			}
 
 			if (context.scopes.includes("email")) {
-				if (properties.email) claims.email = properties.email
-				if (properties.email_verified !== undefined)
-					claims.email_verified = properties.email_verified
+				if ("email" in props && props.email) claims.email = props.email
+				if ("email_verified" in props && props.email_verified !== undefined)
+					claims.email_verified = props.email_verified
 			}
 
 			return { claims, success: true }

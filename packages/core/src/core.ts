@@ -182,7 +182,7 @@ export interface IssuerInput<
 	/** Supported OAuth 2.0 scopes */
 	scopes_supported?: string[]
 	/** Claims configuration for OIDC token and UserInfo transformations */
-	claims?: ClaimsConfiguration
+	claims?: ClaimsConfiguration<SubjectPayload<Subjects>["properties"]>
 	/** Provider selection UI function */
 	select?(providers: Record<string, string>, req: Request): Promise<Response>
 	/** Optional start callback */
@@ -191,11 +191,35 @@ export interface IssuerInput<
 	error?(error: UnknownStateError, req: Request): Promise<Response>
 	/** Client authorization check function */
 	allow?(input: AllowCheckInput, req: Request): Promise<boolean>
-	/** Refresh callback for updating user claims */
+	/**
+	 * Refresh callback for updating user claims with full TypeScript autocomplete.
+	 * Properties parameter is now strongly typed based on your subject schemas.
+	 *
+	 * @example
+	 * ```typescript
+	 * refresh: async (payload, req) => {
+	 *   // payload.properties now has full autocomplete based on your subjects!
+	 *   const user = await getUserBySubject(payload.subject)
+	 *   if (!user || !user.active) {
+	 *     return undefined // Revoke the token
+	 *   }
+	 *
+	 *   return {
+	 *     type: payload.type,
+	 *     properties: {
+	 *       userID: user.id,
+	 *       role: user.role,        // ✅ TypeScript knows about these properties
+	 *       permissions: user.permissions,
+	 *       lastLogin: new Date().toISOString()
+	 *     }
+	 *   }
+	 * }
+	 * ```
+	 */
 	refresh?(
 		payload: {
-			type: string
-			properties: unknown
+			type: SubjectPayload<Subjects>["type"]
+			properties: SubjectPayload<Subjects>["properties"]
 			subject: string
 			clientID: string
 			scopes?: string[]
@@ -203,8 +227,8 @@ export interface IssuerInput<
 		req: Request
 	): Promise<
 		| {
-				type: string
-				properties: unknown
+				type: SubjectPayload<Subjects>["type"]
+				properties: SubjectPayload<Subjects>["properties"]
 				subject?: string
 				scopes?: string[]
 		  }
@@ -474,7 +498,7 @@ export const issuer = <
 			}
 
 			const propertiesWithSub = {
-				...value.properties,
+				...(value.properties as Record<string, unknown>),
 				sub: value.subject
 			}
 
