@@ -140,18 +140,34 @@ export interface ClaimsConfiguration<TProperties = Record<string, unknown>> {
 	essential?: EssentialClaimsConfig
 
 	/**
-	 * Default claims to always include regardless of scopes.
-	 * These claims will be merged with transformed claims.
+	 * Default claims applied only when property doesn't exist in subject properties.
+	 * These are true fallbacks that never override existing subject data.
 	 *
 	 * @example
 	 * ```typescript
 	 * defaults: {
-	 *   iss: 'https://auth.example.com',
-	 *   custom_namespace: 'draft-auth'
+	 *   name: 'Anonymous',      // Only if subject has no name
+	 *   company: 'Acme Corp',   // Only if subject has no company
+	 *   version: '1.0'          // Only if subject has no version
 	 * }
 	 * ```
 	 */
 	defaults?: Record<string, unknown>
+
+	/**
+	 * Override claims that always take precedence over subject properties.
+	 * Useful for system metadata that should never be overridden by user data.
+	 *
+	 * @example
+	 * ```typescript
+	 * overrides: {
+	 *   iss: 'https://auth.example.com',  // Always this issuer
+	 *   system_version: '2.0',            // Always this version
+	 *   environment: 'production'         // Always this environment
+	 * }
+	 * ```
+	 */
+	overrides?: Record<string, unknown>
 
 	/**
 	 * Mapping of property names to claim names.
@@ -289,20 +305,29 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 	context: ClaimsTransformContext,
 	config: ClaimsConfiguration<TProperties>
 ): Promise<Record<string, unknown> | null> => {
-	let finalClaims: Record<string, unknown> = {}
+	// Start with subject properties as base (authoritative data)
+	let finalClaims: Record<string, unknown> = { ...(properties as Record<string, unknown>) }
 
-	// Start with default claims
-	if (config.defaults) {
-		finalClaims = { ...config.defaults }
+	// Apply defaults only for missing properties (true fallbacks)
+	const defaultsToApply = config.defaults || {}
+	for (const [key, value] of Object.entries(defaultsToApply)) {
+		if (finalClaims[key] === undefined) {
+			finalClaims[key] = value
+		}
 	}
 
-	// Apply simple mapping if provided
+	// Apply simple mapping claims (merge with existing, mapping takes precedence)
 	if (config.mapping) {
 		const mappedClaims = applyClaimsMapping(properties, config.mapping)
 		finalClaims = { ...finalClaims, ...mappedClaims }
 	}
 
-	// Apply custom transform function if provided
+	// Apply overrides (always take precedence)
+	if (config.overrides) {
+		finalClaims = { ...finalClaims, ...config.overrides }
+	}
+
+	// Apply custom transform function (takes precedence for custom logic)
 	if (config.transform) {
 		try {
 			const transformResult = await config.transform(properties, context)
@@ -313,6 +338,7 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 					return null
 				}
 			} else {
+				// Transform takes precedence for intentional customization
 				finalClaims = { ...finalClaims, ...transformResult.claims }
 			}
 		} catch (error) {

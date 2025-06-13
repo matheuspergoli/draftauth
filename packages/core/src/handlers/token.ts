@@ -5,6 +5,7 @@ import type { Context, Hono } from "hono"
  * with full OAuth 2.0 and OIDC compliance.
  */
 import { cors } from "hono/cors"
+import { type ClaimsConfiguration, transformClaims } from "../claims"
 import { validatePKCE } from "../pkce"
 import { parseScopes, validateScopes } from "../scopes"
 import { Storage, type StorageAdapter } from "../storage/storage"
@@ -161,6 +162,10 @@ interface TokenDependencies<Result = unknown> {
 	>
 	/** Resolve subject function */
 	resolveSubject: (type: string, properties: unknown) => Promise<string>
+	/** Claims configuration for token transformations */
+	claims?: ClaimsConfiguration
+	/** Issuer URL function */
+	issuer: (ctx: Context) => string
 }
 
 /**
@@ -174,8 +179,18 @@ export const registerTokenEndpoint = <T, R>(
 	app: Hono<{ Variables: { authorization: T } }>,
 	dependencies: TokenDependencies<R>
 ): void => {
-	const { storage, generateTokens, ttl, auth, refresh, success, providers, resolveSubject } =
-		dependencies
+	const {
+		storage,
+		generateTokens,
+		ttl,
+		auth,
+		refresh,
+		success,
+		providers,
+		resolveSubject,
+		claims,
+		issuer
+	} = dependencies
 
 	const {
 		access: ttlAccess,
@@ -353,6 +368,26 @@ export const registerTokenEndpoint = <T, R>(
 						}
 						if (refreshResult.scopes) {
 							payload.scopes = refreshResult.scopes
+						}
+
+						// Re-apply claims configuration to refreshed properties (consistency with initial auth)
+						if (claims) {
+							const transformContext = {
+								clientID: payload.clientID,
+								scopes: payload.scopes || [],
+								target: "access_token" as const,
+								issuer: issuer(c)
+							}
+
+							const transformedClaims = await transformClaims(
+								refreshResult.properties as Record<string, unknown>,
+								transformContext,
+								claims
+							)
+
+							if (transformedClaims !== null) {
+								payload.properties = transformedClaims
+							}
 						}
 					} catch (error) {
 						console.error("Refresh callback error:", error)

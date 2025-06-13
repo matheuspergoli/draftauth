@@ -246,17 +246,7 @@ export const registerUserEndpoints = <T>(
 					issuer: issuer(c)
 				}
 
-				// Include the sub claim in properties for transformation
-				const propertiesWithSub = {
-					...props,
-					sub: result.payload.sub
-				}
-
-				const transformedClaims = await transformClaims(
-					propertiesWithSub,
-					transformContext,
-					claimsConfig
-				)
+				const transformedClaims = await transformClaims(props, transformContext, claimsConfig)
 
 				if (transformedClaims === null) {
 					return c.json(

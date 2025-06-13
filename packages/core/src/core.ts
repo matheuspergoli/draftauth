@@ -405,14 +405,8 @@ export const issuer = <
 			authTime: payload.authTime
 		}
 
-		// Include the sub claim in properties for transformation
-		const propertiesWithSub = {
-			...payload.properties,
-			sub: payload.sub
-		}
-
 		const transformedClaims = await transformClaims(
-			propertiesWithSub,
+			payload.properties,
 			transformContext,
 			claimsConfig
 		)
@@ -497,13 +491,8 @@ export const issuer = <
 				issuer: issuer(ctx)
 			}
 
-			const propertiesWithSub = {
-				...(value.properties as Record<string, unknown>),
-				sub: value.subject
-			}
-
 			const transformedClaims = await transformClaims(
-				propertiesWithSub,
+				value.properties,
 				transformContext,
 				claimsConfig
 			)
@@ -884,7 +873,9 @@ export const issuer = <
 		refresh: input.refresh,
 		success: input.success,
 		providers: input.providers,
-		resolveSubject
+		resolveSubject,
+		claims: input.claims,
+		issuer
 	})
 
 	registerAuthorizeEndpoint(app, {
