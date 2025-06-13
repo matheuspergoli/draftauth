@@ -67,6 +67,8 @@ interface OAuth2DiscoveryDocument {
 	jwks_uri: string
 	/** Supported OAuth 2.0 response types */
 	response_types_supported: string[]
+	/** Supported OAuth 2.0 grant types */
+	grant_types_supported: string[]
 	/** Supported OAuth 2.0 scopes */
 	scopes_supported: string[]
 	/** Supported revocation endpoint authentication methods */

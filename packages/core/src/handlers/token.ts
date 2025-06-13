@@ -483,7 +483,7 @@ export const registerTokenEndpoint = <T, R>(
 					{
 						provider: provider.toString(),
 						...(response && typeof response === "object" ? response : {})
-					},
+					} as R,
 					c.req.raw,
 					clientID.toString()
 				)
