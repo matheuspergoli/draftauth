@@ -73,15 +73,15 @@
  *       )
  *       const profile = await profileResponse.json()
  *
- *       console.log(`User: ${profile.name} (${profile.email})`)
- *       console.log(`Facebook ID: ${profile.id}`)
+ *       // User info: `${profile.name} (${profile.email})`
+ *       // Facebook ID: profile.id
  *     }
  *
  *     // OIDC flow
  *     if (value.id) {
- *       console.log(value.id.sub)   // Facebook user ID
- *       console.log(value.id.email) // Verified email
- *       console.log(value.id.name)  // Full name
+ *       // Facebook user ID: value.id.sub
+ *       // Verified email: value.id.email
+ *       // Full name: value.id.name
  *     }
  *   }
  * }
@@ -314,8 +314,8 @@ export const FacebookProvider = (config: FacebookConfig) => {
  *   success: async (ctx, value) => {
  *     if (value.provider === "facebook") {
  *       const user = value.id
- *       console.log(`User ${user.name} (${user.email}) authenticated`)
- *       console.log(`Facebook ID: ${user.sub}`)
+ *       // User authenticated: `${user.name} (${user.email})`
+ *       // Facebook ID: user.sub
  *
  *       return ctx.subject("user", {
  *         facebookId: user.sub,

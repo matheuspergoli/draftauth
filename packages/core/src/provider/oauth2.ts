@@ -47,10 +47,10 @@
  * ```ts
  * success: async (ctx, value) => {
  *   if (value.provider === "oauth2") {
- *     console.log(value.tokenset.access)    // Access token for API calls
- *     console.log(value.tokenset.refresh)   // Refresh token (if provided)
- *     console.log(value.tokenset.id)        // ID token claims (if JWT endpoint configured)
- *     console.log(value.clientID)           // Client ID used
+ *     // Access token for API calls: value.tokenset.access
+ *     // Refresh token (if provided): value.tokenset.refresh
+ *     // ID token claims (if JWT endpoint configured): value.tokenset.id
+ *     // Client ID used: value.clientID
  *   }
  * }
  * ```

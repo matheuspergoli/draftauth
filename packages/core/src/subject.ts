@@ -40,7 +40,7 @@
  * import { subjects } from "./subjects"
  *
  * const verified = await client.verify(subjects, accessToken)
- * console.log(verified.subject.properties.userID) // Fully typed!
+ * // Fully typed: verified.subject.properties.userID
  * ```
  *
  * ## Important Notes

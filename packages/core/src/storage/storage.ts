@@ -122,7 +122,7 @@ export const Storage = {
 	 *
 	 * const session = await Storage.get<UserSession>(adapter, ['sessions', sessionId])
 	 * if (session) {
-	 *   console.log(session.userId) // Fully typed!
+	 *   // Fully typed: session.userId
 	 * }
 	 * ```
 	 */
@@ -189,7 +189,7 @@ export const Storage = {
 	 * ```ts
 	 * // Find all user sessions
 	 * for await (const [key, session] of Storage.scan<UserSession>(adapter, ['sessions'])) {
-	 *   console.log(`Session ${key.join('/')} expires at ${session.expiresAt}`)
+	 *   // Session: `${key.join('/')} expires at ${session.expiresAt}`
 	 * }
 	 * ```
 	 */

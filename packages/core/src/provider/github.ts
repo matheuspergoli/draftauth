@@ -68,8 +68,8 @@
  *     })
  *     const emails = await emailsResponse.json()
  *
- *     console.log(`User: ${user.login} (${user.name})`)
- *     console.log(`Primary email: ${emails.find(e => e.primary)?.email}`)
+ *     // User info: `${user.login} (${user.name})`
+ *     // Primary email: emails.find(e => e.primary)?.email
  *   }
  * }
  * ```

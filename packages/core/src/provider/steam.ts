@@ -32,7 +32,7 @@ import type { Provider } from "./provider"
  * ```ts
  * success: async (ctx, value) => {
  *   if (value.provider === "steam") {
- *     console.log(value.steamId) // Steam user ID (17-digit number)
+ *     // Steam user ID (17-digit number): value.steamId
  *     // Use steamId to fetch profile data from Steam API
  *   }
  * }

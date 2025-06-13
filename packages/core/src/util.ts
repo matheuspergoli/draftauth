@@ -109,7 +109,7 @@ export const isDomainMatch = (a: string, b: string): boolean => {
  * @example
  * ```ts
  * const expensiveOperation = lazy(() => {
- *   console.log("Computing...") // Only logs once
+ *   // Computing... (only logs once)
  *   return heavyComputation()
  * })
  *

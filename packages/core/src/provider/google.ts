@@ -56,16 +56,16 @@
  *   if (value.provider === "google") {
  *     // OAuth 2.0 flow
  *     if (value.tokenset) {
- *       console.log(value.tokenset.access) // Use for API calls
- *       console.log(value.tokenset.id?.email) // User email from ID token
+ *       // Use for API calls: value.tokenset.access
+ *       // User email from ID token: value.tokenset.id?.email
  *     }
  *
  *     // OIDC flow
  *     if (value.id) {
- *       console.log(value.id.sub)   // Google user ID
- *       console.log(value.id.email) // Verified email
- *       console.log(value.id.name)  // Full name
- *       console.log(value.id.picture) // Profile picture URL
+ *       // Google user ID: value.id.sub
+ *       // Verified email: value.id.email
+ *       // Full name: value.id.name
+ *       // Profile picture URL: value.id.picture
  *     }
  *   }
  * }
@@ -271,9 +271,9 @@ export const GoogleProvider = (config: GoogleConfig) => {
  * // Access user information from ID token
  * success: async (ctx, value) => {
  *   const user = value.id
- *   console.log(`User ${user.name} (${user.email}) authenticated`)
- *   console.log(`Google ID: ${user.sub}`)
- *   console.log(`Profile picture: ${user.picture}`)
+ *   // User authenticated: `${user.name} (${user.email})`
+ *   // Google ID: user.sub
+ *   // Profile picture: user.picture
  * }
  * ```
  */

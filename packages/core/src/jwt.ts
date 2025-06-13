@@ -66,7 +66,7 @@ export const jwt = {
 	 * }
 	 *
 	 * const result = await jwt.verify<TokenPayload>(token, verificationKey.public)
-	 * console.log(result.payload.sub) // Fully typed!
+	 * // Fully typed: result.payload.sub
 	 * ```
 	 *
 	 * @throws {JWTExpired} When the token has expired

@@ -42,7 +42,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
  * ```ts
  * const result = await client.verify(subjects, accessToken)
  * if (result.success) {
- *   console.log(result.data.subject.properties)
+ *   // Access user properties: result.data.subject.properties
  * }
  * ```
  *
@@ -70,9 +70,9 @@ import type { SubjectSchema } from "./subject"
  * ```ts
  * const result = await client.exchange(code, redirectUri)
  * if (result.success) {
- *   console.log(result.data.access)
+ *   // Access token available: result.data.access
  * } else {
- *   console.error(result.error.message)
+ *   // Handle error: result.error.message
  * }
  * ```
  */
@@ -736,7 +736,7 @@ export interface Client {
 	 *   const { access, refresh: newRefresh } = result.data.tokens
 	 *   updateStoredTokens(access, newRefresh)
 	 * } else if (result.success) {
-	 *   console.log('Token still valid')
+	 *   // Token still valid
 	 * } else {
 	 *   redirectToLogin()
 	 * }
@@ -761,8 +761,8 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { subject, scopes } = result.data
-	 *   console.log(`User: ${subject.properties.userID}`)
-	 *   console.log(`Scopes: ${scopes?.join(', ')}`)
+	 *   // Access user ID: subject.properties.userID
+	 *   // Access scopes: scopes?.join(', ')
 	 * }
 	 * ```
 	 *
@@ -804,7 +804,7 @@ export interface Client {
 	 * ```ts
 	 * const result = await client.revoke(refreshToken)
 	 * if (result.success) {
-	 *   console.log('Logged out from this device')
+	 *   // Successfully logged out from this device
 	 *   clearStoredTokens()
 	 * }
 	 * ```
@@ -813,7 +813,7 @@ export interface Client {
 	 * ```ts
 	 * const result = await client.revoke(refreshToken, { all: true })
 	 * if (result.success) {
-	 *   console.log('Logged out from all devices')
+	 *   // Successfully logged out from all devices
 	 *   redirectToLogin()
 	 * }
 	 * ```
@@ -836,8 +836,8 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { userinfo } = result.data
-	 *   console.log(`Name: ${userinfo.name}`)
-	 *   console.log(`Email: ${userinfo.email}`)
+	 *   // Access name: userinfo.name
+	 *   // Access email: userinfo.email
 	 * }
 	 * ```
 	 */
@@ -858,8 +858,8 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { claims } = result.data
-	 *   console.log(`User ID: ${claims.sub}`)
-	 *   console.log(`Email: ${claims.email}`)
+	 *   // Access user ID: claims.sub
+	 *   // Access email: claims.email
 	 * }
 	 * ```
 	 */
