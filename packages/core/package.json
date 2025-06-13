@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@changesets/cli": "^2.29.4",
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/bun": "^1.2.15",
+		"@types/bun": "^1.2.16",
 		"@types/node": "^24.0.1",
 		"typescript": "^5.8.3"
 	},
