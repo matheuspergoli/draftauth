@@ -6,6 +6,11 @@ import { getCookie } from "hono/cookie"
  */
 import { cors } from "hono/cors"
 import { jwtVerify } from "jose"
+import {
+	type ClaimsConfiguration,
+	createDefaultClaimsConfig,
+	transformClaims
+} from "../claims"
 import type { KeyPair } from "../keys"
 import { Storage, type StorageAdapter } from "../storage/storage"
 
@@ -99,6 +104,8 @@ interface UserDependencies {
 		getSsoCookieName: (c: Context) => string
 		deleteSsoCookie: (c: Context) => void
 	}
+	/** Claims configuration for UserInfo transformation */
+	claims?: ClaimsConfiguration
 }
 
 /**
@@ -133,7 +140,7 @@ export const registerUserEndpoints = <T>(
 	app: Hono<{ Variables: { authorization: T } }>,
 	dependencies: UserDependencies
 ): void => {
-	const { storage, signingKey, issuer, auth, sso, ssoUtils } = dependencies
+	const { storage, signingKey, issuer, auth, sso, ssoUtils, claims } = dependencies
 	const { getSsoCookieName, deleteSsoCookie } = ssoUtils
 
 	/**
@@ -222,29 +229,53 @@ export const registerUserEndpoints = <T>(
 					)
 				}
 
-				const userinfo: UserInfoResponse = {
+				// Standard UserInfo claims (always included)
+				const standardClaims: UserInfoResponse = {
 					sub: result.payload.sub
 				}
 
 				const props = result.payload.properties
 				const scopes = result.payload.scopes || []
 
-				// Add claims based on scopes (OIDC Standard Claims)
-				if (scopes.includes("profile")) {
-					if (props.name) userinfo.name = props.name as string
-					if (props.preferred_username)
-						userinfo.preferred_username = props.preferred_username as string
-					if (props.picture) userinfo.picture = props.picture as string
+				// Transform claims using configuration or default behavior
+				const claimsConfig = claims || createDefaultClaimsConfig()
+				const transformContext = {
+					clientID: result.payload.aud as string,
+					scopes,
+					target: "userinfo" as const,
+					issuer: issuer(c)
 				}
 
-				if (scopes.includes("email")) {
-					if (props.email) userinfo.email = props.email as string
-					if (props.email_verified !== undefined) {
-						userinfo.email_verified = props.email_verified as boolean
-					}
+				// Include the sub claim in properties for transformation
+				const propertiesWithSub = {
+					...props,
+					sub: result.payload.sub
 				}
 
-				return c.json(userinfo)
+				const transformedClaims = await transformClaims(
+					propertiesWithSub,
+					transformContext,
+					claimsConfig
+				)
+
+				if (transformedClaims === null) {
+					return c.json(
+						{
+							error: "server_error",
+							error_description: "Essential claims validation failed"
+						},
+						500
+					)
+				}
+
+				// Merge standard claims with transformed claims
+				// Standard claims take precedence to ensure OIDC compliance
+				const finalUserInfo = {
+					...transformedClaims,
+					...standardClaims
+				}
+
+				return c.json(finalUserInfo)
 			} catch (error) {
 				return c.json(
 					{

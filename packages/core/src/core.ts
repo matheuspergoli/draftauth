@@ -7,6 +7,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 import type { StatusCode } from "hono/utils/http-status"
 import { CompactEncrypt, SignJWT, compactDecrypt } from "jose"
 import { type AllowCheckInput, defaultAllowCheck } from "./allow"
+import { type ClaimsConfiguration, createDefaultClaimsConfig, transformClaims } from "./claims"
 import { OauthError, UnknownStateError } from "./error"
 import { encryptionKeys, signingKeys } from "./keys"
 import type { Provider, ProviderRoute } from "./provider/provider"
@@ -180,14 +181,8 @@ export interface IssuerInput<
 	}
 	/** Supported OAuth 2.0 scopes */
 	scopes_supported?: string[]
-	/** Claims configuration for OIDC */
-	claims?: {
-		sub: string
-		email?: string
-		name?: string
-		preferred_username?: string
-		picture?: string
-	}
+	/** Claims configuration for OIDC token and UserInfo transformations */
+	claims?: ClaimsConfiguration
 	/** Provider selection UI function */
 	select?(providers: Record<string, string>, req: Request): Promise<Response>
 	/** Optional start callback */
@@ -274,7 +269,6 @@ export const issuer = <
 	// SSO configuration
 	const ssoEnabled = input.sso?.enabled === true
 	const ssoSessionTtlToUse = input.ttl?.ssoSessionSeconds ?? DEFAULT_SSO_SESSION_TTL_SECONDS
-	const postLogoutRedirectUris = input.sso?.postLogoutRedirectUris ?? []
 	const claimsSupported = input.sso?.claimsSupported ?? [
 		"sub",
 		"iss",
@@ -364,7 +358,7 @@ export const issuer = <
 		}
 
 		const now = Math.floor(Date.now() / 1000)
-		const claims: Record<string, unknown> = {
+		const standardClaims: Record<string, unknown> = {
 			iss: issuer(ctx),
 			sub: payload.sub,
 			aud: payload.aud,
@@ -375,23 +369,42 @@ export const issuer = <
 			...(payload.nonce && { nonce: payload.nonce })
 		}
 
-		// Add profile claims based on scopes
-		if (payload.scopes.includes("profile")) {
-			if (payload.properties.name) claims.name = payload.properties.name
-			if (payload.properties.preferred_username) {
-				claims.preferred_username = payload.properties.preferred_username
-			}
-			if (payload.properties.picture) claims.picture = payload.properties.picture
+		// Transform claims using configuration or default behavior
+		const claimsConfig = input.claims || createDefaultClaimsConfig()
+		const transformContext = {
+			clientID: payload.aud,
+			scopes: payload.scopes,
+			target: "id_token" as const,
+			issuer: issuer(ctx),
+			nonce: payload.nonce,
+			sessionId: payload.sessionId,
+			authTime: payload.authTime
 		}
 
-		if (payload.scopes.includes("email")) {
-			if (payload.properties.email) claims.email = payload.properties.email
-			if (payload.properties.email_verified !== undefined) {
-				claims.email_verified = payload.properties.email_verified
-			}
+		// Include the sub claim in properties for transformation
+		const propertiesWithSub = {
+			...payload.properties,
+			sub: payload.sub
 		}
 
-		return await new SignJWT(claims)
+		const transformedClaims = await transformClaims(
+			propertiesWithSub,
+			transformContext,
+			claimsConfig
+		)
+
+		if (transformedClaims === null) {
+			throw new Error("Essential claims validation failed for ID token")
+		}
+
+		// Merge standard claims with transformed claims
+		// Standard claims take precedence to ensure OIDC compliance
+		const finalClaims = {
+			...transformedClaims,
+			...standardClaims
+		}
+
+		return await new SignJWT(finalClaims)
 			.setProtectedHeader({
 				alg: signingKeyData.alg,
 				kid: signingKeyData.id,
@@ -448,12 +461,41 @@ export const issuer = <
 		}
 
 		const now = Math.floor(Date.now() / 1000)
+
+		// Transform claims for access token as well
+		let transformedProperties = value.properties
+		if (input.claims) {
+			const claimsConfig = input.claims
+			const transformContext = {
+				clientID: value.clientID,
+				scopes: value.scopes || [],
+				target: "access_token" as const,
+				issuer: issuer(ctx)
+			}
+
+			const propertiesWithSub = {
+				...value.properties,
+				sub: value.subject
+			}
+
+			const transformedClaims = await transformClaims(
+				propertiesWithSub,
+				transformContext,
+				claimsConfig
+			)
+
+			if (transformedClaims !== null) {
+				transformedProperties = transformedClaims
+			}
+		}
+
 		const accessPayload = {
 			mode: "access",
 			type: value.type,
-			properties: value.properties,
+			properties: transformedProperties,
 			sub: value.subject,
 			aud: value.clientID,
+			iss: issuer(ctx),
 			exp: now + value.ttl.access,
 			iat: now,
 			scopes: value.scopes
@@ -588,6 +630,7 @@ export const issuer = <
 			successOpts?: { invalidate?: (subject: string) => Promise<void> }
 		) {
 			const authorization = await getAuthorization(ctx)
+			const currentProvider = ctx.get("provider") || "unknown"
 			return await input.success(
 				{
 					async subject(type, properties, subjectOpts) {
@@ -660,7 +703,10 @@ export const issuer = <
 						// Handle different response types
 						if (authorization.response_type === "token") {
 							const location = new URL(authorization.redirect_uri!)
-							const scopes = parseScopes(authorization.scopes)
+							const scopes =
+								parseScopes(authorization.scopes).length > 0
+									? parseScopes(authorization.scopes)
+									: ["openid"]
 							const tokens = await generateTokens(ctx, {
 								subject,
 								type: type as string,
@@ -696,7 +742,10 @@ export const issuer = <
 							redirectURI: authorization.redirect_uri!,
 							clientID: authorization.client_id!,
 							pkce: authorization.pkce,
-							scopes: parseScopes(authorization.scopes),
+							scopes:
+								parseScopes(authorization.scopes).length > 0
+									? parseScopes(authorization.scopes)
+									: ["openid"],
 							nonce: authorization.nonce,
 							sessionId: crypto.randomUUID(),
 							authTime: Math.floor(Date.now() / 1000),
@@ -718,7 +767,7 @@ export const issuer = <
 					}
 				},
 				{
-					provider: "unknown", // This will be overridden by actual provider
+					provider: currentProvider,
 					...(properties && typeof properties === "object" ? properties : {})
 				} as Result,
 				ctx.req.raw,
@@ -836,7 +885,8 @@ export const issuer = <
 		issuer,
 		auth,
 		sso: input.sso,
-		ssoUtils: { getSsoCookieName, deleteSsoCookie }
+		ssoUtils: { getSsoCookieName, deleteSsoCookie },
+		claims: input.claims
 	})
 
 	registerRevokeEndpoint(app, {

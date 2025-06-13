@@ -276,7 +276,7 @@ export const registerAuthorizeEndpoint = (
 			max_age: max_age ? Number.parseInt(max_age) : undefined,
 			id_token_hint,
 			login_hint,
-			scopes: parseScopes(scope),
+			scopes: parseScopes(scope).length > 0 ? parseScopes(scope) : ["openid"],
 			pkce:
 				code_challenge && code_challenge_method
 					? {
@@ -399,7 +399,7 @@ export const registerAuthorizeEndpoint = (
 						c.set("authorization", authorizationForThisApp)
 
 						let finalSubjectProperties = ssoSessionData.originalProperties
-						let finalScopes = parseScopes(scope)
+						let finalScopes = parseScopes(scope).length > 0 ? parseScopes(scope) : ["openid"]
 
 						// Refresh user properties if callback provided
 						if (sso?.getSsoUserProperties) {
