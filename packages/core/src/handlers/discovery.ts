@@ -25,6 +25,8 @@ interface OidcDiscoveryDocument {
 	end_session_endpoint: string
 	/** Token revocation endpoint URL */
 	revocation_endpoint: string
+	/** Token introspection endpoint URL */
+	introspection_endpoint: string
 	/** Supported OAuth 2.0 response types */
 	response_types_supported: string[]
 	/** Supported OAuth 2.0 response modes */
@@ -49,6 +51,12 @@ interface OidcDiscoveryDocument {
 	request_uri_parameter_supported: boolean
 	/** Whether request_uri registration is required */
 	require_request_uri_registration: boolean
+	/** Supported PKCE code challenge methods */
+	code_challenge_methods_supported: string[]
+	/** Supported display values */
+	display_values_supported: string[]
+	/** Supported claim types */
+	claim_types_supported: string[]
 }
 
 /**
@@ -63,6 +71,8 @@ interface OAuth2DiscoveryDocument {
 	token_endpoint: string
 	/** Token revocation endpoint URL */
 	revocation_endpoint: string
+	/** Token introspection endpoint URL */
+	introspection_endpoint: string
 	/** JWKS endpoint URL */
 	jwks_uri: string
 	/** Supported OAuth 2.0 response types */
@@ -73,6 +83,10 @@ interface OAuth2DiscoveryDocument {
 	scopes_supported: string[]
 	/** Supported revocation endpoint authentication methods */
 	revocation_endpoint_auth_methods_supported: string[]
+	/** Supported introspection endpoint authentication methods */
+	introspection_endpoint_auth_methods_supported: string[]
+	/** Supported PKCE code challenge methods */
+	code_challenge_methods_supported: string[]
 }
 
 /**
@@ -173,6 +187,7 @@ export const registerDiscoveryEndpoints = <T>(
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				end_session_endpoint: `${iss}/logout`,
 				revocation_endpoint: `${iss}/revoke`,
+				introspection_endpoint: `${iss}/introspect`,
 				response_types_supported: [
 					"code",
 					"token",
@@ -188,11 +203,14 @@ export const registerDiscoveryEndpoints = <T>(
 				id_token_signing_alg_values_supported: ["RS256"],
 				scopes_supported: allSupportedScopes,
 				claims_supported: claimsSupported,
-				token_endpoint_auth_methods_supported: ["none"],
+				token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
 				claims_parameter_supported: false,
 				request_parameter_supported: false,
 				request_uri_parameter_supported: false,
-				require_request_uri_registration: false
+				require_request_uri_registration: false,
+				code_challenge_methods_supported: ["S256"],
+				display_values_supported: ["page"],
+				claim_types_supported: ["normal"]
 			}
 
 			return c.json(oidcDocument)
@@ -221,11 +239,14 @@ export const registerDiscoveryEndpoints = <T>(
 				authorization_endpoint: `${iss}/authorize`,
 				token_endpoint: `${iss}/token`,
 				revocation_endpoint: `${iss}/revoke`,
+				introspection_endpoint: `${iss}/introspect`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				response_types_supported: ["code", "token"],
 				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				scopes_supported: allSupportedScopes,
-				revocation_endpoint_auth_methods_supported: ["none"]
+				revocation_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+				introspection_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+				code_challenge_methods_supported: ["S256"]
 			}
 
 			return c.json(oauth2Document)

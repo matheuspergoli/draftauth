@@ -35,13 +35,12 @@
  */
 
 /**
- * Standard OAuth 2.0 error types as defined in RFC 6749.
+ * Standard OAuth 2.0 error types
  * These error codes are returned by OAuth authorization servers.
- *
- * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1
  */
 export type OauthErrorType =
 	| "invalid_request" // Request is missing required parameter or malformed
+	| "invalid_client" // Client authentication failed
 	| "invalid_grant" // Authorization grant is invalid, expired, or revoked
 	| "unauthorized_client" // Client is not authorized to use this grant type
 	| "access_denied" // Resource owner denied the request
