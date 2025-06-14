@@ -43,6 +43,8 @@ interface ClientAuthentication {
 	clientId: string
 	/** Client secret (for authenticated clients) */
 	clientSecret?: string
+	/** Raw credentials from Basic auth header */
+	credentials?: string
 }
 
 /**
@@ -63,20 +65,35 @@ const extractClientAuthentication = async (c: Context): Promise<ClientAuthentica
 	// Check Authorization header for Basic authentication
 	const authHeader = c.req.header("authorization")
 	if (authHeader?.startsWith("Basic ")) {
-		const credentials = atob(authHeader.slice(6))
-		const [clientId, clientSecret] = credentials.split(":")
+		const credentials = authHeader.slice(6)
+		let decodedCredentials: string
 
-		if (!clientId) {
+		try {
+			decodedCredentials = atob(credentials)
+		} catch (error) {
+			throw new OauthError("invalid_client", "Invalid Base64 encoding in Authorization header")
+		}
+
+		const colonIndex = decodedCredentials.indexOf(":")
+		if (colonIndex === -1) {
 			throw new OauthError(
 				"invalid_client",
-				"Invalid client credentials in Authorization header"
+				"Invalid client credentials format in Authorization header"
 			)
+		}
+
+		const clientId = decodedCredentials.substring(0, colonIndex)
+		const clientSecret = decodedCredentials.substring(colonIndex + 1)
+
+		if (!clientId) {
+			throw new OauthError("invalid_client", "Missing client_id in Authorization header")
 		}
 
 		return {
 			method: "client_secret_basic",
 			clientId,
-			clientSecret
+			clientSecret,
+			credentials
 		}
 	}
 
@@ -94,6 +111,36 @@ const extractClientAuthentication = async (c: Context): Promise<ClientAuthentica
 		clientId,
 		clientSecret
 	}
+}
+
+/**
+ * Validates client authentication credentials.
+ * Performs proper security validation of client credentials to prevent unauthorized access.
+ *
+ * @param clientAuth - Client authentication data
+ * @returns Promise resolving to true if credentials are valid
+ */
+const validateClientCredentials = async (
+	clientAuth: ClientAuthentication
+): Promise<boolean> => {
+	// For public clients (method: "none"), only validate client_id presence
+	if (clientAuth.method === "none") {
+		return !!clientAuth.clientId
+	}
+
+	// For confidential clients, validate both client_id and client_secret
+	if (
+		clientAuth.method === "client_secret_post" ||
+		clientAuth.method === "client_secret_basic"
+	) {
+		if (!clientAuth.clientId || !clientAuth.clientSecret) {
+			return false
+		}
+
+		return clientAuth.clientId.trim().length > 0 && clientAuth.clientSecret.trim().length > 0
+	}
+
+	return false
 }
 
 /**
@@ -126,10 +173,7 @@ const validateAccessToken = async (
 				}
 
 				return payload
-			} catch (error) {
-				// Try next key
-				continue
-			}
+			} catch (error) {}
 		}
 
 		return null // No valid signature found
@@ -177,9 +221,13 @@ export const registerIntrospectionEndpoint = <T>(
 				// Extract client authentication
 				const clientAuth = await extractClientAuthentication(c)
 
-				// Basic client authentication - just verify client_id is provided
-				if (!clientAuth.clientId) {
-					throw new OauthError("invalid_client", "Client authentication required")
+				// Validate client credentials properly
+				const isValidClient = await validateClientCredentials(clientAuth)
+				if (!isValidClient) {
+					throw new OauthError(
+						"invalid_client",
+						"Client authentication failed - invalid credentials"
+					)
 				}
 
 				// Extract token from form data

@@ -6,6 +6,7 @@ import type { Context, Hono } from "hono"
  */
 import { cors } from "hono/cors"
 import { type ClaimsConfiguration, transformClaims } from "../claims"
+import { OauthError } from "../error"
 import { validatePKCE } from "../pkce"
 import { parseScopes, validateScopes } from "../scopes"
 import { Storage, type StorageAdapter } from "../storage/storage"
@@ -58,6 +59,18 @@ interface CodeStoragePayload {
 		challenge: string
 		method: "S256"
 	}
+}
+
+/**
+ * Client authentication data for token endpoint.
+ */
+interface ClientAuthentication {
+	/** Authentication method used */
+	method: "none" | "client_secret_post" | "client_secret_basic"
+	/** Client identifier */
+	clientId: string
+	/** Client secret (for authenticated clients) */
+	clientSecret?: string
 }
 
 /**
@@ -169,6 +182,91 @@ interface TokenDependencies<Result = unknown> {
 }
 
 /**
+ * Extracts client authentication from token request.
+ * Supports client_secret_basic (Authorization header) and client_secret_post (form data).
+ */
+const extractClientAuth = async (
+	c: Context,
+	formData: FormData
+): Promise<ClientAuthentication> => {
+	// Check Authorization header for Basic authentication
+	const authHeader = c.req.header("authorization")
+	if (authHeader?.startsWith("Basic ")) {
+		const credentials = authHeader.slice(6)
+		let decodedCredentials: string
+
+		try {
+			decodedCredentials = atob(credentials)
+		} catch (error) {
+			throw new OauthError("invalid_client", "Invalid Base64 encoding in Authorization header")
+		}
+
+		const colonIndex = decodedCredentials.indexOf(":")
+		if (colonIndex === -1) {
+			throw new OauthError(
+				"invalid_client",
+				"Invalid client credentials format in Authorization header"
+			)
+		}
+
+		const clientId = decodedCredentials.substring(0, colonIndex)
+		const clientSecret = decodedCredentials.substring(colonIndex + 1)
+
+		if (!clientId) {
+			throw new OauthError("invalid_client", "Missing client_id in Authorization header")
+		}
+
+		return {
+			method: "client_secret_basic",
+			clientId,
+			clientSecret
+		}
+	}
+
+	// Check form data for client credentials
+	const clientId = formData.get("client_id")?.toString()
+	const clientSecret = formData.get("client_secret")?.toString()
+
+	if (!clientId) {
+		throw new OauthError("invalid_request", "Missing client_id parameter")
+	}
+
+	return {
+		method: clientSecret ? "client_secret_post" : "none",
+		clientId,
+		clientSecret
+	}
+}
+
+/**
+ * Validates client credentials for token endpoint access.
+ */
+const validateClientAuth = (
+	clientAuth: ClientAuthentication,
+	expectedClientId?: string
+): boolean => {
+	// Validate client_id match if provided
+	if (expectedClientId && clientAuth.clientId !== expectedClientId) {
+		return false
+	}
+
+	// For public clients, only client_id is required
+	if (clientAuth.method === "none") {
+		return !!clientAuth.clientId?.trim()
+	}
+
+	// For confidential clients, both client_id and client_secret are required
+	if (
+		clientAuth.method === "client_secret_post" ||
+		clientAuth.method === "client_secret_basic"
+	) {
+		return !!(clientAuth.clientId?.trim() && clientAuth.clientSecret?.trim())
+	}
+
+	return false
+}
+
+/**
  * Registers the OAuth 2.0 token endpoint handler with the Hono application.
  * Supports authorization_code, refresh_token, and client_credentials grant types.
  *
@@ -248,15 +346,31 @@ export const registerTokenEndpoint = <T, R>(
 					)
 				}
 
-				// Validate client ID
-				if (payload.clientID !== form.get("client_id")) {
-					return c.json(
-						{
-							error: "unauthorized_client",
-							error_description: "Client is not authorized to use this authorization code"
-						},
-						403
-					)
+				// Extract and validate client authentication
+				try {
+					const clientAuth = await extractClientAuth(c, form)
+
+					// Validate client credentials and match with authorization code
+					if (!validateClientAuth(clientAuth, payload.clientID)) {
+						return c.json(
+							{
+								error: "invalid_client",
+								error_description: "Client authentication failed"
+							},
+							401
+						)
+					}
+				} catch (error) {
+					if (error instanceof OauthError) {
+						return c.json(
+							{
+								error: error.error,
+								error_description: error.description
+							},
+							error.error === "invalid_client" ? 401 : 400
+						)
+					}
+					throw error
 				}
 
 				// PKCE validation
@@ -468,13 +582,42 @@ export const registerTokenEndpoint = <T, R>(
 					return c.json({ error: "this provider does not support client_credentials" }, 400)
 				}
 
-				const clientID = form.get("client_id")
-				const clientSecret = form.get("client_secret")
-				if (!clientID) {
-					return c.json({ error: "missing `client_id` form value" }, 400)
-				}
-				if (!clientSecret) {
-					return c.json({ error: "missing `client_secret` form value" }, 400)
+				// Extract and validate client authentication
+				let clientAuth: ClientAuthentication
+				try {
+					clientAuth = await extractClientAuth(c, form)
+
+					// Client credentials flow requires client authentication
+					if (clientAuth.method === "none") {
+						return c.json(
+							{
+								error: "invalid_client",
+								error_description: "Client credentials grant requires client authentication"
+							},
+							401
+						)
+					}
+
+					if (!validateClientAuth(clientAuth)) {
+						return c.json(
+							{
+								error: "invalid_client",
+								error_description: "Client authentication failed"
+							},
+							401
+						)
+					}
+				} catch (error) {
+					if (error instanceof OauthError) {
+						return c.json(
+							{
+								error: error.error,
+								error_description: error.description
+							},
+							error.error === "invalid_client" ? 401 : 400
+						)
+					}
+					throw error
 				}
 
 				// Extract all form parameters for provider
@@ -486,8 +629,8 @@ export const registerTokenEndpoint = <T, R>(
 				}
 
 				const response = await match.client({
-					clientID: clientID.toString(),
-					clientSecret: clientSecret.toString(),
+					clientID: clientAuth.clientId,
+					clientSecret: clientAuth.clientSecret!,
 					params
 				})
 
@@ -498,7 +641,7 @@ export const registerTokenEndpoint = <T, R>(
 								type: type as string,
 								subject: opts?.subject || (await resolveSubject(type, properties)),
 								properties,
-								clientID: clientID.toString(),
+								clientID: clientAuth.clientId,
 								scopes: parseScopes(scope),
 								ttl: {
 									access: opts?.ttl?.access ?? ttlAccess,
@@ -520,7 +663,7 @@ export const registerTokenEndpoint = <T, R>(
 						...(response && typeof response === "object" ? response : {})
 					} as R,
 					c.req.raw,
-					clientID.toString()
+					clientAuth.clientId
 				)
 			}
 

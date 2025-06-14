@@ -188,22 +188,18 @@ export const registerDiscoveryEndpoints = <T>(
 				end_session_endpoint: `${iss}/logout`,
 				revocation_endpoint: `${iss}/revoke`,
 				introspection_endpoint: `${iss}/introspect`,
-				response_types_supported: [
-					"code",
-					"token",
-					"id_token",
-					"code id_token",
-					"code token",
-					"id_token token",
-					"code id_token token"
-				],
+				response_types_supported: ["code", "code id_token"],
 				response_modes_supported: ["query", "fragment", "form_post"],
 				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				subject_types_supported: ["public"],
 				id_token_signing_alg_values_supported: ["RS256"],
 				scopes_supported: allSupportedScopes,
 				claims_supported: claimsSupported,
-				token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+				token_endpoint_auth_methods_supported: [
+					"none",
+					"client_secret_post",
+					"client_secret_basic"
+				],
 				claims_parameter_supported: false,
 				request_parameter_supported: false,
 				request_uri_parameter_supported: false,
@@ -241,11 +237,19 @@ export const registerDiscoveryEndpoints = <T>(
 				revocation_endpoint: `${iss}/revoke`,
 				introspection_endpoint: `${iss}/introspect`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
-				response_types_supported: ["code", "token"],
+				response_types_supported: ["code"],
 				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				scopes_supported: allSupportedScopes,
-				revocation_endpoint_auth_methods_supported: ["none", "client_secret_post"],
-				introspection_endpoint_auth_methods_supported: ["none", "client_secret_post"],
+				revocation_endpoint_auth_methods_supported: [
+					"none",
+					"client_secret_post",
+					"client_secret_basic"
+				],
+				introspection_endpoint_auth_methods_supported: [
+					"none",
+					"client_secret_post",
+					"client_secret_basic"
+				],
 				code_challenge_methods_supported: ["S256"]
 			}
 
