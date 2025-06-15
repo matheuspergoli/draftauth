@@ -26,7 +26,6 @@ import { getRelativeUrl, lazy } from "./util"
 // Import all handlers
 import { registerAuthorizeEndpoint } from "./handlers/authorize"
 import { registerDiscoveryEndpoints } from "./handlers/discovery"
-import { registerIntrospectionEndpoint } from "./handlers/introspect"
 import { registerRevokeEndpoint } from "./handlers/revoke"
 import { registerTokenEndpoint } from "./handlers/token"
 import { registerUserEndpoints } from "./handlers/user"
@@ -974,11 +973,6 @@ export const issuer = <
 	registerRevokeEndpoint(app, {
 		storage,
 		sso: input.sso
-	})
-
-	registerIntrospectionEndpoint(app, {
-		allSigning,
-		issuer
 	})
 
 	// Error handling
