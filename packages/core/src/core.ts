@@ -7,7 +7,12 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 import type { StatusCode } from "hono/utils/http-status"
 import { CompactEncrypt, SignJWT, compactDecrypt } from "jose"
 import { type AllowCheckInput, defaultAllowCheck } from "./allow"
-import { type ClaimsConfiguration, createDefaultClaimsConfig, transformClaims } from "./claims"
+import {
+	type ClaimsConfiguration,
+	createDefaultClaimsConfig,
+	transformClaims,
+	validateEssentialClaims
+} from "./claims"
 import { OauthError, UnknownStateError } from "./error"
 import { encryptionKeys, signingKeys } from "./keys"
 import type { Provider, ProviderRoute } from "./provider/provider"
@@ -413,6 +418,20 @@ export const issuer = <
 		)
 
 		if (transformedClaims === null) {
+			// Check if we have claims config with essential validation to get specific missing claims
+			if (claimsConfig.essential) {
+				const validationResult = validateEssentialClaims(
+					payload.properties,
+					claimsConfig.essential,
+					transformContext
+				)
+				if (!validationResult.success) {
+					throw new Error(
+						`Essential claims validation failed for ID token. Missing: ${validationResult.missing.join(", ")}`
+					)
+				}
+			}
+
 			throw new Error("Essential claims validation failed for ID token")
 		}
 
@@ -421,6 +440,23 @@ export const issuer = <
 		const finalClaims = {
 			...transformedClaims,
 			...standardClaims
+		}
+
+		const idTokenEssentialConfig = {
+			required: ["sub", "iss", "aud", "exp", "iat"],
+			strict: true
+		}
+
+		const idTokenValidation = validateEssentialClaims(
+			finalClaims,
+			idTokenEssentialConfig,
+			transformContext
+		)
+
+		if (!idTokenValidation.success) {
+			throw new Error(
+				`Essential claims validation failed for ID token. Missing: ${idTokenValidation.missing.join(", ")}`
+			)
 		}
 
 		return await new SignJWT(finalClaims)
@@ -482,25 +518,38 @@ export const issuer = <
 		const now = Math.floor(Date.now() / 1000)
 
 		// Transform claims for access token as well
-		let transformedProperties = value.properties
-		if (input.claims) {
-			const claimsConfig = input.claims
-			const transformContext = {
-				clientID: value.clientID,
-				scopes: value.scopes || [],
-				target: "access_token" as const,
-				issuer: issuer(ctx)
+		const transformedProperties = value.properties
+		const claimsConfig = input.claims || createDefaultClaimsConfig()
+		const transformContext = {
+			clientID: value.clientID,
+			scopes: value.scopes || [],
+			target: "access_token" as const,
+			issuer: issuer(ctx)
+		}
+
+		const transformedClaimsResult = await transformClaims(
+			value.properties,
+			transformContext,
+			claimsConfig
+		)
+
+		if (transformedClaimsResult === null) {
+			// Check if we have claims config with essential validation to get specific missing claims
+			if (claimsConfig.essential) {
+				const validationResult = validateEssentialClaims(
+					value.properties as Record<string, unknown>,
+					claimsConfig.essential,
+					transformContext
+				)
+
+				if (!validationResult.success) {
+					throw new Error(
+						`Essential claims validation failed during properties transformation. Missing: ${validationResult.missing.join(", ")}`
+					)
+				}
 			}
 
-			const transformedClaims = await transformClaims(
-				value.properties,
-				transformContext,
-				claimsConfig
-			)
-
-			if (transformedClaims !== null) {
-				transformedProperties = transformedClaims
-			}
+			throw new Error("Essential claims validation failed during properties transformation.")
 		}
 
 		const accessPayload = {
@@ -513,6 +562,23 @@ export const issuer = <
 			exp: now + value.ttl.access,
 			iat: now,
 			scopes: value.scopes
+		}
+
+		const accessTokenEssentialConfig = {
+			required: ["sub", "iss", "aud", "exp", "iat", "mode", "type"],
+			strict: true
+		}
+
+		const accessTokenValidation = validateEssentialClaims(
+			accessPayload,
+			accessTokenEssentialConfig,
+			transformContext
+		)
+
+		if (!accessTokenValidation.success) {
+			throw new Error(
+				`Essential claims validation failed for Access token. Missing: ${accessTokenValidation.missing.join(", ")}`
+			)
 		}
 
 		const access = await new SignJWT(accessPayload)

@@ -204,19 +204,19 @@ export interface ClaimsConfiguration<TProperties = Record<string, unknown>> {
  * @param claims - Claims object to validate
  * @param config - Essential claims configuration
  * @param context - Transform context for validation
- * @returns True if essential claims validation passes
+ * @returns An object indicating success or failure, with missing claims listed on failure.
  */
 export const validateEssentialClaims = (
 	claims: Record<string, unknown>,
 	config: EssentialClaimsConfig,
 	context: ClaimsTransformContext
-): boolean => {
+): { success: boolean; missing: string[] } => {
 	// Check if all required claims are present
 	const missingClaims = config.required.filter((claim) => !(claim in claims))
 
 	if (missingClaims.length > 0) {
 		if (config.strict) {
-			return false
+			return { success: false, missing: missingClaims }
 		}
 		console.warn(`Missing essential claims: ${missingClaims.join(", ")}`)
 	}
@@ -224,14 +224,17 @@ export const validateEssentialClaims = (
 	// Run custom validation if provided
 	if (config.validate) {
 		try {
-			return config.validate(claims, context)
+			const isValid = config.validate(claims, context)
+			if (!isValid) {
+				return { success: false, missing: ["custom_validation_failed"] }
+			}
 		} catch (error) {
 			console.error("Essential claims validation failed:", error)
-			return false
+			return { success: false, missing: ["custom_validation_exception"] }
 		}
 	}
 
-	return true
+	return { success: true, missing: [] }
 }
 
 /**
@@ -352,10 +355,9 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 	// Filter claims based on target
 	finalClaims = filterClaimsByTarget(finalClaims, context.target, config)
 
-	// Validate essential claims
 	if (config.essential) {
-		const isValid = validateEssentialClaims(finalClaims, config.essential, context)
-		if (!isValid && config.essential.strict) {
+		const validationResult = validateEssentialClaims(finalClaims, config.essential, context)
+		if (!validationResult.success && config.essential.strict) {
 			return null
 		}
 	}
@@ -378,11 +380,6 @@ export const createDefaultClaimsConfig = <
 			const claims: Record<string, unknown> = {}
 			const props = properties as Record<string, unknown>
 
-			// Always include sub claim if available
-			if ("sub" in props && props.sub) {
-				claims.sub = props.sub
-			}
-
 			// Standard OIDC claims based on scopes
 			if (context.scopes.includes("profile")) {
 				if ("name" in props && props.name) claims.name = props.name
@@ -400,7 +397,7 @@ export const createDefaultClaimsConfig = <
 			return { claims, success: true }
 		},
 		essential: {
-			required: ["sub"],
+			required: [],
 			strict: false
 		}
 	}
