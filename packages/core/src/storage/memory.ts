@@ -120,7 +120,7 @@ export const MemoryStorage = (options?: MemoryStorageOptions): StorageAdapter =>
 				store.push(...parsed)
 			}
 		} catch (error) {
-			console.warn("Failed to load persisted storage:", error)
+			// Failed to load persisted storage - continue with empty store
 		}
 	}
 
@@ -134,7 +134,7 @@ export const MemoryStorage = (options?: MemoryStorageOptions): StorageAdapter =>
 			const serialized = JSON.stringify(store, null, 2)
 			await writeFile(options.persist, serialized, "utf8")
 		} catch (error) {
-			console.error("Failed to save storage to file:", error)
+			// Failed to save storage to file - continue operation
 		}
 	}
 

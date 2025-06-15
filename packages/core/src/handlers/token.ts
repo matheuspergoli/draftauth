@@ -504,7 +504,6 @@ export const registerTokenEndpoint = <T, R>(
 							}
 						}
 					} catch (error) {
-						console.error("Refresh callback error:", error)
 						return c.json(
 							{
 								error: "server_error",

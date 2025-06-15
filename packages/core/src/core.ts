@@ -432,7 +432,9 @@ export const issuer = <
 				}
 			}
 
-			throw new Error("Essential claims validation failed for ID token")
+			throw new Error(
+				"Essential claims validation failed for ID token. Claims transformation returned null."
+			)
 		}
 
 		// Merge standard claims with transformed claims
@@ -518,7 +520,6 @@ export const issuer = <
 		const now = Math.floor(Date.now() / 1000)
 
 		// Transform claims for access token as well
-		const transformedProperties = value.properties
 		const claimsConfig = input.claims || createDefaultClaimsConfig()
 		const transformContext = {
 			clientID: value.clientID,
@@ -544,18 +545,20 @@ export const issuer = <
 
 				if (!validationResult.success) {
 					throw new Error(
-						`Essential claims validation failed during properties transformation. Missing: ${validationResult.missing.join(", ")}`
+						`Essential claims validation failed for access token. Missing: ${validationResult.missing.join(", ")}`
 					)
 				}
 			}
 
-			throw new Error("Essential claims validation failed during properties transformation.")
+			throw new Error(
+				"Essential claims validation failed for access token. Claims transformation returned null."
+			)
 		}
 
 		const accessPayload = {
 			mode: "access",
 			type: value.type,
-			properties: transformedProperties,
+			properties: transformedClaimsResult,
 			sub: value.subject,
 			aud: value.clientID,
 			iss: issuer(ctx),
@@ -618,7 +621,6 @@ export const issuer = <
 		const customName = input.sso?.cookieName
 		if (customName) {
 			if (customName.startsWith("__Host-") && input.sso?.cookieDomain) {
-				console.warn("__Host- cookies cannot have domain attributes. Using fallback name.")
 				const isHttps = isHttpsRequest(ctx)
 				return isHttps ? "draftauth-sso-secure" : "draftauth-sso"
 			}
@@ -734,7 +736,6 @@ export const issuer = <
 									userPreferredUsernameForSso = identifiers.preferred_username
 									userPictureForSso = identifiers.picture
 								} catch (error) {
-									console.error("Error extracting SSO identifiers:", error)
 									const props = properties as Record<string, unknown>
 									userIdForSso = props.id as string
 									userEmailForSso = props.email as string
@@ -880,7 +881,6 @@ export const issuer = <
 				const decrypted = await decrypt(raw)
 				return decrypted as T
 			} catch (ex) {
-				console.error("Failed to decrypt", key, ex)
 				return undefined as T
 			}
 		},
@@ -983,7 +983,6 @@ export const issuer = <
 
 	// Error handling
 	app.onError(async (err, c) => {
-		console.error(err)
 		if (err instanceof UnknownStateError) {
 			return auth.forward(c, await error(err, c.req.raw))
 		}

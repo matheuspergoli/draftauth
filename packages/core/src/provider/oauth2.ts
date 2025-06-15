@@ -349,7 +349,6 @@ export const Oauth2Provider = (config: Oauth2Config): Provider<Oauth2UserData> =
 					})
 					idTokenPayload = verificationResult.payload
 				} catch (error) {
-					console.warn("ID token verification failed:", error)
 					// Continue without ID token claims rather than failing the entire flow
 				}
 			}

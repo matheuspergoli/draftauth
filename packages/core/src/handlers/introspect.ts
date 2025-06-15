@@ -4,6 +4,7 @@
 import type { Context, Hono } from "hono"
 import { cors } from "hono/cors"
 import { jwtVerify } from "jose"
+import { validateEssentialClaims } from "../claims"
 import { OauthError } from "../error"
 import type { KeyPair } from "../keys"
 
@@ -166,7 +167,30 @@ const validateAccessToken = async (
 					continue
 				}
 
-				// Check expiration with small buffer
+				// Validate required access token claims using existing claims validation
+				const accessTokenEssentialConfig = {
+					required: ["sub", "iss", "aud", "exp", "iat", "mode", "type"],
+					strict: true
+				}
+
+				const transformContext = {
+					clientID: payload.aud as string,
+					scopes: (payload.scopes as string[]) || [],
+					target: "access_token" as const,
+					issuer: expectedIssuer
+				}
+
+				const validationResult = validateEssentialClaims(
+					payload,
+					accessTokenEssentialConfig,
+					transformContext
+				)
+
+				if (!validationResult.success) {
+					continue
+				}
+
+				// Check expiration
 				const now = Math.floor(Date.now() / 1000)
 				if (payload.exp && payload.exp <= now) {
 					return null // Token expired
@@ -281,7 +305,6 @@ export const registerIntrospectionEndpoint = <T>(
 				}
 
 				// Handle unexpected errors
-				console.error("Token introspection error:", error)
 				return c.json(
 					{
 						error: "server_error",

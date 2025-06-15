@@ -113,7 +113,6 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 			try {
 				return JSON.parse(row.value) as Record<string, unknown>
 			} catch (error) {
-				console.error("Failed to parse stored value:", error)
 				return undefined
 			}
 		},
@@ -129,7 +128,6 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 					args: [joinedKey, serializedValue, expiryTimestamp]
 				})
 			} catch (error) {
-				console.error("Failed to store value:", error)
 				throw new Error("Storage operation failed")
 			}
 		},
@@ -165,7 +163,6 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 					const parsedValue = JSON.parse(row.value) as Record<string, unknown>
 					yield [splitKey(row.key), parsedValue] as const
 				} catch (error) {
-					console.error("Failed to parse value during scan:", error)
 					// Skip malformed entries rather than failing the entire scan
 				}
 			}
@@ -176,8 +173,8 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 					sql: `DELETE FROM ${TABLE_NAME} WHERE expiry IS NOT NULL AND expiry < ?`,
 					args: [now]
 				})
-				.catch((error) => {
-					console.warn("Background cleanup failed:", error)
+				.catch(() => {
+					// Background cleanup failed - continue silently
 				})
 		}
 	}

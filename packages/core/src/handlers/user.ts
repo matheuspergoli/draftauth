@@ -303,7 +303,7 @@ export const registerUserEndpoints = <T>(
 					sessionSub = result.payload.sub as string
 				}
 			} catch (error) {
-				console.error("Invalid ID token hint:", error)
+				// Invalid ID token hint - continue silently
 			}
 		}
 

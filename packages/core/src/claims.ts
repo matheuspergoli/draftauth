@@ -215,10 +215,7 @@ export const validateEssentialClaims = (
 	const missingClaims = config.required.filter((claim) => !(claim in claims))
 
 	if (missingClaims.length > 0) {
-		if (config.strict) {
-			return { success: false, missing: missingClaims }
-		}
-		console.warn(`Missing essential claims: ${missingClaims.join(", ")}`)
+		return { success: false, missing: missingClaims }
 	}
 
 	// Run custom validation if provided
@@ -229,7 +226,6 @@ export const validateEssentialClaims = (
 				return { success: false, missing: ["custom_validation_failed"] }
 			}
 		} catch (error) {
-			console.error("Essential claims validation failed:", error)
 			return { success: false, missing: ["custom_validation_exception"] }
 		}
 	}
@@ -336,7 +332,6 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 			const transformResult = await config.transform(properties, context)
 
 			if (!transformResult.success) {
-				console.error("Claims transformation failed:", transformResult.error)
 				if (config.essential?.strict) {
 					return null
 				}
@@ -345,7 +340,6 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 				finalClaims = { ...finalClaims, ...transformResult.claims }
 			}
 		} catch (error) {
-			console.error("Claims transformation threw error:", error)
 			if (config.essential?.strict) {
 				return null
 			}
@@ -357,8 +351,11 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 
 	if (config.essential) {
 		const validationResult = validateEssentialClaims(finalClaims, config.essential, context)
-		if (!validationResult.success && config.essential.strict) {
-			return null
+		if (!validationResult.success) {
+			// In strict mode, fail immediately
+			if (config.essential.strict) {
+				return null
+			}
 		}
 	}
 

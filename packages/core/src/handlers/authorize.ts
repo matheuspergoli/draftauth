@@ -412,7 +412,6 @@ export const registerAuthorizeEndpoint = (
 									finalScopes || []
 								)
 							} catch (error) {
-								console.error("Error getting SSO user properties:", error)
 								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						} else if (refresh) {
@@ -439,7 +438,6 @@ export const registerAuthorizeEndpoint = (
 									return c.redirect(c.req.url, 302)
 								}
 							} catch (error) {
-								console.error("Error refreshing SSO claims:", error)
 								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						}

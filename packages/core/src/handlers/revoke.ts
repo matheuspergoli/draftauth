@@ -269,7 +269,6 @@ export const registerRevokeEndpoint = <T>(
 
 				return c.newResponse(null, 200)
 			} catch (error) {
-				console.error("Error revoking token:", error)
 				return c.newResponse(null, 200)
 			}
 		}

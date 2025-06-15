@@ -175,7 +175,6 @@ export const SteamProvider = (config: SteamProviderConfig): Provider<SteamUserDa
 					// Return successful authentication with Steam user data
 					return await ctx.success(c, { steamId })
 				} catch (error) {
-					console.error("Steam authentication error:", error)
 					throw new Error(
 						error instanceof Error
 							? `Steam authentication failed: ${error.message}`
