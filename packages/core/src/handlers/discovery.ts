@@ -25,8 +25,6 @@ interface OidcDiscoveryDocument {
 	end_session_endpoint: string
 	/** Token revocation endpoint URL */
 	revocation_endpoint: string
-	/** Token introspection endpoint URL */
-	introspection_endpoint: string
 	/** Supported OAuth 2.0 response types */
 	response_types_supported: string[]
 	/** Supported OAuth 2.0 response modes */
@@ -71,8 +69,6 @@ interface OAuth2DiscoveryDocument {
 	token_endpoint: string
 	/** Token revocation endpoint URL */
 	revocation_endpoint: string
-	/** Token introspection endpoint URL */
-	introspection_endpoint: string
 	/** JWKS endpoint URL */
 	jwks_uri: string
 	/** Supported OAuth 2.0 response types */
@@ -83,8 +79,6 @@ interface OAuth2DiscoveryDocument {
 	scopes_supported: string[]
 	/** Supported revocation endpoint authentication methods */
 	revocation_endpoint_auth_methods_supported: string[]
-	/** Supported introspection endpoint authentication methods */
-	introspection_endpoint_auth_methods_supported: string[]
 	/** Supported PKCE code challenge methods */
 	code_challenge_methods_supported: string[]
 }
@@ -187,7 +181,6 @@ export const registerDiscoveryEndpoints = <T>(
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				end_session_endpoint: `${iss}/logout`,
 				revocation_endpoint: `${iss}/revoke`,
-				introspection_endpoint: `${iss}/introspect`,
 				response_types_supported: ["code", "code id_token"],
 				response_modes_supported: ["query", "fragment", "form_post"],
 				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
@@ -235,17 +228,11 @@ export const registerDiscoveryEndpoints = <T>(
 				authorization_endpoint: `${iss}/authorize`,
 				token_endpoint: `${iss}/token`,
 				revocation_endpoint: `${iss}/revoke`,
-				introspection_endpoint: `${iss}/introspect`,
 				jwks_uri: `${iss}/.well-known/jwks.json`,
 				response_types_supported: ["code"],
 				grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
 				scopes_supported: allSupportedScopes,
 				revocation_endpoint_auth_methods_supported: [
-					"none",
-					"client_secret_post",
-					"client_secret_basic"
-				],
-				introspection_endpoint_auth_methods_supported: [
 					"none",
 					"client_secret_post",
 					"client_secret_basic"
