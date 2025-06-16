@@ -132,7 +132,7 @@ const generateChallenge = async (verifier: string, method: PKCEMethod): Promise<
  * @throws {RangeError} If length is outside the valid range (43-128)
  */
 export const generatePKCE = async (length = 64): Promise<PKCEChallenge> => {
-	if (length < 43 || length > 128) {
+	if (!Number.isInteger(length) || length < 43 || length > 128) {
 		throw new RangeError("Code verifier length must be between 43 and 128 characters")
 	}
 
