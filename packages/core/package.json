@@ -32,14 +32,23 @@
 	"scripts": {
 		"build": "bun run script/build.ts",
 		"deploy": "tsup && changeset publish",
-		"clean": "rm -rf dist .turbo node_modules"
+		"clean": "rm -rf dist .turbo node_modules",
+		"test": "vitest",
+		"test:run": "vitest run",
+		"test:ui": "vitest --ui",
+		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.29.4",
 		"@draftauth/tsconfig": "workspace:*",
 		"@types/bun": "^1.2.16",
-		"@types/node": "^24.0.1",
-		"typescript": "^5.8.3"
+		"@types/node": "^24.0.3",
+		"@vitest/coverage-v8": "^3.2.3",
+		"@vitest/ui": "^3.2.3",
+		"happy-dom": "^18.0.1",
+		"typescript": "^5.8.3",
+		"valibot": "^1.1.0",
+		"vitest": "^3.2.3"
 	},
 	"dependencies": {
 		"@libsql/client": "^0.15.9",
