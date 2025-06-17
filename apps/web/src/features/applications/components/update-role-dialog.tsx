@@ -15,7 +15,11 @@ export const UpdateRoleDialog = ({
 	appId,
 	roleId,
 	roleName
-}: { appId: string; roleName: string; roleId: string }) => {
+}: {
+	appId: string
+	roleName: string
+	roleId: string
+}) => {
 	const { ability } = useRouteContext({ from: "/dashboard" })
 	const { mutateAsync: updateRole } = useUpdateRole()
 

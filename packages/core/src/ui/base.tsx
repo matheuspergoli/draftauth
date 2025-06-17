@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "hono/jsx"
 import { getTheme } from "../themes/theme"
-import css from "./ui.css" assert { type: "text" }
+import css from "./ui.css"
 
 /**
  * Base layout component for Draft Auth UI.

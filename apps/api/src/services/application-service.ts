@@ -100,7 +100,10 @@ export const addRedirectUri = async ({ appId, uri }: { appId: string; uri: strin
 export const deleteRedirectUri = async ({
 	uriId,
 	appId
-}: { uriId: string; appId: string }) => {
+}: {
+	uriId: string
+	appId: string
+}) => {
 	const [requestedApp, requestedURI] = await Promise.all([
 		db.query.applications.findFirst({
 			where: eq(applications.appId, appId)
@@ -227,10 +230,7 @@ export const listApplicationsWithCounts = async () => {
 	return results
 }
 
-export const createApplication = async (data: {
-	appId: string
-	appName: string
-}) => {
+export const createApplication = async (data: { appId: string; appName: string }) => {
 	const appExists = await db
 		.select()
 		.from(applications)

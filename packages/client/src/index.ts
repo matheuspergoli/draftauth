@@ -130,10 +130,7 @@ export class DraftauthServiceClient {
 		return await this._makeSignedRequest<"enabled" | "disabled">("GET", path)
 	}
 
-	async setUserAccess(body: {
-		userId: string
-		status: "enabled" | "disabled"
-	}) {
+	async setUserAccess(body: { userId: string; status: "enabled" | "disabled" }) {
 		const path = `/api/service/users/${body.userId}/access`
 		return await this._makeSignedRequest("PUT", path, body)
 	}

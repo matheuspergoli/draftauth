@@ -6,7 +6,9 @@
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
