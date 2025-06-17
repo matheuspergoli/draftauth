@@ -31,7 +31,10 @@ export const listRolesForApp = async ({ appId }: { appId: string }) => {
 export const getRoleDetailsByNameAndApp = async ({
 	roleName,
 	appId
-}: { roleName: string; appId: string }) => {
+}: {
+	roleName: string
+	appId: string
+}) => {
 	const [requestedApp, requestedRole] = await Promise.all([
 		db.query.applications.findFirst({
 			where: eq(applications.appId, appId)
@@ -56,10 +59,7 @@ export const getRoleDetailsByNameAndApp = async ({
 	return requestedRole
 }
 
-export const createRole = async (data: {
-	appId: string
-	roleName: string
-}) => {
+export const createRole = async (data: { appId: string; roleName: string }) => {
 	const [requestedApp, roleExists] = await Promise.all([
 		db.query.applications.findFirst({
 			where: eq(applications.appId, data.appId)
@@ -160,7 +160,10 @@ export const deleteRole = async ({ roleId }: { roleId: string }) => {
 export const assignRoleToUser = async ({
 	userId,
 	roleId
-}: { userId: string; roleId: string }) => {
+}: {
+	userId: string
+	roleId: string
+}) => {
 	const [requestedUser, requestedRole] = await Promise.all([
 		db.query.users.findFirst({
 			where: eq(users.userId, userId)
@@ -199,7 +202,10 @@ export const assignRoleToUser = async ({
 export const revokeRoleFromUser = async ({
 	userId,
 	roleId
-}: { userId: string; roleId: string }) => {
+}: {
+	userId: string
+	roleId: string
+}) => {
 	const [requestedUser, requestedRole] = await Promise.all([
 		db.query.users.findFirst({
 			where: eq(users.userId, userId)

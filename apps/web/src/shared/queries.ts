@@ -113,7 +113,10 @@ export const userQueryOptions = (userId: string) => {
 export const userApplicationRolesQueryOptions = ({
 	userId,
 	appId
-}: { userId: string; appId: string }) => {
+}: {
+	userId: string
+	appId: string
+}) => {
 	return queryOptions({
 		enabled: !!userId && !!appId,
 		queryKey: queryKeys.userApplicationRoles({ userId, appId }),

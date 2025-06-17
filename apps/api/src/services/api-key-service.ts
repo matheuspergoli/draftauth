@@ -11,11 +11,7 @@ import { events } from "@/libs/events"
 import { eq } from "drizzle-orm"
 import { HTTPException } from "hono/http-exception"
 
-export const generateApiKey = async ({
-	appId
-}: {
-	appId: string
-}) => {
+export const generateApiKey = async ({ appId }: { appId: string }) => {
 	const secretKey = generateSecretKey()
 	const keyId = generateKeyId(`sk_${appId}`)
 
