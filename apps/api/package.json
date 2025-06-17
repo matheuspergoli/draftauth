@@ -29,7 +29,7 @@
 		"drizzle-orm": "^0.44.2",
 		"hono": "^4.7.11",
 		"resend": "^4.6.0",
-		"zod": "^3.25.64",
+		"zod": "^3.25.67",
 		"zxcvbn": "^4.4.2"
 	},
 	"devDependencies": {
