@@ -245,14 +245,19 @@ const validateClientAuth = (
 	clientAuth: ClientAuthentication,
 	expectedClientId?: string
 ): boolean => {
-	// Validate client_id match if provided
+	// This prevents authorization code theft attacks
 	if (expectedClientId && clientAuth.clientId !== expectedClientId) {
+		return false
+	}
+
+	// client_id should always be present for token requests
+	if (!clientAuth.clientId?.trim()) {
 		return false
 	}
 
 	// For public clients, only client_id is required
 	if (clientAuth.method === "none") {
-		return !!clientAuth.clientId?.trim()
+		return true
 	}
 
 	// For confidential clients, both client_id and client_secret are required
@@ -260,7 +265,7 @@ const validateClientAuth = (
 		clientAuth.method === "client_secret_post" ||
 		clientAuth.method === "client_secret_basic"
 	) {
-		return !!(clientAuth.clientId?.trim() && clientAuth.clientSecret?.trim())
+		return !!clientAuth.clientSecret?.trim()
 	}
 
 	return false
@@ -349,6 +354,17 @@ export const registerTokenEndpoint = <T, R>(
 				// Extract and validate client authentication
 				try {
 					const clientAuth = await extractClientAuth(c, form)
+
+					// validate that the client_id matches the authorization code issuer
+					if (!payload.clientID) {
+						return c.json(
+							{
+								error: "invalid_grant",
+								error_description: "Authorization code missing client binding"
+							},
+							400
+						)
+					}
 
 					// Validate client credentials and match with authorization code
 					if (!validateClientAuth(clientAuth, payload.clientID)) {

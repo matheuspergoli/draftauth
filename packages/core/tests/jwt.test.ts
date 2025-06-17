@@ -317,8 +317,7 @@ describe("JWT Functions", () => {
 			const result = await jwt.verify(token, key.public)
 
 			expect(result.payload.sub).toBe("user123")
-			// Kid should default to "sst"
-			expect(result.protectedHeader.kid).toBe("sst")
+			expect(result.protectedHeader.kid).toBeUndefined()
 		})
 	})
 

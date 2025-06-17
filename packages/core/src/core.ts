@@ -554,6 +554,16 @@ export const issuer = <
 			)
 		}
 
+		// client must be present and non-empty
+		if (!value.clientID || !value.clientID.trim()) {
+			throw new Error("Invalid audience: client ID cannot be empty")
+		}
+
+		// ensure client ID format is valid
+		if (value.clientID.length < 3 || value.clientID.length > 100) {
+			throw new Error("Invalid audience: client ID must be between 3 and 100 characters")
+		}
+
 		const accessPayload = {
 			mode: "access",
 			type: value.type,

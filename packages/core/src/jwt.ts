@@ -1,4 +1,10 @@
-import { type JWTPayload, type JWTVerifyResult, SignJWT, jwtVerify } from "jose"
+import {
+	type JWTHeaderParameters,
+	type JWTPayload,
+	type JWTVerifyResult,
+	SignJWT,
+	jwtVerify
+} from "jose"
 import type { KeyLike } from "./keys"
 
 /**
@@ -39,22 +45,27 @@ export const jwt = {
 		privateKey: KeyLike,
 		keyId?: string
 	): Promise<string> => {
-		return new SignJWT(payload)
-			.setProtectedHeader({
-				alg: algorithm,
-				typ: "JWT",
-				kid: keyId || "sst"
-			})
-			.sign(privateKey)
+		const header: JWTHeaderParameters = {
+			alg: algorithm,
+			typ: "JWT"
+		}
+
+		if (keyId) {
+			header.kid = keyId
+		}
+
+		return new SignJWT(payload).setProtectedHeader(header).sign(privateKey)
 	},
 
 	/**
 	 * Verifies a JWT signature and returns the decoded payload.
 	 * Validates the token signature against the provided public key.
+	 * Only allows secure algorithms (ES256, RS256) by default to prevent algorithm confusion attacks.
 	 *
 	 * @template T - Expected shape of the JWT payload
 	 * @param token - The JWT string to verify
 	 * @param publicKey - The public key for signature verification
+	 * @param options - Optional configuration including allowed algorithms
 	 * @returns Promise resolving to JWT verification result with typed payload
 	 *
 	 * @example
@@ -66,7 +77,8 @@ export const jwt = {
 	 * }
 	 *
 	 * const result = await jwt.verify<TokenPayload>(token, verificationKey.public)
-	 * // Fully typed: result.payload.sub
+	 * // With custom algorithms:
+	 * const result = await jwt.verify<TokenPayload>(token, key, { algorithms: ['RS256'] })
 	 * ```
 	 *
 	 * @throws {JWTExpired} When the token has expired
@@ -74,8 +86,13 @@ export const jwt = {
 	 */
 	verify: <T extends JWTPayload = JWTPayload>(
 		token: string,
-		publicKey: KeyLike
+		publicKey: KeyLike,
+		options?: { algorithms?: string[] }
 	): Promise<JWTVerifyResult<T>> => {
-		return jwtVerify<T>(token, publicKey)
+		const allowedAlgorithms = options?.algorithms || ["ES256", "RS256"]
+
+		return jwtVerify<T>(token, publicKey, {
+			algorithms: allowedAlgorithms
+		})
 	}
 } as const

@@ -113,6 +113,7 @@ const generateChallenge = async (verifier: string, method: PKCEMethod): Promise<
 /**
  * Generates a complete PKCE challenge for OAuth 2.0 authorization requests.
  * Creates a cryptographically secure verifier and corresponding S256 challenge.
+ * Validates that the generated verifier meets standard requirements (43-128 characters).
  *
  * @param length - Length of the random buffer in bytes (43-128 range)
  * @returns Promise resolving to PKCE challenge data
@@ -129,7 +130,7 @@ const generateChallenge = async (verifier: string, method: PKCEMethod): Promise<
  * sessionStorage.setItem('code_verifier', pkce.verifier)
  * ```
  *
- * @throws {RangeError} If length is outside the valid range (43-128)
+ * @throws {RangeError} If length is outside valid range or generated verifier doesn't meet requirements
  */
 export const generatePKCE = async (length = 64): Promise<PKCEChallenge> => {
 	if (!Number.isInteger(length) || length < 43 || length > 128) {
@@ -148,7 +149,9 @@ export const generatePKCE = async (length = 64): Promise<PKCEChallenge> => {
 
 /**
  * Validates a PKCE code verifier against a previously generated challenge.
- * Uses timing-safe comparison to prevent timing attacks during validation.
+ * Uses timing-safe comparison and timing normalization to prevent timing attacks.
+ * Validates input format and length requirements before processing to prevent
+ * timing-based information leakage.
  *
  * @param verifier - The code verifier received from the client
  * @param challenge - The code challenge stored during authorization
@@ -174,6 +177,44 @@ export const validatePKCE = async (
 	challenge: string,
 	method: PKCEMethod = "S256"
 ): Promise<boolean> => {
+	const startTime = Date.now()
+	const minProcessingTime = 10
+
+	if (
+		!verifier ||
+		!challenge ||
+		typeof verifier !== "string" ||
+		typeof challenge !== "string"
+	) {
+		const elapsed = Date.now() - startTime
+		const remainingTime = Math.max(0, minProcessingTime - elapsed)
+		await new Promise((resolve) => setTimeout(resolve, remainingTime + Math.random() * 5))
+		return false
+	}
+
+	if (verifier.length < 10 || verifier.length > 200) {
+		const elapsed = Date.now() - startTime
+		const remainingTime = Math.max(0, minProcessingTime - elapsed)
+		await new Promise((resolve) => setTimeout(resolve, remainingTime + Math.random() * 5))
+		return false
+	}
+
+	const base64urlPattern = /^[A-Za-z0-9_-]+$/
+	if (!base64urlPattern.test(verifier) || !base64urlPattern.test(challenge)) {
+		const elapsed = Date.now() - startTime
+		const remainingTime = Math.max(0, minProcessingTime - elapsed)
+		await new Promise((resolve) => setTimeout(resolve, remainingTime + Math.random() * 5))
+		return false
+	}
+
 	const generatedChallenge = await generateChallenge(verifier, method)
-	return timingSafeCompare(generatedChallenge, challenge)
+	const result = timingSafeCompare(generatedChallenge, challenge)
+
+	const elapsed = Date.now() - startTime
+	const remainingTime = Math.max(0, minProcessingTime - elapsed)
+	if (remainingTime > 0) {
+		await new Promise((resolve) => setTimeout(resolve, remainingTime + Math.random() * 5))
+	}
+
+	return result
 }
