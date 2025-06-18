@@ -46,17 +46,17 @@
 		"@draftauth/tsconfig": "workspace:*",
 		"@types/bun": "^1.2.16",
 		"@types/node": "^24.0.3",
-		"@vitest/coverage-v8": "^3.2.3",
-		"@vitest/ui": "^3.2.3",
+		"@vitest/coverage-v8": "^3.2.4",
+		"@vitest/ui": "^3.2.4",
 		"happy-dom": "^18.0.1",
 		"typescript": "^5.8.3",
 		"valibot": "^1.1.0",
-		"vitest": "^3.2.3"
+		"vitest": "^3.2.4"
 	},
 	"dependencies": {
 		"@libsql/client": "^0.15.9",
 		"@standard-schema/spec": "^1.0.0",
-		"hono": "^4.7.11",
+		"hono": "^4.8.0",
 		"jose": "^6.0.11"
 	}
 }
