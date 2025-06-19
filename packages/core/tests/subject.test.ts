@@ -3,7 +3,7 @@ import { array, number, object, optional, string } from "valibot"
  * Subject schema creation and type inference tests
  */
 import { describe, expect, it } from "vitest"
-import { type SubjectSchema, createSubjects } from "../src/subject"
+import { createSubjects, type SubjectSchema } from "../src/subject"
 
 describe("Subject Functions", () => {
 	describe("createSubjects", () => {

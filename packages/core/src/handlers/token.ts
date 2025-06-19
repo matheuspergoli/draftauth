@@ -197,7 +197,7 @@ const extractClientAuth = async (
 
 		try {
 			decodedCredentials = atob(credentials)
-		} catch (error) {
+		} catch {
 			throw new OauthError("invalid_client", "Invalid Base64 encoding in Authorization header")
 		}
 
@@ -519,7 +519,7 @@ export const registerTokenEndpoint = <T, R>(
 								payload.properties = transformedClaims
 							}
 						}
-					} catch (error) {
+					} catch {
 						return c.json(
 							{
 								error: "server_error",

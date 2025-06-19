@@ -268,7 +268,7 @@ export const registerRevokeEndpoint = <T>(
 				}
 
 				return c.newResponse(null, 200)
-			} catch (error) {
+			} catch {
 				return c.newResponse(null, 200)
 			}
 		}

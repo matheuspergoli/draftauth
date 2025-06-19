@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router"
 import { auth } from "@/libs/auth"
 import { Button } from "@/shared/components/button"
 import {
@@ -8,7 +9,6 @@ import {
 	CardHeader,
 	CardTitle
 } from "@/shared/components/card"
-import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/")({
 	component: RouteComponent

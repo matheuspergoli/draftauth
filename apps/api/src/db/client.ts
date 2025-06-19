@@ -1,6 +1,5 @@
 import { type Client, type Config, createClient } from "@libsql/client"
 import { drizzle } from "drizzle-orm/libsql"
-
 import { env } from "@/environment/env"
 import * as schema from "./schema"
 

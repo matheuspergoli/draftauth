@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto"
+import { and, eq } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import { type ProviderName, type UserStatus, userExternalIdentities, users } from "@/db/schema"
 import { events } from "@/libs/events"
-import { and, eq } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
+import { randomUUID } from "node:crypto"
 
 export interface FindOrCreateUserResult {
 	created: boolean

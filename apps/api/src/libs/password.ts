@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto"
 import zxcvbn, { type ZXCVBNFeedbackWarning } from "zxcvbn"
+import { createHash } from "node:crypto"
 
 export const checkPasswordStrength = (password: string) => {
 	const checkPasswordStrength = zxcvbn(password)
@@ -35,7 +35,7 @@ export const checkPasswordLeaks = async (password: string): Promise<boolean> => 
 			return false
 		}
 		return false
-	} catch (error) {
+	} catch {
 		return false
 	}
 }

@@ -1,16 +1,6 @@
-import { api } from "@/libs/api"
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from "@/shared/components/card"
-import { PageTitle } from "@/shared/components/page-title"
-import { dashboardStatsQueryOptions } from "@/shared/queries"
+import { createFileRoute } from "@tanstack/react-router"
 import type { AppEventType, AuditLogEntry } from "@draftauth/types"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {
@@ -26,6 +16,16 @@ import {
 	UserPlus,
 	Users
 } from "lucide-react"
+import { api } from "@/libs/api"
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle
+} from "@/shared/components/card"
+import { PageTitle } from "@/shared/components/page-title"
+import { dashboardStatsQueryOptions } from "@/shared/queries"
 
 export const Route = createFileRoute("/dashboard/")({
 	component: RouteComponent,

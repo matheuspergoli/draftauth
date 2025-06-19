@@ -1,8 +1,7 @@
-import { type VariantProps, cva } from "class-variance-authority"
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 import { PanelLeftIcon } from "lucide-react"
 import { Slot as SlotPrimitive } from "radix-ui"
-import * as React from "react"
-
 import { cn } from "@/libs/utils"
 import { Button } from "@/shared/components/button"
 import { Input } from "@/shared/components/input"

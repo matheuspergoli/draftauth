@@ -48,7 +48,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
  *
  * @packageDocumentation
  */
-import { type JSONWebKeySet, createLocalJWKSet, errors, jwtVerify } from "jose"
+import { createLocalJWKSet, errors, type JSONWebKeySet, jwtVerify } from "jose"
 import {
 	InvalidAccessTokenError,
 	InvalidAuthorizationCodeError,

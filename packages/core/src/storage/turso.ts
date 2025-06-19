@@ -1,5 +1,5 @@
 import type { Client } from "@libsql/client"
-import { type StorageAdapter, joinKey, splitKey } from "./storage"
+import { joinKey, type StorageAdapter, splitKey } from "./storage"
 
 /**
  * Turso/LibSQL storage adapter for Draft Auth with automatic expiration cleanup.
@@ -112,7 +112,7 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 
 			try {
 				return JSON.parse(row.value) as Record<string, unknown>
-			} catch (error) {
+			} catch {
 				return undefined
 			}
 		},
@@ -127,7 +127,7 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 					sql: `INSERT OR REPLACE INTO ${TABLE_NAME} (key, value, expiry) VALUES (?, ?, ?)`,
 					args: [joinedKey, serializedValue, expiryTimestamp]
 				})
-			} catch (error) {
+			} catch {
 				throw new Error("Storage operation failed")
 			}
 		},
@@ -162,7 +162,7 @@ export const TursoStorage = (client: Client): StorageAdapter => {
 				try {
 					const parsedValue = JSON.parse(row.value) as Record<string, unknown>
 					yield [splitKey(row.key), parsedValue] as const
-				} catch (error) {
+				} catch {
 					// Skip malformed entries rather than failing the entire scan
 				}
 			}

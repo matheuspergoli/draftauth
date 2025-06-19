@@ -1,15 +1,15 @@
+import { eq } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import { applicationApiKeys } from "@/db/schema"
 import {
-	type EncryptedPayload,
 	decryptSecret,
+	type EncryptedPayload,
 	encryptSecret,
 	generateKeyId,
 	generateSecretKey
 } from "@/libs/crypto"
 import { events } from "@/libs/events"
-import { eq } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
 
 export const generateApiKey = async ({ appId }: { appId: string }) => {
 	const secretKey = generateSecretKey()
@@ -108,7 +108,7 @@ export const getDecryptedSecretForKeyId = async ({ keyId }: { keyId: string }) =
 
 		const decryptedSecret = decryptSecret(encryptedPayload)
 		return decryptedSecret
-	} catch (error) {
+	} catch {
 		return null
 	}
 }

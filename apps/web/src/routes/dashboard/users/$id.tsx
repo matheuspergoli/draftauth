@@ -1,3 +1,6 @@
+import React from "react"
+import { createFileRoute, useRouteContext } from "@tanstack/react-router"
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { useAssignRoleToUser } from "@/features/users/hooks/use-assign-role-to-user"
 import { useChangeUserAppAccessStatus } from "@/features/users/hooks/use-change-user-app-access-status"
 import { useChangeUserGlobalStatus } from "@/features/users/hooks/use-change-user-global-status"
@@ -41,9 +44,6 @@ import {
 	userApplicationsRolesQueryOptions,
 	userQueryOptions
 } from "@/shared/queries"
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, useRouteContext } from "@tanstack/react-router"
-import React from "react"
 
 export const Route = createFileRoute("/dashboard/users/$id")({
 	component: RouteComponent,

@@ -348,7 +348,7 @@ export const Oauth2Provider = (config: Oauth2Config): Provider<Oauth2UserData> =
 						audience: config.clientID
 					})
 					idTokenPayload = verificationResult.payload
-				} catch (error) {
+				} catch {
 					// Continue without ID token claims rather than failing the entire flow
 				}
 			}

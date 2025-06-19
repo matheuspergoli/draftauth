@@ -65,7 +65,7 @@ export const defaultAllowCheck = async (
 	let redirectHostname: string
 	try {
 		redirectHostname = new URL(input.redirectURI).hostname
-	} catch (error) {
+	} catch {
 		return false
 	}
 
@@ -81,7 +81,7 @@ export const defaultAllowCheck = async (
 		currentHostname = forwardedHost
 			? new URL(`https://${forwardedHost}`).hostname
 			: new URL(req.url).hostname
-	} catch (error) {
+	} catch {
 		return false
 	}
 

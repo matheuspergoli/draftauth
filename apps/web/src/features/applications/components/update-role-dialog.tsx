@@ -1,3 +1,4 @@
+import { useRouteContext } from "@tanstack/react-router"
 import { Button } from "@/shared/components/button"
 import {
 	Dialog,
@@ -7,7 +8,6 @@ import {
 	DialogTrigger
 } from "@/shared/components/dialog"
 import { useAppForm } from "@/shared/components/form"
-import { useRouteContext } from "@tanstack/react-router"
 import { useUpdateRole } from "../hooks/use-update-role"
 import { type UpdateRoleData, UpdateRoleSchema } from "../schemas/update-role-schema"
 

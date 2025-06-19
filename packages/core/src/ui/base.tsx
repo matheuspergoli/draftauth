@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "hono/jsx"
 import { getTheme } from "../themes/theme"
-import css from "./ui.css"
+import css from "./ui.css" with { type: "text" }
 
 /**
  * Base layout component for Draft Auth UI.
@@ -132,9 +132,11 @@ export const Layout = (props: PropsWithChildren<LayoutProps>) => {
 				)}
 
 				{/* Base CSS styles */}
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: CSS from imported file is safe */}
 				<style dangerouslySetInnerHTML={{ __html: css }} />
 
 				{/* Custom theme CSS if provided */}
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: Theme CSS is validated */}
 				{theme?.css && <style dangerouslySetInnerHTML={{ __html: theme.css }} />}
 			</head>
 			<body>

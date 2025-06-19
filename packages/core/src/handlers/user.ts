@@ -266,7 +266,7 @@ export const registerUserEndpoints = <T>(
 				}
 
 				return c.json(finalUserInfo)
-			} catch (error) {
+			} catch {
 				return c.json(
 					{
 						error: "invalid_token",
@@ -302,7 +302,7 @@ export const registerUserEndpoints = <T>(
 					})
 					sessionSub = result.payload.sub as string
 				}
-			} catch (error) {
+			} catch {
 				// Invalid ID token hint - continue silently
 			}
 		}

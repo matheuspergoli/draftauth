@@ -1,8 +1,7 @@
-import { env } from "@/environment/env"
 import type { ApiRoutes } from "@draftauth/types"
 import { hc } from "hono/client"
 import { toast } from "sonner"
-
+import { env } from "@/environment/env"
 import { auth } from "./auth"
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {

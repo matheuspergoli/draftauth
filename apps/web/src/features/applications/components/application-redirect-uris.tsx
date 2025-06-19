@@ -1,3 +1,6 @@
+import { useParams, useRouteContext } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { Plus, Trash } from "lucide-react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -27,9 +30,6 @@ import {
 } from "@/shared/components/dialog"
 import { useAppForm } from "@/shared/components/form"
 import { applicationRedirectUrisQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams, useRouteContext } from "@tanstack/react-router"
-import { Plus, Trash } from "lucide-react"
 import { useCreateRedirectURI } from "../hooks/use-create-redirect-uri"
 import { useDeleteRedirectURI } from "../hooks/use-delete-redirect-uri"
 import {

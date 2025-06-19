@@ -1,3 +1,5 @@
+import { createFileRoute } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import {
 	ApplicationTable,
 	applicationTableColumns
@@ -11,8 +13,6 @@ import {
 } from "@/shared/components/card"
 import { PageTitle } from "@/shared/components/page-title"
 import { applicationsQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard/applications/")({
 	component: RouteComponent,

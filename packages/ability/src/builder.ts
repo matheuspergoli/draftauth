@@ -86,8 +86,8 @@ export class AbilityBuilder<
 			inverted: false
 		}
 
-		let finalRuleFields = undefined
-		let finalRuleConditions = undefined
+		let finalRuleFields
+		let finalRuleConditions
 
 		if (p4 !== undefined) {
 			finalRuleFields = p3
@@ -168,8 +168,8 @@ export class AbilityBuilder<
 			inverted: true
 		}
 
-		let finalRuleFields = undefined
-		let finalRuleConditions = undefined
+		let finalRuleFields
+		let finalRuleConditions
 
 		if (p4 !== undefined) {
 			finalRuleFields = p3

@@ -317,7 +317,7 @@ export const registerAuthorizeEndpoint = (
 								ssoSessionData!,
 								c.req.raw
 							)
-						} catch (error) {
+						} catch {
 							isSsoSessionValid = false
 						}
 
@@ -411,7 +411,7 @@ export const registerAuthorizeEndpoint = (
 									client_id,
 									finalScopes || []
 								)
-							} catch (error) {
+							} catch {
 								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						} else if (refresh) {
@@ -437,7 +437,7 @@ export const registerAuthorizeEndpoint = (
 									deleteSsoCookie(c)
 									return c.redirect(c.req.url, 302)
 								}
-							} catch (error) {
+							} catch {
 								finalSubjectProperties = ssoSessionData.originalProperties
 							}
 						}

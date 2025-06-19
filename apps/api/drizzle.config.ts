@@ -1,5 +1,4 @@
 import { defineConfig } from "drizzle-kit"
-
 import { env } from "./src/environment/env"
 
 const configDev = defineConfig({

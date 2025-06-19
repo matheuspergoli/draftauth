@@ -1,6 +1,6 @@
-import { env } from "@/environment/env"
 import { createClient } from "@draftauth/core/client"
 import { z } from "zod"
+import { env } from "@/environment/env"
 import { queryClient } from "./query-client"
 
 const ACCESS_KEY = "access_token"
@@ -105,7 +105,7 @@ const refreshTokens = async () => {
 		}
 
 		return storedAccessToken
-	} catch (error) {
+	} catch {
 		return null
 	}
 }

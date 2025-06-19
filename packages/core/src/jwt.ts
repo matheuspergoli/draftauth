@@ -2,8 +2,8 @@ import {
 	type JWTHeaderParameters,
 	type JWTPayload,
 	type JWTVerifyResult,
-	SignJWT,
-	jwtVerify
+	jwtVerify,
+	SignJWT
 } from "jose"
 import type { KeyLike } from "./keys"
 

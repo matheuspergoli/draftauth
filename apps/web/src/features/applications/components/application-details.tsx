@@ -1,3 +1,5 @@
+import { useParams } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { env } from "@/environment/env"
 import { run } from "@/libs/utils"
 import {
@@ -10,8 +12,6 @@ import {
 import { Input } from "@/shared/components/input"
 import { Label } from "@/shared/components/label"
 import { applicationQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams } from "@tanstack/react-router"
 import { DeleteApplicationDialog } from "./delete-application-dialog"
 
 export const ApplicationDetails = () => {

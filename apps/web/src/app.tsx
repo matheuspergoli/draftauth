@@ -1,6 +1,5 @@
-import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider } from "@tanstack/react-router"
-
+import { QueryClientProvider } from "@tanstack/react-query"
 import { queryClient } from "./libs/query-client"
 import { router } from "./router"
 import { ThemeProvider } from "./shared/components/theming"

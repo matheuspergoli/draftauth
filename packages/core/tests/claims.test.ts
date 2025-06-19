@@ -3,11 +3,11 @@
  */
 import { describe, expect, it } from "vitest"
 import {
+	applyClaimsMapping,
 	type ClaimsConfiguration,
 	type ClaimsTransformContext,
-	type EssentialClaimsConfig,
-	applyClaimsMapping,
 	createDefaultClaimsConfig,
+	type EssentialClaimsConfig,
 	filterClaimsByTarget,
 	transformClaims,
 	validateEssentialClaims

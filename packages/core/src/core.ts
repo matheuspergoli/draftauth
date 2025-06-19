@@ -5,7 +5,7 @@
 import { type Context, Hono } from "hono"
 import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 import type { StatusCode } from "hono/utils/http-status"
-import { CompactEncrypt, SignJWT, compactDecrypt } from "jose"
+import { CompactEncrypt, compactDecrypt, SignJWT } from "jose"
 import { type AllowCheckInput, defaultAllowCheck } from "./allow"
 import {
 	type ClaimsConfiguration,
@@ -14,21 +14,20 @@ import {
 	validateEssentialClaims
 } from "./claims"
 import { OauthError, UnknownStateError } from "./error"
-import { encryptionKeys, signingKeys } from "./keys"
-import type { Provider, ProviderRoute } from "./provider/provider"
-import { parseScopes } from "./scopes"
-import { Storage, type StorageAdapter } from "./storage/storage"
-import type { SubjectPayload, SubjectSchema } from "./subject"
-import { type Theme, setTheme } from "./themes/theme"
-import { Select } from "./ui/select"
-import { getRelativeUrl, lazy } from "./util"
-
 // Import all handlers
 import { registerAuthorizeEndpoint } from "./handlers/authorize"
 import { registerDiscoveryEndpoints } from "./handlers/discovery"
 import { registerRevokeEndpoint } from "./handlers/revoke"
 import { registerTokenEndpoint } from "./handlers/token"
 import { registerUserEndpoints } from "./handlers/user"
+import { encryptionKeys, signingKeys } from "./keys"
+import type { Provider, ProviderRoute } from "./provider/provider"
+import { parseScopes } from "./scopes"
+import { Storage, type StorageAdapter } from "./storage/storage"
+import type { SubjectPayload, SubjectSchema } from "./subject"
+import { setTheme, type Theme } from "./themes/theme"
+import { Select } from "./ui/select"
+import { getRelativeUrl, lazy } from "./util"
 
 /**
  * SSO session data following OIDC Session Management specification.
@@ -744,7 +743,7 @@ export const issuer = <
 									userNameForSso = identifiers.name
 									userPreferredUsernameForSso = identifiers.preferred_username
 									userPictureForSso = identifiers.picture
-								} catch (error) {
+								} catch {
 									const props = properties as Record<string, unknown>
 									userIdForSso = props.id as string
 									userEmailForSso = props.email as string
@@ -889,7 +888,7 @@ export const issuer = <
 			try {
 				const decrypted = await decrypt(raw)
 				return decrypted as T
-			} catch (ex) {
+			} catch {
 				return undefined as T
 			}
 		},

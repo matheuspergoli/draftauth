@@ -1,11 +1,11 @@
 import {
-	type JWK,
 	exportJWK,
 	exportPKCS8,
 	exportSPKI,
 	generateKeyPair,
 	importPKCS8,
-	importSPKI
+	importSPKI,
+	type JWK
 } from "jose"
 import { Storage, type StorageAdapter } from "./storage/storage"
 

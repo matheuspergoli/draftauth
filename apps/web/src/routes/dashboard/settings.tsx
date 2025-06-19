@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router"
 import { baseColors } from "@/libs/colors"
 import {
 	Card,
@@ -16,7 +17,6 @@ import {
 } from "@/shared/components/select"
 import { Switch } from "@/shared/components/switch"
 import { useTheme } from "@/shared/components/theming"
-import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard/settings")({
 	component: RouteComponent,

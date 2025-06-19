@@ -49,7 +49,7 @@
  */
 
 import type { JWTPayload } from "hono/utils/jwt/types"
-import { type JSONWebKeySet, createLocalJWKSet, jwtVerify } from "jose"
+import { createLocalJWKSet, type JSONWebKeySet, jwtVerify } from "jose"
 import type { WellKnown } from "../client"
 import { OauthError, type OauthErrorType } from "../error"
 import { getRelativeUrl, lazy } from "../util"

@@ -1,5 +1,5 @@
-import { type BaseColor, baseColors } from "@/libs/colors"
 import React from "react"
+import { type BaseColor, baseColors } from "@/libs/colors"
 
 type ColorMode = "dark" | "light" | "system"
 type ThemeName = BaseColor["name"] | "default"

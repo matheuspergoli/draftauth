@@ -1,3 +1,8 @@
+import { TursoStorage } from "@draftauth/core/storage/turso"
+import { zValidator } from "@hono/zod-validator"
+import { Hono } from "hono"
+import { HTTPException } from "hono/http-exception"
+import { z } from "zod"
 import { dbClient } from "@/db/client"
 import { env } from "@/environment/env"
 import { SYSTEM_ROLES } from "@/libs/ability"
@@ -5,11 +10,6 @@ import { setUserAppAccessStatus } from "@/services/access-service"
 import { addRedirectUri, createApplication } from "@/services/application-service"
 import { CONFIG_KEYS, isSetupComplete, setConfigValue } from "@/services/config-service"
 import { assignRoleToUser, createRole } from "@/services/role-service"
-import { TursoStorage } from "@draftauth/core/storage/turso"
-import { zValidator } from "@hono/zod-validator"
-import { Hono } from "hono"
-import { HTTPException } from "hono/http-exception"
-import { z } from "zod"
 
 export const setupRouter = new Hono()
 	.post(

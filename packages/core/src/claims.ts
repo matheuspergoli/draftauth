@@ -225,7 +225,7 @@ export const validateEssentialClaims = (
 			if (!isValid) {
 				return { success: false, missing: ["custom_validation_failed"] }
 			}
-		} catch (error) {
+		} catch {
 			return { success: false, missing: ["custom_validation_exception"] }
 		}
 	}
@@ -339,7 +339,7 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 				// Transform takes precedence for intentional customization
 				finalClaims = { ...finalClaims, ...transformResult.claims }
 			}
-		} catch (error) {
+		} catch {
 			if (config.essential?.strict) {
 				return null
 			}

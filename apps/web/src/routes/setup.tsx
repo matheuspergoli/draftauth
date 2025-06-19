@@ -1,3 +1,5 @@
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { z } from "zod"
 import { env } from "@/environment/env"
 import { api } from "@/libs/api"
 import { auth } from "@/libs/auth"
@@ -11,8 +13,6 @@ import {
 import { useAppForm } from "@/shared/components/form"
 import { Input } from "@/shared/components/input"
 import { Label } from "@/shared/components/label"
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { z } from "zod"
 
 export const Route = createFileRoute("/setup")({
 	component: RouteComponent,

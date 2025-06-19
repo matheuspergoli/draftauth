@@ -1,10 +1,10 @@
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { Ability } from "@draftauth/ability"
+import type { AppNameActions, AppSubjectTypeMappings } from "@draftauth/types"
 import { MainSidebar } from "@/shared/components/app-sidebar/main-sidebar"
 import { Separator } from "@/shared/components/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/shared/components/sidebar"
 import { currentUserQueryOptions, currentUserStatusQueryOptions } from "@/shared/queries"
-import { Ability } from "@draftauth/ability"
-import type { AppNameActions, AppSubjectTypeMappings } from "@draftauth/types"
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,

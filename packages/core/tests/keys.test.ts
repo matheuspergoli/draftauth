@@ -2,7 +2,7 @@
  * Cryptographic key management tests
  * Testing key generation, storage, and retrieval functionality
  */
-import { SignJWT, jwtVerify } from "jose"
+import { jwtVerify, SignJWT } from "jose"
 import { beforeEach, describe, expect, it } from "vitest"
 import { encryptionKeys, signingKeys } from "../src/keys"
 import { MemoryStorage } from "../src/storage/memory"

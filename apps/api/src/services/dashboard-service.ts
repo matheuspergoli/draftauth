@@ -1,6 +1,6 @@
+import { sql } from "drizzle-orm"
 import { db } from "@/db/client"
 import { applications, roles, users } from "@/db/schema"
-import { sql } from "drizzle-orm"
 
 export const getDashboardStats = async () => {
 	const [usersResult, appsResult, rolesResult] = await Promise.all([

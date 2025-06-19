@@ -3,8 +3,8 @@ import { object, string } from "valibot"
  * Testing OAuth 2.0 and OIDC client functionality
  */
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { createClient } from "../src/client"
 import type { Client } from "../src/client"
+import { createClient } from "../src/client"
 import { issuer } from "../src/core"
 import {
 	InvalidAccessTokenError,

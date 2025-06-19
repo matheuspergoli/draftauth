@@ -97,7 +97,7 @@ export class DraftauthServiceClient {
 						errorMessageFromServer = errorPayload.message
 					}
 				}
-			} catch (e) {
+			} catch {
 				/* ignora isso aqui por enquanto */
 			}
 
@@ -116,7 +116,7 @@ export class DraftauthServiceClient {
 		try {
 			const data = await response.json()
 			return data as TResponse
-		} catch (error) {
+		} catch {
 			throw new ApiClientError(
 				"Falha ao processar resposta da API (JSON inválido).",
 				response.status,

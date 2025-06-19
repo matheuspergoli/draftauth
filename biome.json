@@ -6,11 +6,39 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!dist/**",
+			"!.dist/**",
+			"!**/*.css",
+			"!**/routeTree.gen.ts",
+			"!**/coverage",
+			"!node_modules/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							["react", "react/**", "react-dom", "react-dom/**"],
+							["@tanstack/react-router", "@tanstack/react-router/**"],
+							":PACKAGE:",
+							["@/**"],
+							["./**", "../**"]
+						]
+					}
+				}
+			}
+		}
 	},
 	"linter": {
 		"enabled": true,

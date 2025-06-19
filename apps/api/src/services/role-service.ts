@@ -1,8 +1,8 @@
+import { and, eq } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import { applications, roles, userRoles, users } from "@/db/schema"
 import { events } from "@/libs/events"
-import { and, eq } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
 
 export const listRolesForApp = async ({ appId }: { appId: string }) => {
 	const requestedApp = await db

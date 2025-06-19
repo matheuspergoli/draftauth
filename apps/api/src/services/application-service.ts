@@ -1,3 +1,5 @@
+import { and, eq, sql } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import {
 	applicationRedirectUris,
@@ -6,8 +8,6 @@ import {
 	userApplicationAccess
 } from "@/db/schema"
 import { events } from "@/libs/events"
-import { and, eq, sql } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
 
 export const deleteApplication = async ({ appId }: { appId: string }) => {
 	const requestedApp = await db

@@ -1,3 +1,5 @@
+import { createFileRoute } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { UsersTable, usersTableColumns } from "@/features/users/components/users-table"
 import {
 	Card,
@@ -8,8 +10,6 @@ import {
 } from "@/shared/components/card"
 import { PageTitle } from "@/shared/components/page-title"
 import { usersQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard/users/")({
 	component: RouteComponent,

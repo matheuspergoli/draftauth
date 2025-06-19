@@ -1,6 +1,6 @@
+import { queryOptions } from "@tanstack/react-query"
 import { env } from "@/environment/env"
 import { api } from "@/libs/api"
-import { queryOptions } from "@tanstack/react-query"
 
 export const queryKeys = {
 	users: () => ["users"] as const,

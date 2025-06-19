@@ -1,6 +1,6 @@
-import { env } from "@/environment/env"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import { env } from "@/environment/env"
 
 const redisClient = new Redis({
 	url: env.REDIS_URL,
@@ -8,7 +8,7 @@ const redisClient = new Redis({
 })
 
 const ipEphemeralCache = new Map<string, number>()
-let ipRateLimiterInstance: Ratelimit | undefined = undefined
+let ipRateLimiterInstance: Ratelimit | undefined
 
 const getIpRateLimiterInstance = () => {
 	if (ipRateLimiterInstance === undefined) {
@@ -28,13 +28,13 @@ export const limitIpRate = async (identifier: string) => {
 	try {
 		const result = await limiter.limit(identifier)
 		return { success: result.success, remaining: result.remaining }
-	} catch (error) {
+	} catch {
 		return { success: false, remaining: 0 }
 	}
 }
 
 const emailEphemeralCache = new Map<string, number>()
-let emailRateLimiterInstance: Ratelimit | undefined = undefined
+let emailRateLimiterInstance: Ratelimit | undefined
 
 const getEmailRateLimiterInstance = () => {
 	if (emailRateLimiterInstance === undefined) {
@@ -53,7 +53,7 @@ export const limitEmailRate = async (identifier: string) => {
 	try {
 		const result = await limiter.limit(identifier)
 		return { success: result.success, remaining: result.remaining }
-	} catch (error) {
+	} catch {
 		return { success: false, remaining: 0 }
 	}
 }
