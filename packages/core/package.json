@@ -42,7 +42,7 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
-		"@changesets/cli": "^2.29.4",
+		"@changesets/cli": "^2.29.5",
 		"@draftauth/tsconfig": "workspace:*",
 		"@types/bun": "^1.2.16",
 		"@types/node": "^24.0.3",
