@@ -1,9 +1,6 @@
 /**
  * Claims configuration and transformation utilities for Draft Auth.
  * Handles custom claim mapping, validation, and transformation for OIDC compliance.
- *
- * This module implements the Phase 1 claims configuration as outlined in IMPROVEMENTS.md,
- * providing extensible claim transformation with multi-tenant support.
  */
 
 /**
@@ -236,25 +233,28 @@ export const validateEssentialClaims = (
 /**
  * Applies simple property mapping to claims.
  * Maps property names to claim names based on the provided mapping.
+ * Returns both the mapped claims and the original property names that should be removed.
  *
  * @template TProperties - The strongly-typed properties from subject schemas
  * @param properties - Original properties object (strongly typed)
  * @param mapping - Mapping of property names to claim names
- * @returns Mapped claims object
+ * @returns Object containing mapped claims and properties to remove
  */
 export const applyClaimsMapping = <TProperties = Record<string, unknown>>(
 	properties: TProperties,
 	mapping: Record<string, string>
-): Record<string, unknown> => {
+): { mappedClaims: Record<string, unknown>; propertiesToRemove: string[] } => {
 	const mappedClaims: Record<string, unknown> = {}
+	const propertiesToRemove: string[] = []
 
 	for (const [propertyName, claimName] of Object.entries(mapping)) {
 		if (propertyName in (properties as Record<string, unknown>)) {
 			mappedClaims[claimName] = (properties as Record<string, unknown>)[propertyName]
+			propertiesToRemove.push(propertyName)
 		}
 	}
 
-	return mappedClaims
+	return { mappedClaims, propertiesToRemove }
 }
 
 /**
@@ -315,9 +315,14 @@ export const transformClaims = async <TProperties = Record<string, unknown>>(
 		}
 	}
 
-	// Apply simple mapping claims (merge with existing, mapping takes precedence)
+	// Apply simple mapping claims (rename properties, remove originals)
 	if (config.mapping) {
-		const mappedClaims = applyClaimsMapping(properties, config.mapping)
+		const { mappedClaims, propertiesToRemove } = applyClaimsMapping(properties, config.mapping)
+		// Remove original properties that were mapped
+		for (const propertyName of propertiesToRemove) {
+			delete finalClaims[propertyName]
+		}
+		// Add mapped claims
 		finalClaims = { ...finalClaims, ...mappedClaims }
 	}
 
