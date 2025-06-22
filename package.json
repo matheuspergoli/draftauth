@@ -18,7 +18,7 @@
 		"clean": "turbo run clean && rm -rf .turbo node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.0.0",
+		"@biomejs/biome": "^2.0.4",
 		"@turbo/gen": "^2.5.4",
 		"turbo": "^2.5.4",
 		"typescript": "^5.8.3"
