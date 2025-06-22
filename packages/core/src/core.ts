@@ -241,7 +241,18 @@ export interface IssuerInput<
 }
 
 /**
- * Utility to check if request is HTTPS.
+ * Determines if the incoming request is using HTTPS protocol.
+ * Checks multiple proxy headers to handle load balancers and reverse proxies.
+ *
+ * @param ctx - Hono context containing request headers and URL
+ * @returns True if request is HTTPS, false otherwise
+ *
+ * @example
+ * ```ts
+ * if (isHttpsRequest(ctx)) {
+ *   setCookie(ctx, 'secure-cookie', value, { secure: true })
+ * }
+ * ```
  */
 const isHttpsRequest = (ctx: Context): boolean => {
 	return (

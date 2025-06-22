@@ -37,9 +37,7 @@ type PKCEMethod = "S256" | "plain"
  */
 const timingSafeCompare = (a: string, b: string): boolean => {
 	// Initial type checks are not a timing vulnerability.
-	if (typeof a !== "string" || typeof b !== "string") {
-		return false
-	}
+	if (typeof a !== "string" || typeof b !== "string") return false
 
 	// Use TextEncoder for correct and consistent handling of all Unicode characters.
 	const encoder = new TextEncoder()

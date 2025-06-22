@@ -23,9 +23,7 @@
  * ```
  */
 export const parseScopes = (scope: string | string[] | null | undefined): string[] => {
-	if (Array.isArray(scope)) {
-		return scope.filter(Boolean)
-	}
+	if (Array.isArray(scope)) return scope.filter(Boolean)
 	return scope?.split(" ").filter(Boolean) ?? []
 }
 

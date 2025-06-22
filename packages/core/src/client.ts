@@ -1376,7 +1376,11 @@ export const createClient = (input: ClientInput): Client => {
 				const wk = await getIssuer()
 				const requestBody = new URLSearchParams({
 					grant_type: "client_credentials",
-					provider: "client-credentials", // Use our standard provider name
+					/**
+					 * Sets provider to 'client-credentials' as required by the client credentials flow.
+					 * This is the standard provider name for machine-to-machine authentication.
+					 */
+					provider: "client-credentials",
 					...(opts?.scopes && { scope: opts.scopes.join(" ") }),
 					...(opts?.params || {})
 				})
@@ -1411,7 +1415,7 @@ export const createClient = (input: ClientInput): Client => {
 						...(tokenResponse.scope && { scope: tokenResponse.scope })
 					}
 				}
-			} catch (error) {
+			} catch {
 				return {
 					success: false,
 					error: new InvalidAuthorizationCodeError()
