@@ -559,8 +559,12 @@ export const issuer = <
 		}
 
 		// ensure client ID format is valid
-		if (value.clientID.length < 3 || value.clientID.length > 100) {
-			throw new Error("Invalid audience: client ID must be between 3 and 100 characters")
+		const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{3,100}$/
+		if (!CLIENT_ID_REGEX.test(value.clientID)) {
+			throw new OauthError(
+				"invalid_client",
+				"Client ID must be 3-100 characters using only letters, numbers, hyphens, and underscores"
+			)
 		}
 
 		const accessPayload = {
