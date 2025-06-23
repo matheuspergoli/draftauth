@@ -12,6 +12,7 @@ import {
 	transformClaims
 } from "../claims"
 import type { KeyPair } from "../keys"
+import type { SsoSessionData } from "../sso"
 import { Storage, type StorageAdapter } from "../storage/storage"
 
 /**
@@ -50,34 +51,6 @@ interface AccessTokenPayload {
 	sub: string
 }
 
-/**
- * SSO session data structure.
- * Contains session information for logout processing.
- */
-interface SsoSessionData {
-	/** Unique identifier of the user */
-	userId: string
-	/** Type of the subject */
-	subjectType: string
-	/** User's email */
-	email?: string
-	/** User's full name */
-	name?: string
-	/** User's preferred username */
-	preferred_username?: string
-	/** User's profile picture URL */
-	picture?: string
-	/** Authentication time (seconds since epoch) */
-	auth_time: number
-	/** Session expiration time (seconds since epoch) */
-	exp: number
-	/** Session ID for OIDC Session Management */
-	sid: string
-	/** Resolved subject identifier for JWT tokens */
-	resolvedSubject: string
-	/** Original subject properties from authentication */
-	originalProperties: Record<string, unknown>
-}
 
 /**
  * User handler dependencies provided by the issuer.

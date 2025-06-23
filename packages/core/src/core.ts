@@ -23,84 +23,14 @@ import { registerUserEndpoints } from "./handlers/user"
 import { encryptionKeys, signingKeys } from "./keys"
 import type { Provider, ProviderRoute } from "./provider/provider"
 import { parseScopes } from "./scopes"
+import { createSsoUtils, handleSsoSessionCreation, type SsoConfiguration } from "./sso"
 import { Storage, type StorageAdapter } from "./storage/storage"
 import type { SubjectPayload, SubjectSchema } from "./subject"
 import { setTheme, type Theme } from "./themes/theme"
+import type { AuthorizationState, TokenGenerationResult } from "./types"
 import { Select } from "./ui/select"
 import { getRelativeUrl, lazy } from "./util"
 
-/**
- * SSO session data following OIDC Session Management specification.
- */
-interface SsoSessionData<T = string> {
-	/** Unique identifier of the user (OIDC 'sub' claim) */
-	userId: string
-	/** Type of the subject */
-	subjectType: T
-	/** User's email for OIDC email scope */
-	email?: string
-	/** User's full name for OIDC profile scope */
-	name?: string
-	/** User's preferred username for OIDC profile scope */
-	preferred_username?: string
-	/** User's profile picture URL for OIDC profile scope */
-	picture?: string
-	/** Authentication time (OIDC 'auth_time') */
-	auth_time: number
-	/** Session expiration time (OIDC 'exp') */
-	exp: number
-	/** Session ID for OIDC Session Management (OIDC 'sid') */
-	sid: string
-	/** Resolved subject identifier for JWT tokens */
-	resolvedSubject: string
-	/** Original subject properties from authentication */
-	originalProperties: Record<string, unknown>
-}
-
-/**
- * Enhanced authorization state with OIDC parameters.
- */
-interface AuthorizationState {
-	redirect_uri?: string
-	response_type?: string
-	state?: string
-	client_id?: string
-	audience?: string
-	scope?: string
-	nonce?: string
-	prompt?: string
-	max_age?: number
-	id_token_hint?: string
-	login_hint?: string
-	scopes?: string[]
-	pkce?: {
-		challenge: string
-		method: "S256"
-	}
-}
-
-/**
- * Token generation result with OIDC support.
- */
-interface TokenGenerationResult {
-	access: string
-	expiresIn: number
-	refresh: string
-	id_token?: string
-}
-
-/**
- * SSO lock management for concurrent session operations.
- */
-const ssoLocks: Record<string, Promise<unknown>> = {}
-
-/**
- * Default constants for SSO and OAuth state management.
- */
-const DEFAULT_SSO_COOKIE_NAME_SECURE = "__Host-draftauth-sso"
-const DEFAULT_SSO_COOKIE_NAME_INSECURE = "draftauth-sso"
-const DEFAULT_SSO_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
-const DEFAULT_OAUTH_STATE_TTL_SECONDS = 60 * 10
 
 /**
  * Sets the subject payload in the JWT token and returns the response.
@@ -152,37 +82,7 @@ export interface IssuerInput<
 		ssoSessionSeconds?: number
 	}
 	/** SSO configuration */
-	sso?: {
-		enabled?: boolean
-		cookieName?: string
-		postLogoutRedirectUri?: string
-		postLogoutRedirectUris?: string[]
-		cookieDomain?: string
-		forceSecure?: boolean
-		claimsSupported?: string[]
-		isSsoUserStillValid?: (
-			userId: string,
-			ssoSessionData: SsoSessionData<SubjectPayload<Subjects>["type"]>,
-			req: Request
-		) => Promise<boolean>
-		getSsoUserProperties?: (
-			userId: string,
-			ssoSessionData: SsoSessionData<SubjectPayload<Subjects>["type"]>,
-			req: Request,
-			clientID: string,
-			scopes: string[]
-		) => Promise<Record<string, unknown>>
-		getSsoIdentifiers?: (
-			properties: SubjectPayload<Subjects>["properties"],
-			subjectType: SubjectPayload<Subjects>["type"]
-		) => {
-			userId: string
-			email?: string
-			name?: string
-			preferred_username?: string
-			picture?: string
-		}
-	}
+	sso?: SsoConfiguration
 	/** Supported OAuth 2.0 scopes */
 	scopes_supported?: string[]
 	/** Claims configuration for OIDC token and UserInfo transformations */
@@ -290,7 +190,7 @@ export const issuer = <
 	const ttlRefresh = input.ttl?.refresh ?? 60 * 60 * 24 * 365
 	const ttlRefreshReuse = input.ttl?.reuse ?? 60
 	const ttlRefreshRetention = input.ttl?.retention ?? 0
-	const ttlOauthState = input.ttl?.oauthState ?? DEFAULT_OAUTH_STATE_TTL_SECONDS
+	const ttlOauthState = input.ttl?.oauthState ?? 600
 
 	if (input.theme) {
 		setTheme(input.theme)
@@ -305,22 +205,6 @@ export const issuer = <
 	const signingKey = lazy(() => allSigning().then((all) => all[0]))
 	const encryptionKey = lazy(() => allEncryption().then((all) => all[0]))
 
-	// SSO configuration
-	const ssoEnabled = input.sso?.enabled === true
-	const ssoSessionTtlToUse = input.ttl?.ssoSessionSeconds ?? DEFAULT_SSO_SESSION_TTL_SECONDS
-	const claimsSupported = input.sso?.claimsSupported ?? [
-		"sub",
-		"iss",
-		"aud",
-		"exp",
-		"iat",
-		"auth_time",
-		"nonce",
-		"name",
-		"email",
-		"preferred_username",
-		"picture"
-	]
 
 	// Enhanced scopes for OIDC
 	const standardOidcScopes = ["openid", "profile", "email", "address", "phone"]
@@ -569,17 +453,8 @@ export const issuer = <
 			throw new Error("Invalid audience: client ID cannot be empty")
 		}
 
-		// ensure client ID format is valid
-		const CLIENT_ID_REGEX = /^[a-zA-Z0-9_-]{3,100}$/
-		if (!CLIENT_ID_REGEX.test(value.clientID)) {
-			throw new OauthError(
-				"invalid_client",
-				"Client ID must be 3-100 characters using only letters, numbers, hyphens, and underscores"
-			)
-		}
 
 		const accessPayload = {
-			mode: "access",
 			type: value.type,
 			properties: transformedClaimsResult,
 			sub: value.subject,
@@ -638,85 +513,6 @@ export const issuer = <
 	}
 
 	/**
-	 * Gets SSO cookie name based on HTTPS and configuration.
-	 */
-	const getSsoCookieName = (ctx: Context): string => {
-		const customName = input.sso?.cookieName
-		if (customName) {
-			if (customName.startsWith("__Host-") && input.sso?.cookieDomain) {
-				const isHttps = isHttpsRequest(ctx)
-				return isHttps ? "draftauth-sso-secure" : "draftauth-sso"
-			}
-			return customName
-		}
-
-		const isHttps = isHttpsRequest(ctx)
-		if (input.sso?.cookieDomain) {
-			return isHttps ? "draftauth-sso-secure" : "draftauth-sso"
-		}
-
-		return isHttps ? DEFAULT_SSO_COOKIE_NAME_SECURE : DEFAULT_SSO_COOKIE_NAME_INSECURE
-	}
-
-	/**
-	 * Sets SSO cookie with appropriate security settings.
-	 */
-	const setSsoCookie = (ctx: Context, sessionId: string): void => {
-		const isHttps = isHttpsRequest(ctx)
-		const cookieName = getSsoCookieName(ctx)
-
-		const cookieOptions = {
-			path: "/",
-			httpOnly: true,
-			secure: isHttps || input.sso?.forceSecure,
-			sameSite: "Lax" as const,
-			maxAge: ssoSessionTtlToUse,
-			...(input.sso?.cookieDomain && { domain: input.sso.cookieDomain })
-		}
-
-		setCookie(ctx, cookieName, sessionId, cookieOptions)
-	}
-
-	/**
-	 * Deletes SSO cookie.
-	 */
-	const deleteSsoCookie = (ctx: Context): void => {
-		const cookieName = getSsoCookieName(ctx)
-		const isHttps = isHttpsRequest(ctx)
-
-		const cookieOptions = {
-			path: "/",
-			httpOnly: true,
-			secure: isHttps || input.sso?.forceSecure,
-			sameSite: "Lax" as const,
-			...(input.sso?.cookieDomain && { domain: input.sso.cookieDomain })
-		}
-
-		deleteCookie(ctx, cookieName, cookieOptions)
-	}
-
-	/**
-	 * Acquires lock for SSO session operations to prevent race conditions.
-	 */
-	const acquireSsoLock = async <T>(
-		sessionId: string,
-		operation: () => Promise<T>
-	): Promise<T> => {
-		if (ssoLocks[sessionId]) {
-			await ssoLocks[sessionId]
-		}
-
-		const promise = operation()
-		ssoLocks[sessionId] = promise
-
-		try {
-			return await promise
-		} finally {
-			delete ssoLocks[sessionId]
-		}
-	}
-
-	/**
 	 * Gets authorization state from context.
 	 */
 	const getAuthorization = async (ctx: Context): Promise<AuthorizationState> => {
@@ -743,65 +539,16 @@ export const issuer = <
 						await successOpts?.invalidate?.(subject)
 
 						// Handle SSO session creation
-						if (ssoEnabled) {
-							let userIdForSso: string | undefined
-							let userEmailForSso: string | undefined
-							let userNameForSso: string | undefined
-							let userPreferredUsernameForSso: string | undefined
-							let userPictureForSso: string | undefined
-
-							if (input.sso?.getSsoIdentifiers) {
-								try {
-									const identifiers = input.sso.getSsoIdentifiers(properties, type)
-									userIdForSso = identifiers.userId
-									userEmailForSso = identifiers.email
-									userNameForSso = identifiers.name
-									userPreferredUsernameForSso = identifiers.preferred_username
-									userPictureForSso = identifiers.picture
-								} catch {
-									const props = properties as Record<string, unknown>
-									userIdForSso = props.id as string
-									userEmailForSso = props.email as string
-									userNameForSso = props.name as string
-									userPreferredUsernameForSso = props.preferred_username as string
-									userPictureForSso = props.picture as string
-								}
-							} else {
-								const props = properties as Record<string, unknown>
-								userIdForSso = props.id as string
-								userEmailForSso = props.email as string
-								userNameForSso = props.name as string
-								userPreferredUsernameForSso = props.preferred_username as string
-								userPictureForSso = props.picture as string
-							}
-
-							if (userIdForSso) {
-								const ssoSessionId = crypto.randomUUID()
-								const authTime = Math.floor(Date.now() / 1000)
-								const ssoExpiresAt = authTime + ssoSessionTtlToUse
-
-								const ssoSessionPayload: SsoSessionData<SubjectPayload<Subjects>["type"]> = {
-									userId: userIdForSso,
-									email: userEmailForSso,
-									name: userNameForSso,
-									preferred_username: userPreferredUsernameForSso,
-									picture: userPictureForSso,
-									subjectType: type,
-									auth_time: authTime,
-									exp: ssoExpiresAt,
-									sid: ssoSessionId,
-									resolvedSubject: subject,
-									originalProperties: properties as Record<string, unknown>
-								}
-
-								await Storage.set(
-									storage,
-									["sso:session", ssoSessionId],
-									ssoSessionPayload,
-									ssoSessionTtlToUse
-								)
-								setSsoCookie(ctx, ssoSessionId)
-							}
+						if (input.sso?.enabled) {
+							await handleSsoSessionCreation(
+								ctx,
+								type as string,
+								properties as Record<string, unknown>,
+								subject,
+								input.sso,
+								storage,
+								isHttpsRequest
+							)
 						}
 
 						// Handle different response types
@@ -946,8 +693,7 @@ export const issuer = <
 	registerDiscoveryEndpoints(app, {
 		allSigning,
 		issuer,
-		allSupportedScopes,
-		claimsSupported
+		allSupportedScopes
 	})
 
 	registerTokenEndpoint(app, {
@@ -981,7 +727,7 @@ export const issuer = <
 		refresh: input.refresh,
 		generateTokens,
 		resolveSubject,
-		ssoUtils: { getSsoCookieName, deleteSsoCookie, setSsoCookie, acquireSsoLock }
+		ssoUtils: createSsoUtils(input.sso || {}, isHttpsRequest)
 	})
 
 	registerUserEndpoints(app, {
@@ -990,7 +736,7 @@ export const issuer = <
 		issuer,
 		auth,
 		sso: input.sso,
-		ssoUtils: { getSsoCookieName, deleteSsoCookie },
+		ssoUtils: createSsoUtils(input.sso || {}, isHttpsRequest),
 		claims: input.claims
 	})
 

@@ -109,8 +109,6 @@ interface DiscoveryDependencies {
 	issuer: (ctx: Context) => string
 	/** Array of all supported OAuth 2.0 scopes */
 	allSupportedScopes: string[]
-	/** Array of all supported OIDC claims */
-	claimsSupported: string[]
 }
 
 /**
@@ -124,7 +122,7 @@ export const registerDiscoveryEndpoints = <T>(
 	app: Hono<{ Variables: { authorization: T } }>,
 	dependencies: DiscoveryDependencies
 ): void => {
-	const { allSigning, issuer, allSupportedScopes, claimsSupported } = dependencies
+	const { allSigning, issuer, allSupportedScopes } = dependencies
 
 	/**
 	 * JWKS (JSON Web Key Set) endpoint.
@@ -187,7 +185,7 @@ export const registerDiscoveryEndpoints = <T>(
 				subject_types_supported: ["public"],
 				id_token_signing_alg_values_supported: ["ES256"],
 				scopes_supported: allSupportedScopes,
-				claims_supported: claimsSupported,
+				claims_supported: ["sub", "iss", "aud", "exp", "iat", "auth_time", "nonce"],
 				token_endpoint_auth_methods_supported: [
 					"none",
 					"client_secret_post",

@@ -10,56 +10,7 @@ import { OauthError } from "../error"
 import { validatePKCE } from "../pkce"
 import { parseScopes, validateScopes } from "../scopes"
 import { Storage, type StorageAdapter } from "../storage/storage"
-
-/**
- * Token generation response with OIDC ID token support.
- * Used internally for generating access, refresh, and ID tokens.
- */
-interface TokenGenerationResult {
-	/** OAuth 2.0 access token */
-	access: string
-	/** Token expiration time in seconds */
-	expiresIn: number
-	/** OAuth 2.0 refresh token */
-	refresh: string
-	/** OIDC ID token (optional) */
-	id_token?: string
-}
-
-/**
- * Authorization code storage payload with OIDC parameters.
- * Contains all necessary data to exchange an authorization code for tokens.
- */
-interface CodeStoragePayload {
-	/** Subject type identifier */
-	type: string
-	/** Subject properties/claims */
-	properties: unknown
-	/** Client identifier that requested the authorization */
-	clientID: string
-	/** Redirect URI used in the authorization request */
-	redirectURI: string
-	/** Resolved subject identifier for JWT */
-	subject: string
-	/** Requested OAuth 2.0 scopes */
-	scopes?: string[]
-	/** OIDC nonce for ID token binding */
-	nonce?: string
-	/** SSO session identifier */
-	sessionId?: string
-	/** OIDC authentication time */
-	authTime?: number
-	/** Token TTL configuration */
-	ttl: {
-		access: number
-		refresh: number
-	}
-	/** PKCE challenge data for code verification */
-	pkce?: {
-		challenge: string
-		method: "S256"
-	}
-}
+import type { CodeStoragePayload, TokenGenerationResult } from "../types"
 
 /**
  * Client authentication data for token endpoint.

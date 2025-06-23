@@ -4,6 +4,7 @@ import type { Hono } from "hono"
  * Handles OAuth 2.0 token revocation with SSO session cleanup.
  */
 import { cors } from "hono/cors"
+import type { SsoSessionData } from "../sso"
 import { Storage, type StorageAdapter } from "../storage/storage"
 
 /**
@@ -23,35 +24,6 @@ interface RefreshTokenStoragePayload {
 	scopes?: string[]
 	/** Timestamp when the refresh token was first used */
 	timeUsed?: number
-}
-
-/**
- * SSO session data structure for cleanup operations.
- * Contains session information needed for revocation.
- */
-interface SsoSessionData {
-	/** Unique identifier of the user */
-	userId: string
-	/** Type of the subject */
-	subjectType: string
-	/** User's email */
-	email?: string
-	/** User's full name */
-	name?: string
-	/** User's preferred username */
-	preferred_username?: string
-	/** User's profile picture URL */
-	picture?: string
-	/** Authentication time (seconds since epoch) */
-	auth_time: number
-	/** Session expiration time (seconds since epoch) */
-	exp: number
-	/** Session ID for OIDC Session Management */
-	sid: string
-	/** Resolved subject identifier for JWT tokens */
-	resolvedSubject: string
-	/** Original subject properties from authentication */
-	originalProperties: Record<string, unknown>
 }
 
 /**
