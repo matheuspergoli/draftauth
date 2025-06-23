@@ -14,10 +14,10 @@
 	},
 	"dependencies": {
 		"@astrojs/starlight": "^0.34.4",
-		"astro": "^5.10.0",
+		"astro": "^5.10.1",
 		"sharp": "^0.34.2"
 	},
 	"devDependencies": {
-		"prettier": "^3.5.3"
+		"prettier": "^3.6.0"
 	}
 }
