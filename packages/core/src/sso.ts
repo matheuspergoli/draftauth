@@ -8,11 +8,7 @@
  * export default issuer({
  *   sso: {
  *     enabled: true,
- *     cookieDomain: ".mycompany.com",
- *     isSsoUserStillValid: async (userId, req) => {
- *       const user = await getUserById(userId)
- *       return user?.active === true
- *     }
+ *     cookieDomain: ".mycompany.com"
  *   }
  * })
  * ```
@@ -65,28 +61,6 @@ export interface SsoConfiguration {
 	 * @example ".mycompany.com"
 	 */
 	cookieDomain?: string
-
-	/**
-	 * Custom validation function to check if SSO user is still valid.
-	 * Called during SSO flow to ensure user account is still active.
-	 */
-	isSsoUserStillValid?: (
-		userId: string,
-		sessionData: SsoSessionData,
-		req: Request
-	) => Promise<boolean>
-
-	/**
-	 * Custom function to refresh user properties during SSO flow.
-	 * Allows real-time updates of user claims without re-authentication.
-	 */
-	getSsoUserProperties?: (
-		userId: string,
-		sessionData: SsoSessionData,
-		req: Request,
-		clientID: string,
-		scopes: string[]
-	) => Promise<Record<string, unknown>>
 }
 
 const DEFAULT_SSO_COOKIE_NAME_SECURE = "__Host-draftauth-sso"
@@ -224,9 +198,7 @@ const createSsoSession = async (
  */
 const validateSsoSession = async (
 	sessionId: string,
-	config: SsoConfiguration,
-	storage: StorageAdapter,
-	req: Request
+	storage: StorageAdapter
 ): Promise<SsoSessionData | null> => {
 	const ssoSessionKey = ["sso:session", sessionId]
 	const ssoSessionData = await Storage.get<SsoSessionData>(storage, ssoSessionKey)
@@ -236,24 +208,6 @@ const validateSsoSession = async (
 	// Basic validation: structure and expiration
 	const now = Math.floor(Date.now() / 1000)
 	let isSsoSessionValid = ssoSessionData.userId && ssoSessionData.exp > now
-
-	// Custom validation callback
-	if (isSsoSessionValid && config.isSsoUserStillValid) {
-		try {
-			isSsoSessionValid = await config.isSsoUserStillValid(
-				ssoSessionData.userId,
-				ssoSessionData,
-				req
-			)
-		} catch {
-			isSsoSessionValid = false
-		}
-
-		if (!isSsoSessionValid) {
-			await Storage.remove(storage, ssoSessionKey)
-			return null
-		}
-	}
 
 	return isSsoSessionValid ? ssoSessionData : null
 }
@@ -330,12 +284,7 @@ export const handleSsoAuthorizationFlow = async (
 	if (!ssoSessionIdFromCookie) return null
 
 	return await acquireSsoLock(ssoSessionIdFromCookie, async () => {
-		const ssoSessionData = await validateSsoSession(
-			ssoSessionIdFromCookie,
-			config,
-			storage,
-			ctx.req.raw
-		)
+		const ssoSessionData = await validateSsoSession(ssoSessionIdFromCookie, storage)
 
 		if (!ssoSessionData) {
 			deleteSsoCookie(ctx, config, isHttpsRequest)

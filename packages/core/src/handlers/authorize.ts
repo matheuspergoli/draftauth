@@ -198,25 +198,6 @@ export const registerAuthorizeEndpoint = (
 					const now = Math.floor(Date.now() / 1000)
 					let isSsoSessionValid = ssoSessionData?.userId && ssoSessionData.exp > now
 
-					// Custom validation callback
-					if (isSsoSessionValid && sso?.isSsoUserStillValid) {
-						try {
-							isSsoSessionValid = await sso.isSsoUserStillValid(
-								ssoSessionData!.userId,
-								ssoSessionData!,
-								c.req.raw
-							)
-						} catch {
-							isSsoSessionValid = false
-						}
-
-						if (!isSsoSessionValid) {
-							await Storage.remove(storage, ssoSessionKey)
-							deleteSsoCookie(c)
-							ssoSessionData = null
-						}
-					}
-
 					// Handle OIDC prompt parameter
 					if (prompt === "none" && !isSsoSessionValid) {
 						const errorUrl = new URL(redirect_uri!)
@@ -291,19 +272,7 @@ export const registerAuthorizeEndpoint = (
 						let finalScopes = parseScopes(scope).length > 0 ? parseScopes(scope) : ["openid"]
 
 						// Refresh user properties if callback provided
-						if (sso?.getSsoUserProperties) {
-							try {
-								finalSubjectProperties = await sso.getSsoUserProperties(
-									ssoSessionData.userId,
-									ssoSessionData,
-									c.req.raw,
-									client_id,
-									finalScopes || []
-								)
-							} catch {
-								finalSubjectProperties = ssoSessionData.originalProperties
-							}
-						} else if (refresh) {
+						if (refresh) {
 							try {
 								const refreshedClaims = await refresh(
 									{

@@ -14,7 +14,6 @@ import {
 	validateEssentialClaims
 } from "./claims"
 import { OauthError, UnknownStateError } from "./error"
-// Import all handlers
 import { registerAuthorizeEndpoint } from "./handlers/authorize"
 import { registerDiscoveryEndpoints } from "./handlers/discovery"
 import { registerRevokeEndpoint } from "./handlers/revoke"
@@ -30,7 +29,6 @@ import { setTheme, type Theme } from "./themes/theme"
 import type { AuthorizationState, TokenGenerationResult } from "./types"
 import { Select } from "./ui/select"
 import { getRelativeUrl, lazy } from "./util"
-
 
 /**
  * Sets the subject payload in the JWT token and returns the response.
@@ -204,7 +202,6 @@ export const issuer = <
 	const allEncryption = lazy(() => encryptionKeys(storage))
 	const signingKey = lazy(() => allSigning().then((all) => all[0]))
 	const encryptionKey = lazy(() => allEncryption().then((all) => all[0]))
-
 
 	// Enhanced scopes for OIDC
 	const standardOidcScopes = ["openid", "profile", "email", "address", "phone"]
@@ -452,7 +449,6 @@ export const issuer = <
 		if (!value.clientID || !value.clientID.trim()) {
 			throw new Error("Invalid audience: client ID cannot be empty")
 		}
-
 
 		const accessPayload = {
 			type: value.type,

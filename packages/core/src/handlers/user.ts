@@ -51,7 +51,6 @@ interface AccessTokenPayload {
 	sub: string
 }
 
-
 /**
  * User handler dependencies provided by the issuer.
  */
