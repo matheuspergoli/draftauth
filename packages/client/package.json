@@ -1,40 +1,40 @@
 {
-  "name": "@draftauth/client",
-  "version": "0.2.0",
-  "type": "module",
-  "description": "Draft Auth Client SDK",
-  "author": "Matheus Pergoli <https://docs.draftauth.com.br>",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/matheuspergoli/draftauth.git"
-  },
-  "bugs": {
-    "url": "https://github.com/matheuspergoli/draftauth/issues"
-  },
-  "license": "MIT",
-  "scripts": {
-    "build": "tsup",
-    "deploy": "tsup && changeset publish",
-    "clean": "rm -rf dist .turbo node_modules"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.29.5",
-    "@draftauth/tsconfig": "workspace:*",
-    "@types/node": "^24.0.3",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
-  }
+	"name": "@draftauth/client",
+	"version": "0.2.0",
+	"type": "module",
+	"description": "Draft Auth Client SDK",
+	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
+	"main": "dist/index.js",
+	"typings": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/matheuspergoli/draftauth.git"
+	},
+	"bugs": {
+		"url": "https://github.com/matheuspergoli/draftauth/issues"
+	},
+	"license": "MIT",
+	"scripts": {
+		"build": "tsup",
+		"deploy": "tsup && changeset publish",
+		"clean": "rm -rf dist .turbo node_modules"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.29.5",
+		"@draftauth/tsconfig": "workspace:*",
+		"@types/node": "^24.0.3",
+		"tsup": "^8.5.0",
+		"typescript": "^5.8.3"
+	}
 }

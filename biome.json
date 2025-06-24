@@ -1,79 +1,78 @@
 {
-  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["ultracite"],
-  "vcs": {
-    "enabled": false,
-    "clientKind": "git",
-    "useIgnoreFile": false
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": [
-      "**",
-      "!dist/**",
-      "!.dist/**",
-      "!**/*.css",
-      "!**/routeTree.gen.ts",
-      "!**/coverage",
-      "!node_modules/**"
-    ]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "tab"
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": {
-          "level": "on",
-          "options": {
-            "groups": [
-              ["react", "react/**", "react-dom", "react-dom/**"],
-              ["@tanstack/react-router", "@tanstack/react-router/**"],
-              ":PACKAGE:",
-              ["@/**"],
-              ["./**", "../**"]
-            ]
-          }
-        }
-      }
-    }
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedImports": "error"
-      },
-      "suspicious": {
-        "noConsole": {
-          "level": "error",
-          "options": {
-            "allow": ["warn", "error", "log"]
-          }
-        }
-      },
-      "style": {
-        "noNonNullAssertion": "off"
-      },
-      "a11y": {
-        "noSvgWithoutTitle": "off",
-        "useKeyWithClickEvents": "off"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "lineWidth": 95,
-      "bracketSpacing": true,
-      "quoteStyle": "double",
-      "semicolons": "asNeeded",
-      "trailingCommas": "none",
-      "jsxQuoteStyle": "double",
-      "arrowParentheses": "always"
-    }
-  }
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!dist/**",
+			"!.dist/**",
+			"!**/*.css",
+			"!**/routeTree.gen.ts",
+			"!**/coverage",
+			"!node_modules/**"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							["react", "react/**", "react-dom", "react-dom/**"],
+							["@tanstack/react-router", "@tanstack/react-router/**"],
+							":PACKAGE:",
+							["@/**"],
+							["./**", "../**"]
+						]
+					}
+				}
+			}
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedImports": "error"
+			},
+			"suspicious": {
+				"noConsole": {
+					"level": "error",
+					"options": {
+						"allow": ["warn", "error", "log"]
+					}
+				}
+			},
+			"style": {
+				"noNonNullAssertion": "off"
+			},
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"useKeyWithClickEvents": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"lineWidth": 95,
+			"bracketSpacing": true,
+			"quoteStyle": "double",
+			"semicolons": "asNeeded",
+			"trailingCommas": "none",
+			"jsxQuoteStyle": "double",
+			"arrowParentheses": "always"
+		}
+	}
 }

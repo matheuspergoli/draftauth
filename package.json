@@ -1,28 +1,27 @@
 {
-  "name": "Draft Auth",
-  "author": "Matheus Pergoli",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "turbo run dev",
-    "start": "turbo run start",
-    "build": "turbo run build",
-    "ui-add": "turbo run ui-add",
-    "db:push": "turbo run db:push",
-    "db:reset": "turbo run db:reset",
-    "db:studio": "turbo run db:studio",
-    "db:migrate": "turbo run db:migrate",
-    "db:generate": "turbo run db:generate",
-    "format": "biome format --write .",
-    "check": "biome check --write .",
-    "clean": "turbo run clean && rm -rf .turbo node_modules"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.0.5",
-    "@turbo/gen": "^2.5.4",
-    "turbo": "^2.5.4",
-    "typescript": "^5.8.3",
-    "ultracite": "5.0.12"
-  },
-  "packageManager": "pnpm@10.0.0"
+	"name": "Draft Auth",
+	"author": "Matheus Pergoli",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "turbo run dev",
+		"start": "turbo run start",
+		"build": "turbo run build",
+		"ui-add": "turbo run ui-add",
+		"db:push": "turbo run db:push",
+		"db:reset": "turbo run db:reset",
+		"db:studio": "turbo run db:studio",
+		"db:migrate": "turbo run db:migrate",
+		"db:generate": "turbo run db:generate",
+		"format": "biome format --write .",
+		"check": "biome check --write .",
+		"clean": "turbo run clean && rm -rf .turbo node_modules"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.0.5",
+		"@turbo/gen": "^2.5.4",
+		"turbo": "^2.5.4",
+		"typescript": "^5.8.3"
+	},
+	"packageManager": "pnpm@10.0.0"
 }
