@@ -1,5 +1,5 @@
-import crypto from "node:crypto"
 import { env } from "@/environment/env"
+import crypto from "node:crypto"
 
 const ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 12
@@ -42,7 +42,7 @@ export const encryptSecret = (plaintext: string): EncryptedPayload => {
 			encryptedData: encrypted,
 			authTag: authTag.toString("base64")
 		}
-	} catch (error) {
+	} catch {
 		throw new Error("Falha na criptografia do segredo.")
 	}
 }
@@ -69,7 +69,7 @@ export const decryptSecret = (payload: EncryptedPayload): string => {
 		decrypted += decipher.final("utf8")
 
 		return decrypted
-	} catch (error) {
+	} catch {
 		throw new Error("Falha na descriptografia ou segredo inválido/corrompido.")
 	}
 }

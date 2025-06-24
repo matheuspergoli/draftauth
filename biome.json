@@ -7,14 +7,38 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["dist", ".dist", "routeTree.gen.ts", "node_modules"]
+		"includes": [
+			"**",
+			"!dist/**",
+			"!.dist/**",
+			"!**/*.css",
+			"!**/routeTree.gen.ts",
+			"!**/coverage",
+			"!node_modules/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"organizeImports": {
-		"enabled": true
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							["react", "react/**", "react-dom", "react-dom/**"],
+							["@tanstack/react-router", "@tanstack/react-router/**"],
+							":PACKAGE:",
+							["@/**"],
+							["./**", "../**"]
+						]
+					}
+				}
+			}
+		}
 	},
 	"linter": {
 		"enabled": true,

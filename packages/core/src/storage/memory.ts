@@ -1,6 +1,6 @@
+import { joinKey, type StorageAdapter, splitKey } from "./storage"
 import { existsSync, readFileSync } from "node:fs"
 import { writeFile } from "node:fs/promises"
-import { type StorageAdapter, joinKey, splitKey } from "./storage"
 
 /**
  * In-memory storage adapter for Draft Auth with optional file persistence.
@@ -119,8 +119,8 @@ export const MemoryStorage = (options?: MemoryStorageOptions): StorageAdapter =>
 			if (isValidStoreData(parsed)) {
 				store.push(...parsed)
 			}
-		} catch (error) {
-			console.warn("Failed to load persisted storage:", error)
+		} catch {
+			// Failed to load persisted storage - continue with empty store
 		}
 	}
 
@@ -133,8 +133,8 @@ export const MemoryStorage = (options?: MemoryStorageOptions): StorageAdapter =>
 		try {
 			const serialized = JSON.stringify(store, null, 2)
 			await writeFile(options.persist, serialized, "utf8")
-		} catch (error) {
-			console.error("Failed to save storage to file:", error)
+		} catch {
+			// Failed to save storage to file - continue operation
 		}
 	}
 

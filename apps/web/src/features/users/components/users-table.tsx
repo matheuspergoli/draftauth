@@ -1,3 +1,14 @@
+import React from "react"
+import { Link } from "@tanstack/react-router"
+import {
+	type ColumnDef,
+	type ColumnFiltersState,
+	flexRender,
+	getCoreRowModel,
+	getFilteredRowModel,
+	useReactTable
+} from "@tanstack/react-table"
+import type { InferResponseType } from "hono/client"
 import type { api } from "@/libs/api"
 import { Badge } from "@/shared/components/badge"
 import { Button } from "@/shared/components/button"
@@ -10,17 +21,6 @@ import {
 	TableHeader,
 	TableRow
 } from "@/shared/components/table"
-import { Link } from "@tanstack/react-router"
-import {
-	type ColumnDef,
-	type ColumnFiltersState,
-	flexRender,
-	getCoreRowModel,
-	getFilteredRowModel,
-	useReactTable
-} from "@tanstack/react-table"
-import type { InferResponseType } from "hono/client"
-import React from "react"
 
 type Users = InferResponseType<typeof api.manage.users.$get>
 
@@ -52,7 +52,7 @@ export const usersTableColumns: ColumnDef<Users[number]>[] = [
 		cell: ({ row }) => {
 			return (
 				<Button asChild className="ml-auto block w-fit">
-					<Link to="/dashboard/users/$id" params={{ id: row.original.userId }}>
+					<Link params={{ id: row.original.userId }} to="/dashboard/users/$id">
 						Gerenciar
 					</Link>
 				</Button>
@@ -84,10 +84,10 @@ export function UsersTable<TData, TValue>({ columns, data }: DataTableProps<TDat
 		<div>
 			<div className="flex items-center py-4">
 				<Input
+					className="max-w-sm"
+					onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
 					placeholder="Buscar usuário por email"
 					value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-					onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
-					className="max-w-sm"
 				/>
 			</div>
 
@@ -111,7 +111,7 @@ export function UsersTable<TData, TValue>({ columns, data }: DataTableProps<TDat
 					<TableBody>
 						{table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+								<TableRow data-state={row.getIsSelected() && "selected"} key={row.id}>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
 											{flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -121,7 +121,7 @@ export function UsersTable<TData, TValue>({ columns, data }: DataTableProps<TDat
 							))
 						) : (
 							<TableRow>
-								<TableCell colSpan={columns.length} className="h-24 text-center">
+								<TableCell className="h-24 text-center" colSpan={columns.length}>
 									Sem resultados.
 								</TableCell>
 							</TableRow>

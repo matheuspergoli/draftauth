@@ -31,10 +31,10 @@ export const UserNotFoundPage = () => {
 			</p>
 
 			<button
-				type="button"
 				data-color="ghost"
 				data-component="button"
 				onClick={() => window.history.back()}
+				type="button"
 			>
 				Voltar
 			</button>

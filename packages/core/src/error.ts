@@ -16,10 +16,10 @@
  * } catch (error) {
  *   if (error instanceof InvalidAuthorizationCodeError) {
  *     // Handle invalid authorization code
- *     console.log("Authorization code expired or invalid")
+ *     // Authorization code expired or invalid
  *   } else if (error instanceof OauthError) {
  *     // Handle OAuth-specific errors
- *     console.log(`OAuth error: ${error.error} - ${error.description}`)
+ *     // OAuth error: error.error - error.description
  *   }
  * }
  * ```
@@ -35,13 +35,12 @@
  */
 
 /**
- * Standard OAuth 2.0 error types as defined in RFC 6749.
+ * Standard OAuth 2.0 error types
  * These error codes are returned by OAuth authorization servers.
- *
- * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1
  */
 export type OauthErrorType =
 	| "invalid_request" // Request is missing required parameter or malformed
+	| "invalid_client" // Client authentication failed
 	| "invalid_grant" // Authorization grant is invalid, expired, or revoked
 	| "unauthorized_client" // Client is not authorized to use this grant type
 	| "access_denied" // Resource owner denied the request
@@ -297,7 +296,7 @@ export class InvalidAuthorizationCodeError extends Error {
  *   await client.revoke(idToken) // ID tokens may not be revocable
  * } catch (error) {
  *   if (error instanceof UnsupportedTokenTypeError) {
- *     console.log("This token type cannot be revoked")
+ *     // This token type cannot be revoked
  *   }
  * }
  * ```
@@ -328,7 +327,7 @@ export class UnsupportedTokenTypeError extends Error {
  *   await client.revoke(refreshToken)
  * } catch (error) {
  *   if (error instanceof TokenRevocationError) {
- *     console.log(`Revocation failed: ${error.message}`)
+ *     // Revocation failed: error.message
  *   }
  * }
  * ```

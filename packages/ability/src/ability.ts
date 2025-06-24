@@ -116,7 +116,7 @@ export class Ability<AppActions extends ActionName, AppSubjects extends SubjectT
 		}
 
 		for (const key in conditions) {
-			if (!Object.prototype.hasOwnProperty.call(conditions, key)) {
+			if (!Object.hasOwn(conditions, key)) {
 				continue
 			}
 			const conditionKey = key as keyof Conditions<Name, AppSubjects>

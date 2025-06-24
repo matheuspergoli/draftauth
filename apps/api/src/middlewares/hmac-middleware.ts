@@ -1,7 +1,7 @@
-import crypto from "node:crypto"
-import { getDecryptedSecretForKeyId } from "@/services/api-key-service"
 import { createMiddleware } from "hono/factory"
 import { HTTPException } from "hono/http-exception"
+import { getDecryptedSecretForKeyId } from "@/services/api-key-service"
+import crypto from "node:crypto"
 
 const DIGEST_HEADER = "digest"
 const KEY_ID_HEADER = "x-api-key-id"
@@ -17,7 +17,7 @@ const safeCompare = (a: string, b: string): boolean => {
 			return false
 		}
 		return crypto.timingSafeEqual(bufA, bufB)
-	} catch (error) {
+	} catch {
 		return false
 	}
 }
@@ -80,7 +80,7 @@ export const hmacAuthMiddleware = createMiddleware<HMACEnv>(async (c, next) => {
 					message: "Integridade da checagem do request body falhou"
 				})
 			}
-		} catch (err) {
+		} catch {
 			throw new HTTPException(400, {
 				message: "Não foi possível validar o request body digest"
 			})

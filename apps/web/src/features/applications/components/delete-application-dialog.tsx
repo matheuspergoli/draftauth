@@ -1,3 +1,5 @@
+import { useRouter } from "@tanstack/react-router"
+import { Trash } from "lucide-react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -10,8 +12,6 @@ import {
 	AlertDialogTrigger
 } from "@/shared/components/alert-dialog"
 import { Button } from "@/shared/components/button"
-import { useRouter } from "@tanstack/react-router"
-import { Trash } from "lucide-react"
 import { useDeleteApplication } from "../hooks/use-delete-application"
 
 export const DeleteApplicationDialog = ({ appId }: { appId: string }) => {
@@ -42,7 +42,7 @@ export const DeleteApplicationDialog = ({ appId }: { appId: string }) => {
 							router.navigate({ to: "/dashboard/applications" })
 						}}
 					>
-						<Button mode="loading" isLoading={isPending}>
+						<Button isLoading={isPending} mode="loading">
 							Apagar
 						</Button>
 					</AlertDialogAction>

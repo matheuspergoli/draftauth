@@ -1,6 +1,6 @@
-export { createClient } from "./client"
 export type {
 	ClientConfig,
-	LoginOptions,
-	HandleRedirectResult
+	HandleRedirectResult,
+	LoginOptions
 } from "./client"
+export { createClient } from "./client"

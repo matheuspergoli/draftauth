@@ -1,16 +1,16 @@
-import type { auth } from "@/libs/auth"
-import { Toaster } from "@/shared/components/sonner"
-import type { QueryClient } from "@tanstack/react-query"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
+	createRootRouteWithContext,
 	HeadContent,
 	Outlet,
-	createRootRouteWithContext,
 	redirect,
 	stripSearchParams
 } from "@tanstack/react-router"
+import type { QueryClient } from "@tanstack/react-query"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 import { z } from "zod"
+import type { auth } from "@/libs/auth"
+import { Toaster } from "@/shared/components/sonner"
 
 const defaultValues = {
 	code: "",
@@ -51,7 +51,7 @@ function Root() {
 			<Outlet />
 			<Toaster />
 			<TanStackRouterDevtools position="bottom-left" />
-			<ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+			<ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
 		</>
 	)
 }

@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto"
-import type { AppEventType } from "@/libs/events"
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
+import type { AppEventType } from "@/libs/events"
+import { randomUUID } from "node:crypto"
 
 export type UserStatus = "active" | "inactive"
 export type AccessStatus = "enabled" | "disabled"

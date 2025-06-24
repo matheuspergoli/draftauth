@@ -1,3 +1,10 @@
+import React from "react"
+import { useParams, useRouteContext } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import type { InferResponseType } from "hono"
+import { AlertTriangle, Download, KeyIcon, PlusIcon, Trash } from "lucide-react"
 import type { api } from "@/libs/api"
 import {
 	AlertDialog,
@@ -21,13 +28,6 @@ import {
 import { Input } from "@/shared/components/input"
 import { Label } from "@/shared/components/label"
 import { applicationApiKeysQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams, useRouteContext } from "@tanstack/react-router"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import type { InferResponseType } from "hono"
-import { AlertTriangle, Download, KeyIcon, PlusIcon, Trash } from "lucide-react"
-import React from "react"
 import { useCreateApiKey } from "../hooks/use-create-api-key"
 import { useRevokeApiKey } from "../hooks/use-revoke-api-key"
 
@@ -69,8 +69,8 @@ export const ApplicationApiKeys = () => {
 						<CardDescription>Gerencie as API Keys dessa aplicação</CardDescription>
 					</div>
 					<AlertDialog
-						open={dialogState.status !== "closed"}
 						onOpenChange={(open) => !open && setDialogState({ status: "closed" })}
+						open={dialogState.status !== "closed"}
 					>
 						<AlertDialogTrigger asChild>
 							<Button
@@ -100,8 +100,8 @@ export const ApplicationApiKeys = () => {
 											Cancelar
 										</AlertDialogCancel>
 										<Button
-											mode="loading"
 											isLoading={createIsPending}
+											mode="loading"
 											onClick={async () => {
 												const newApiKeyData = await createApiKey({ appId })
 												setDialogState({
@@ -132,10 +132,10 @@ export const ApplicationApiKeys = () => {
 										<div className="space-y-2">
 											<Label htmlFor="keyId">ID da Chave (Key ID)</Label>
 											<Input
-												id="keyId"
-												value={dialogState.value.metadata.keyId}
-												readOnly
 												className="font-mono text-sm"
+												id="keyId"
+												readOnly
+												value={dialogState.value.metadata.keyId}
 											/>
 											<p className="text-xs text-muted-foreground">
 												Este ID é público e usado para identificar a chave.
@@ -143,13 +143,13 @@ export const ApplicationApiKeys = () => {
 										</div>
 
 										<Button
+											className="w-full"
 											onClick={() => {
 												handleDownload(
 													dialogState.value.keyFileData,
 													dialogState.value.metadata.keyId
 												)
 											}}
-											className="w-full"
 										>
 											<Download className="mr-2 h-4 w-4" />
 											Baixar Arquivo da Chave (.txt)
@@ -173,8 +173,8 @@ export const ApplicationApiKeys = () => {
 					<div className="space-y-4">
 						{data.map((key) => (
 							<div
-								key={key.keyId}
 								className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-md border"
+								key={key.keyId}
 							>
 								<div className="space-y-1 mb-2 md:mb-0">
 									<div className="flex items-center gap-2">
@@ -196,8 +196,8 @@ export const ApplicationApiKeys = () => {
 									<AlertDialogTrigger asChild>
 										<Button
 											disabled={ability.cannot("delete_api_key", "Application")}
-											variant="destructive"
 											size="icon"
+											variant="destructive"
 										>
 											<Trash />
 										</Button>
@@ -219,10 +219,10 @@ export const ApplicationApiKeys = () => {
 												}}
 											>
 												<Button
-													mode="loading"
 													disabled={ability.cannot("delete_api_key", "Application")}
-													variant="destructive"
 													isLoading={revokeIsPending}
+													mode="loading"
+													variant="destructive"
 												>
 													Revogar Chave
 												</Button>

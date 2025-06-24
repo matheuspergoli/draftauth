@@ -1,10 +1,10 @@
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { Ability } from "@draftauth/ability"
+import type { AppNameActions, AppSubjectTypeMappings } from "@draftauth/types"
 import { MainSidebar } from "@/shared/components/app-sidebar/main-sidebar"
 import { Separator } from "@/shared/components/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/shared/components/sidebar"
 import { currentUserQueryOptions, currentUserStatusQueryOptions } from "@/shared/queries"
-import { Ability } from "@draftauth/ability"
-import type { AppNameActions, AppSubjectTypeMappings } from "@draftauth/types"
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
@@ -45,7 +45,7 @@ function RouteComponent() {
 				<header className="flex h-16 shrink-0 items-center gap-2 border-b">
 					<div className="flex items-center gap-2 px-4">
 						<SidebarTrigger className="-ml-1" />
-						<Separator orientation="vertical" className="mr-2 h-4" />
+						<Separator className="mr-2 h-4" orientation="vertical" />
 					</div>
 				</header>
 				<div className="container my-5 px-4 mx-auto">

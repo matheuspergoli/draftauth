@@ -1,3 +1,6 @@
+import React from "react"
+import { createFileRoute, useRouteContext } from "@tanstack/react-router"
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { useAssignRoleToUser } from "@/features/users/hooks/use-assign-role-to-user"
 import { useChangeUserAppAccessStatus } from "@/features/users/hooks/use-change-user-app-access-status"
 import { useChangeUserGlobalStatus } from "@/features/users/hooks/use-change-user-global-status"
@@ -41,9 +44,6 @@ import {
 	userApplicationsRolesQueryOptions,
 	userQueryOptions
 } from "@/shared/queries"
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, useRouteContext } from "@tanstack/react-router"
-import React from "react"
 
 export const Route = createFileRoute("/dashboard/users/$id")({
 	component: RouteComponent,
@@ -127,12 +127,12 @@ function RouteComponent() {
 					<CardContent className="flex [&>*]:flex-1 gap-5">
 						<fieldset className="space-y-1">
 							<Label>User ID</Label>
-							<Input value={user.data.userId} disabled />
+							<Input disabled value={user.data.userId} />
 						</fieldset>
 
 						<fieldset className="space-y-1">
 							<Label>Email</Label>
-							<Input value={user.data.email} disabled />
+							<Input disabled value={user.data.email} />
 						</fieldset>
 
 						<form
@@ -147,8 +147,8 @@ function RouteComponent() {
 									<field.Fieldset>
 										<field.LabelField>Status</field.LabelField>
 										<field.SelectField
-											label="Status"
 											disabled={ability.cannot("edit_user_global_status", "User")}
+											label="Status"
 											placeholder="Status global do usuário"
 											values={[
 												{ label: "Ativo", value: "active" },
@@ -181,8 +181,8 @@ function RouteComponent() {
 							<fieldset className="space-y-1">
 								<Label>Selecionar Aplicação</Label>
 								<Select
-									disabled={ability.cannot("assign_role_to_user", "User")}
 									defaultValue={currentAppId}
+									disabled={ability.cannot("assign_role_to_user", "User")}
 									onValueChange={(value) => {
 										setCurrentAppId(value)
 									}}
@@ -208,8 +208,8 @@ function RouteComponent() {
 									<field.Fieldset>
 										<field.LabelField>Selecionar Cargo</field.LabelField>
 										<field.SelectField
-											label="Cargos"
 											disabled={ability.cannot("assign_role_to_user", "User")}
+											label="Cargos"
 											placeholder="Selecione o cargo"
 											values={renderRoles()}
 										/>
@@ -219,8 +219,8 @@ function RouteComponent() {
 
 							<rolesForm.AppForm>
 								<rolesForm.SubscribeButton
-									disabled={ability.cannot("assign_role_to_user", "User")}
 									className="self-end"
+									disabled={ability.cannot("assign_role_to_user", "User")}
 								>
 									Adicionar cargo
 								</rolesForm.SubscribeButton>
@@ -246,8 +246,6 @@ function RouteComponent() {
 												</TableCell>
 												<TableCell className="text-right">
 													<Button
-														variant="destructive"
-														size="sm"
 														disabled={ability.cannot("revoke_role_from_user", "User")}
 														onClick={async () =>
 															await revokeUserRole({
@@ -255,6 +253,8 @@ function RouteComponent() {
 																userId: params.id
 															})
 														}
+														size="sm"
+														variant="destructive"
 													>
 														Revogar
 													</Button>
@@ -264,7 +264,7 @@ function RouteComponent() {
 									)
 								) : (
 									<TableRow>
-										<TableCell colSpan={3} className="text-center">
+										<TableCell className="text-center" colSpan={3}>
 											Usuário não possui cargos atribuídos.
 										</TableCell>
 									</TableRow>
@@ -312,8 +312,8 @@ function RouteComponent() {
 											</TableCell>
 											<TableCell className="text-right">
 												<Switch
-													disabled={ability.cannot("edit_user_application_access", "User")}
 													defaultChecked={isCurrentlyEnabled}
+													disabled={ability.cannot("edit_user_application_access", "User")}
 													onCheckedChange={async (checked) => {
 														await changeUserAppAccessStatus({
 															checked,

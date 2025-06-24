@@ -1,7 +1,7 @@
+import { desc } from "drizzle-orm"
 import { db } from "@/db/client"
 import { auditLogs } from "@/db/schema"
 import type { AppEventType, AuditLogEntry } from "@/libs/events"
-import { desc } from "drizzle-orm"
 
 interface AuditEventData {
 	eventType: AppEventType
@@ -34,7 +34,7 @@ export const getAuditLogs = async () => {
 		if (log.details) {
 			try {
 				parsedDetails = JSON.parse(log.details)
-			} catch (e) {
+			} catch {
 				parsedDetails = { error: "Falha ao parsear details" }
 			}
 		}

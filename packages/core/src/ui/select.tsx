@@ -205,13 +205,13 @@ type IconElement = JSX.Element
 const ICON: Record<string, IconElement> = {
 	steam: (
 		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="16"
-			height="16"
-			fill="currentColor"
-			class="bi bi-steam"
-			viewBox="0 0 16 16"
 			aria-hidden="true"
+			class="bi bi-steam"
+			fill="currentColor"
+			height="16"
+			viewBox="0 0 16 16"
+			width="16"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path d="M.329 10.333A8.01 8.01 0 0 0 7.99 16C12.414 16 16 12.418 16 8s-3.586-8-8.009-8A8.006 8.006 0 0 0 0 7.468l.003.006 4.304 1.769A2.2 2.2 0 0 1 5.62 8.88l1.96-2.844-.001-.04a3.046 3.046 0 0 1 3.042-3.043 3.046 3.046 0 0 1 3.042 3.043 3.047 3.047 0 0 1-3.111 3.044l-2.804 2a2.223 2.223 0 0 1-3.075 2.11 2.22 2.22 0 0 1-1.312-1.568L.33 10.333Z" />
 			<path d="M4.868 12.683a1.715 1.715 0 0 0 1.318-3.165 1.7 1.7 0 0 0-1.263-.02l1.023.424a1.261 1.261 0 1 1-.97 2.33l-.99-.41a1.7 1.7 0 0 0 .882.84Zm3.726-6.687a2.03 2.03 0 0 0 2.027 2.029 2.03 2.03 0 0 0 2.027-2.029 2.03 2.03 0 0 0-2.027-2.027 2.03 2.03 0 0 0-2.027 2.027m2.03-1.527a1.524 1.524 0 1 1-.002 3.048 1.524 1.524 0 0 1 .002-3.048" />
@@ -219,11 +219,11 @@ const ICON: Record<string, IconElement> = {
 	),
 	code: (
 		<svg
+			aria-hidden="true"
+			data-name="Layer 1"
 			fill="currentColor"
 			viewBox="0 0 52 52"
-			data-name="Layer 1"
 			xmlns="http://www.w3.org/2000/svg"
-			aria-hidden="true"
 		>
 			<path
 				d="M8.55,36.91A6.55,6.55,0,1,1,2,43.45,6.54,6.54,0,0,1,8.55,36.91Zm17.45,0a6.55,6.55,0,1,1-6.55,6.54A6.55,6.55,0,0,1,26,36.91Zm17.45,0a6.55,6.55,0,1,1-6.54,6.54A6.54,6.54,0,0,1,43.45,36.91ZM8.55,19.45A6.55,6.55,0,1,1,2,26,6.55,6.55,0,0,1,8.55,19.45Zm17.45,0A6.55,6.55,0,1,1,19.45,26,6.56,6.56,0,0,1,26,19.45Zm17.45,0A6.55,6.55,0,1,1,36.91,26,6.55,6.55,0,0,1,43.45,19.45ZM8.55,2A6.55,6.55,0,1,1,2,8.55,6.54,6.54,0,0,1,8.55,2ZM26,2a6.55,6.55,0,1,1-6.55,6.55A6.55,6.55,0,0,1,26,2ZM43.45,2a6.55,6.55,0,1,1-6.54,6.55A6.55,6.55,0,0,1,43.45,2Z"
@@ -233,28 +233,28 @@ const ICON: Record<string, IconElement> = {
 	),
 	password: (
 		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 24 24"
-			fill="currentColor"
 			aria-hidden="true"
+			fill="currentColor"
+			viewBox="0 0 24 24"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path
-				fill-rule="evenodd"
-				d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
 				clip-rule="evenodd"
+				d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z"
+				fill-rule="evenodd"
 			/>
 		</svg>
 	),
 	twitch: (
 		<svg
-			role="img"
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 448 512"
 			aria-hidden="true"
+			role="img"
+			viewBox="0 0 448 512"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path
-				fill="currentColor"
 				d="M40.1 32L10 108.9v314.3h107V480h60.2l56.8-56.8h87l117-117V32H40.1zm357.8 254.1L331 353H224l-56.8 56.8V353H76.9V72.1h321v214zM331 149v116.9h-40.1V149H331zm-107 0v116.9h-40.1V149H224z"
+				fill="currentColor"
 			/>
 		</svg>
 	),
@@ -262,72 +262,72 @@ const ICON: Record<string, IconElement> = {
 	github: ICON_GITHUB,
 	apple: (
 		<svg
-			role="img"
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 814 1000"
 			aria-hidden="true"
+			role="img"
+			viewBox="0 0 814 1000"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path
-				fill="currentColor"
 				d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57-155.5-127C46.7 790.7 0 663 0 541.8c0-194.4 126.4-297.5 250.8-297.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z "
+				fill="currentColor"
 			/>
 		</svg>
 	),
 	x: (
 		<svg
-			role="img"
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 1200 1227"
 			aria-hidden="true"
+			role="img"
+			viewBox="0 0 1200 1227"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<path
-				fill="currentColor"
 				d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"
+				fill="currentColor"
 			/>
 		</svg>
 	),
 	microsoft: (
 		<svg
+			aria-hidden="true"
+			preserveAspectRatio="xMidYMid"
 			role="img"
 			viewBox="0 0 256 256"
 			xmlns="http://www.w3.org/2000/svg"
-			preserveAspectRatio="xMidYMid"
-			aria-hidden="true"
 		>
-			<path fill="#F1511B" d="M121.666 121.666H0V0h121.666z" />
-			<path fill="#80CC28" d="M256 121.666H134.335V0H256z" />
-			<path fill="#00ADEF" d="M121.663 256.002H0V134.336h121.663z" />
-			<path fill="#FBBC09" d="M256 256.002H134.335V134.336H256z" />
+			<path d="M121.666 121.666H0V0h121.666z" fill="#F1511B" />
+			<path d="M256 121.666H134.335V0H256z" fill="#80CC28" />
+			<path d="M121.663 256.002H0V134.336h121.663z" fill="#00ADEF" />
+			<path d="M256 256.002H134.335V134.336H256z" fill="#FBBC09" />
 		</svg>
 	),
 	facebook: (
 		<svg
-			role="img"
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 36 36"
-			fill="url(#a)"
 			aria-hidden="true"
+			fill="url(#a)"
+			role="img"
+			viewBox="0 0 36 36"
+			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>
-				<linearGradient x1="50%" x2="50%" y1="97.078%" y2="0%" id="a">
+				<linearGradient id="a" x1="50%" x2="50%" y1="97.078%" y2="0%">
 					<stop offset="0%" stop-color="#0062E0" />
 					<stop offset="100%" stop-color="#19AFFF" />
 				</linearGradient>
 			</defs>
 			<path d="M15 35.8C6.5 34.3 0 26.9 0 18 0 8.1 8.1 0 18 0s18 8.1 18 18c0 8.9-6.5 16.3-15 17.8l-1-.8h-4l-1 .8z" />
 			<path
-				fill="#FFF"
 				d="m25 23 .8-5H21v-3.5c0-1.4.5-2.5 2.7-2.5H26V7.4c-1.3-.2-2.7-.4-4-.4-4.1 0-7 2.5-7 7v4h-4.5v5H15v12.7c1 .2 2 .3 3 .3s2-.1 3-.3V23h4z"
+				fill="#FFF"
 			/>
 		</svg>
 	),
 	slack: (
 		<svg
-			role="img"
+			aria-hidden="true"
 			enable-background="new 0 0 2447.6 2452.5"
+			role="img"
 			viewBox="0 0 2447.6 2452.5"
 			xmlns="http://www.w3.org/2000/svg"
-			aria-hidden="true"
 		>
 			<g clip-rule="evenodd" fill-rule="evenodd">
 				<path
@@ -444,11 +444,11 @@ export const Select = (props?: SelectProps) => {
 
 							return (
 								<a
-									key={`${providerKey}-${providerType}`}
-									href={`/${providerKey}/authorize`}
-									data-component="button"
-									data-color="ghost"
 									aria-label={`${copy.button_provider} ${displayName}`}
+									data-color="ghost"
+									data-component="button"
+									href={`/${providerKey}/authorize`}
+									key={`${providerKey}-${providerType}`}
 								>
 									{icon && <i data-slot="icon">{icon}</i>}
 									{copy.button_provider} {displayName}

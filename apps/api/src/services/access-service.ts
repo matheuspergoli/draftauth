@@ -1,8 +1,8 @@
+import { and, eq } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import { type AccessStatus, applications, userApplicationAccess, users } from "@/db/schema"
 import { events } from "@/libs/events"
-import { and, eq } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
 
 export const ensureUserAppAccessRecord = async ({
 	userId,

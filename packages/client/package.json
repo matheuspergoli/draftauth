@@ -6,7 +6,9 @@
 	"author": "Matheus Pergoli <https://docs.draftauth.com.br>",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -29,9 +31,9 @@
 		"clean": "rm -rf dist .turbo node_modules"
 	},
 	"devDependencies": {
-		"@changesets/cli": "^2.29.4",
+		"@changesets/cli": "^2.29.5",
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^24.0.1",
+		"@types/node": "^24.0.3",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
 	}

@@ -1,3 +1,6 @@
+import { useParams, useRouteContext } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { Plus, Trash } from "lucide-react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -35,9 +38,6 @@ import {
 	TableRow
 } from "@/shared/components/table"
 import { applicationQueryOptions, applicationRolesQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams, useRouteContext } from "@tanstack/react-router"
-import { Plus, Trash } from "lucide-react"
 import { useCreateRoleName } from "../hooks/use-create-role-name"
 import { useDeleteRole } from "../hooks/use-delete-role"
 import {
@@ -108,8 +108,8 @@ export const ApplicationRoles = () => {
 
 							<form.AppForm>
 								<form.SubscribeButton
-									disabled={ability.cannot("create_role", "Application")}
 									className="mt-3"
+									disabled={ability.cannot("create_role", "Application")}
 								>
 									Criar cargo
 								</form.SubscribeButton>
@@ -160,7 +160,7 @@ export const ApplicationRoles = () => {
 													disabled={ability.cannot("delete_role", "Application")}
 													onClick={async () => await deleteRole({ roleId: values.roleId })}
 												>
-													<Button mode="loading" isLoading={isPending}>
+													<Button isLoading={isPending} mode="loading">
 														Apagar
 													</Button>
 												</AlertDialogAction>

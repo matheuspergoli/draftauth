@@ -1,6 +1,6 @@
+import { eq, sql } from "drizzle-orm"
 import { db } from "@/db/client"
 import { applications, systemConfiguration } from "@/db/schema"
-import { eq, sql } from "drizzle-orm"
 
 export const CONFIG_KEYS = {
 	SYSTEM_OWNER_USER_ID: "system_owner_user_id",

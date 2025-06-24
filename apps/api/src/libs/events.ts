@@ -1,6 +1,6 @@
+import { Emitter } from "@draftauth/events"
 import type { applications, auditLogs, roles, userApplicationAccess, users } from "@/db/schema"
 import { logAuditEvent } from "@/services/audit-log-service"
-import { Emitter } from "@draftauth/events"
 
 interface RoleCreatedPayloadData {
 	newRole: typeof roles.$inferSelect

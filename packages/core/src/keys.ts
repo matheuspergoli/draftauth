@@ -1,11 +1,11 @@
 import {
-	type JWK,
 	exportJWK,
 	exportPKCS8,
 	exportSPKI,
 	generateKeyPair,
 	importPKCS8,
-	importSPKI
+	importSPKI,
+	type JWK
 } from "jose"
 import { Storage, type StorageAdapter } from "./storage/storage"
 
@@ -90,23 +90,25 @@ export const signingKeys = async (storage: StorageAdapter): Promise<KeyPair[]> =
 	const scanner = Storage.scan<SerializedKeyPair>(storage, ["signing:key"])
 
 	for await (const [, value] of scanner) {
-		const publicKey = await importSPKI(value.publicKey, value.alg, {
-			extractable: true
-		})
-		const privateKey = await importPKCS8(value.privateKey, value.alg)
-		const jwk = await exportJWK(publicKey)
-		jwk.kid = value.id
-		jwk.use = "sig"
+		try {
+			const publicKey = await importSPKI(value.publicKey, value.alg, {
+				extractable: true
+			})
+			const privateKey = await importPKCS8(value.privateKey, value.alg)
+			const jwk = await exportJWK(publicKey)
+			jwk.kid = value.id
+			jwk.use = "sig"
 
-		results.push({
-			id: value.id,
-			alg: signingAlg,
-			created: new Date(value.created),
-			expired: value.expired ? new Date(value.expired) : undefined,
-			public: publicKey,
-			private: privateKey,
-			jwk
-		})
+			results.push({
+				id: value.id,
+				alg: signingAlg,
+				created: new Date(value.created),
+				expired: value.expired ? new Date(value.expired) : undefined,
+				public: publicKey,
+				private: privateKey,
+				jwk
+			})
+		} catch {}
 	}
 
 	// Sort by creation date (newest first)
@@ -158,22 +160,24 @@ export const encryptionKeys = async (storage: StorageAdapter): Promise<KeyPair[]
 	const scanner = Storage.scan<SerializedKeyPair>(storage, ["encryption:key"])
 
 	for await (const [, value] of scanner) {
-		const publicKey = await importSPKI(value.publicKey, value.alg, {
-			extractable: true
-		})
-		const privateKey = await importPKCS8(value.privateKey, value.alg)
-		const jwk = await exportJWK(publicKey)
-		jwk.kid = value.id
+		try {
+			const publicKey = await importSPKI(value.publicKey, value.alg, {
+				extractable: true
+			})
+			const privateKey = await importPKCS8(value.privateKey, value.alg)
+			const jwk = await exportJWK(publicKey)
+			jwk.kid = value.id
 
-		results.push({
-			id: value.id,
-			alg: encryptionAlg,
-			created: new Date(value.created),
-			expired: value.expired ? new Date(value.expired) : undefined,
-			public: publicKey,
-			private: privateKey,
-			jwk
-		})
+			results.push({
+				id: value.id,
+				alg: encryptionAlg,
+				created: new Date(value.created),
+				expired: value.expired ? new Date(value.expired) : undefined,
+				public: publicKey,
+				private: privateKey,
+				jwk
+			})
+		} catch {}
 	}
 
 	// Sort by creation date (newest first)

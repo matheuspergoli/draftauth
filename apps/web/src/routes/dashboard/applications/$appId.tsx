@@ -1,3 +1,4 @@
+import { createFileRoute, redirect } from "@tanstack/react-router"
 import { ApplicationApiKeys } from "@/features/applications/components/application-api-keys"
 import { ApplicationDetails } from "@/features/applications/components/application-details"
 import { ApplicationRedirectUris } from "@/features/applications/components/application-redirect-uris"
@@ -10,7 +11,6 @@ import {
 	applicationRedirectUrisQueryOptions,
 	applicationRolesQueryOptions
 } from "@/shared/queries"
-import { createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/dashboard/applications/$appId")({
 	component: RouteComponent,

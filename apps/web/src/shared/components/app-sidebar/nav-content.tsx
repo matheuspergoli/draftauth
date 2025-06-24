@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router"
-
 import { LayoutDashboard, List, Settings, User } from "lucide-react"
 import {
 	SidebarGroup,

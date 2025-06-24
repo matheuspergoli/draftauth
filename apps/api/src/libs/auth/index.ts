@@ -1,20 +1,6 @@
-import { randomBytes } from "node:crypto"
-import { dbClient } from "@/db/client"
-import { env } from "@/environment/env"
-import { ensureUserAppAccessRecord, getUserAppAccessStatus } from "@/services/access-service"
-import { isValidApplicationClient } from "@/services/application-service"
-import { isSetupComplete } from "@/services/config-service"
-import {
-	type FindOrCreateUserResult,
-	createUser,
-	findOrCreateUser,
-	findUserByEmail,
-	linkExternalIdentity,
-	setUserGlobalStatus
-} from "@/services/user-service"
+import { issuer } from "@draftauth/core"
 import { defaultAllowCheck } from "@draftauth/core/allow"
 import { createClient } from "@draftauth/core/client"
-import { issuer } from "@draftauth/core/issuer"
 import { CodeProvider } from "@draftauth/core/provider/code"
 import { GithubProvider } from "@draftauth/core/provider/github"
 import { GoogleProvider } from "@draftauth/core/provider/google"
@@ -31,12 +17,26 @@ import { getConnInfo } from "hono/bun"
 import { getContext } from "hono/context-storage"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
+import { dbClient } from "@/db/client"
+import { env } from "@/environment/env"
+import { ensureUserAppAccessRecord, getUserAppAccessStatus } from "@/services/access-service"
+import { isValidApplicationClient } from "@/services/application-service"
+import { isSetupComplete } from "@/services/config-service"
+import {
+	createUser,
+	type FindOrCreateUserResult,
+	findOrCreateUser,
+	findUserByEmail,
+	linkExternalIdentity,
+	setUserGlobalStatus
+} from "@/services/user-service"
 import { checkPasswordLeaks, checkPasswordStrength, translateWarnings } from "../password"
 import { resend } from "../resend"
 import { AccessDeniedPage } from "./access-denied-page"
 import { EmailNotFoundInClaimsPage } from "./email-not-found-in-claims-page"
 import { UserNotFoundPage } from "./user-not-found-page"
 import { getGithubUser, getGoogleUser } from "./utils"
+import { randomBytes } from "node:crypto"
 
 export const authClient = createClient({
 	issuer: getBaseUrl(),

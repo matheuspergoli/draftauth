@@ -1,6 +1,6 @@
+import { queryOptions } from "@tanstack/react-query"
 import { env } from "@/environment/env"
 import { api } from "@/libs/api"
-import { queryOptions } from "@tanstack/react-query"
 
 export const queryKeys = {
 	users: () => ["users"] as const,
@@ -113,7 +113,10 @@ export const userQueryOptions = (userId: string) => {
 export const userApplicationRolesQueryOptions = ({
 	userId,
 	appId
-}: { userId: string; appId: string }) => {
+}: {
+	userId: string
+	appId: string
+}) => {
 	return queryOptions({
 		enabled: !!userId && !!appId,
 		queryKey: queryKeys.userApplicationRoles({ userId, appId }),

@@ -1,7 +1,6 @@
-import { type VariantProps, cva } from "class-variance-authority"
-import { Slot as SlotPrimitive } from "radix-ui"
 import type * as React from "react"
-
+import { cva, type VariantProps } from "class-variance-authority"
+import { Slot as SlotPrimitive } from "radix-ui"
 import { cn, run } from "@/libs/utils"
 import { SpinnersBarsScale } from "./spinners-bars-scale"
 
@@ -53,8 +52,8 @@ function Button({
 
 	return (
 		<Comp
-			data-slot="button"
 			className={cn(buttonVariants({ variant, size, className, mode }))}
+			data-slot="button"
 			disabled={isLoading}
 			{...props}
 		>

@@ -27,16 +27,16 @@
 		"@upstash/ratelimit": "^2.0.5",
 		"@upstash/redis": "^1.35.0",
 		"drizzle-orm": "^0.44.2",
-		"hono": "^4.7.11",
-		"resend": "^4.5.2",
-		"zod": "^3.25.62",
+		"hono": "^4.8.2",
+		"resend": "^4.6.0",
+		"zod": "^3.25.67",
 		"zxcvbn": "^4.4.2"
 	},
 	"devDependencies": {
 		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^24.0.1",
+		"@types/node": "^24.0.3",
 		"@types/zxcvbn": "^4.4.5",
-		"drizzle-kit": "^0.31.1",
+		"drizzle-kit": "^0.31.2",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3"
 	}

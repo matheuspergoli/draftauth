@@ -42,13 +42,13 @@ import type { StandardSchemaV1 } from "@standard-schema/spec"
  * ```ts
  * const result = await client.verify(subjects, accessToken)
  * if (result.success) {
- *   console.log(result.data.subject.properties)
+ *   // Access user properties: result.data.subject.properties
  * }
  * ```
  *
  * @packageDocumentation
  */
-import { type JSONWebKeySet, createLocalJWKSet, errors, jwtVerify } from "jose"
+import { createLocalJWKSet, errors, type JSONWebKeySet, jwtVerify } from "jose"
 import {
 	InvalidAccessTokenError,
 	InvalidAuthorizationCodeError,
@@ -70,9 +70,9 @@ import type { SubjectSchema } from "./subject"
  * ```ts
  * const result = await client.exchange(code, redirectUri)
  * if (result.success) {
- *   console.log(result.data.access)
+ *   // Access token available: result.data.access
  * } else {
- *   console.error(result.error.message)
+ *   // Handle error: result.error.message
  * }
  * ```
  */
@@ -249,6 +249,18 @@ export interface ClientInput {
 	 * ```
 	 */
 	issuer?: string
+	/**
+	 * Client secret for machine-to-machine authentication.
+	 * Required for client credentials flow.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   clientSecret: process.env.CLIENT_SECRET
+	 * }
+	 * ```
+	 */
+	clientSecret?: string
 	/**
 	 * Custom fetch implementation for HTTP requests.
 	 *
@@ -473,6 +485,37 @@ export interface VerifyResult<T extends SubjectSchema> {
 	 * OAuth 2.0 scopes granted for this token.
 	 */
 	scopes?: string[]
+}
+
+/**
+ * Options for credentials authentication.
+ */
+export interface CredentialsOptions {
+	/**
+	 * OAuth 2.0 scopes to request for the service.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   scopes: ["read:users", "write:posts", "admin"]
+	 * }
+	 * ```
+	 */
+	scopes?: string[]
+	/**
+	 * Additional parameters to include in the token request.
+	 *
+	 * @example
+	 * ```ts
+	 * {
+	 *   params: {
+	 *     tenant_id: "tenant-123",
+	 *     environment: "production"
+	 *   }
+	 * }
+	 * ```
+	 */
+	params?: Record<string, string>
 }
 
 /**
@@ -736,7 +779,7 @@ export interface Client {
 	 *   const { access, refresh: newRefresh } = result.data.tokens
 	 *   updateStoredTokens(access, newRefresh)
 	 * } else if (result.success) {
-	 *   console.log('Token still valid')
+	 *   // Token still valid
 	 * } else {
 	 *   redirectToLogin()
 	 * }
@@ -761,8 +804,8 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { subject, scopes } = result.data
-	 *   console.log(`User: ${subject.properties.userID}`)
-	 *   console.log(`Scopes: ${scopes?.join(', ')}`)
+	 *   // Access user ID: subject.properties.userID
+	 *   // Access scopes: scopes?.join(', ')
 	 * }
 	 * ```
 	 *
@@ -804,7 +847,7 @@ export interface Client {
 	 * ```ts
 	 * const result = await client.revoke(refreshToken)
 	 * if (result.success) {
-	 *   console.log('Logged out from this device')
+	 *   // Successfully logged out from this device
 	 *   clearStoredTokens()
 	 * }
 	 * ```
@@ -813,7 +856,7 @@ export interface Client {
 	 * ```ts
 	 * const result = await client.revoke(refreshToken, { all: true })
 	 * if (result.success) {
-	 *   console.log('Logged out from all devices')
+	 *   // Successfully logged out from all devices
 	 *   redirectToLogin()
 	 * }
 	 * ```
@@ -836,8 +879,8 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { userinfo } = result.data
-	 *   console.log(`Name: ${userinfo.name}`)
-	 *   console.log(`Email: ${userinfo.email}`)
+	 *   // Access name: userinfo.name
+	 *   // Access email: userinfo.email
 	 * }
 	 * ```
 	 */
@@ -858,14 +901,57 @@ export interface Client {
 	 *
 	 * if (result.success) {
 	 *   const { claims } = result.data
-	 *   console.log(`User ID: ${claims.sub}`)
-	 *   console.log(`Email: ${claims.email}`)
+	 *   // Access user ID: claims.sub
+	 *   // Access email: claims.email
 	 * }
 	 * ```
 	 */
 	verifyIdToken(
 		idToken: string
 	): Promise<Result<{ claims: IdTokenClaims }, InvalidAccessTokenError>>
+
+	/**
+	 * Authenticate using OAuth 2.0 client credentials flow.
+	 * This method is used for machine-to-machine authentication.
+	 *
+	 * @param opts - Credentials options
+	 * @returns Access tokens for service authentication
+	 *
+	 * @example Basic service authentication
+	 * ```ts
+	 * const client = createClient({
+	 *   clientID: "api-service-1",
+	 *   clientSecret: "super-secret-key",
+	 *   issuer: "https://auth.mycompany.com"
+	 * })
+	 *
+	 * const result = await client.credentials({
+	 *   scopes: ["read:users", "write:posts"]
+	 * })
+	 *
+	 * if (result.success) {
+	 *   const { access } = result.data
+	 *   // Use access token for API calls
+	 *   const response = await fetch('/api/users', {
+	 *     headers: { Authorization: `Bearer ${access}` }
+	 *   })
+	 * }
+	 * ```
+	 *
+	 * @example Multi-tenant service
+	 * ```ts
+	 * const result = await client.credentials({
+	 *   scopes: ["tenant:read", "tenant:write"],
+	 *   params: {
+	 *     tenant_id: "tenant-123",
+	 *     environment: "production"
+	 *   }
+	 * })
+	 * ```
+	 */
+	credentials(
+		opts?: CredentialsOptions
+	): Promise<Result<Tokens, InvalidAuthorizationCodeError>>
 
 	/**
 	 * Generate a logout URL for ending user sessions.
@@ -1273,6 +1359,67 @@ export const createClient = (input: ClientInput): Client => {
 				return { success: true, data: { claims: verifyResult.payload } }
 			} catch {
 				return { success: false, error: new InvalidAccessTokenError() }
+			}
+		},
+
+		async credentials(
+			opts?: CredentialsOptions
+		): Promise<Result<Tokens, InvalidAuthorizationCodeError>> {
+			try {
+				if (!input.clientSecret) {
+					return {
+						success: false,
+						error: new InvalidAuthorizationCodeError()
+					}
+				}
+
+				const wk = await getIssuer()
+				const requestBody = new URLSearchParams({
+					grant_type: "client_credentials",
+					/**
+					 * Sets provider to 'client-credentials' as required by the client credentials flow.
+					 * This is the standard provider name for machine-to-machine authentication.
+					 */
+					provider: "client-credentials",
+					...(opts?.scopes && { scope: opts.scopes.join(" ") }),
+					...(opts?.params || {})
+				})
+
+				// Use client_secret_basic authentication (recommended)
+				const credentials = btoa(`${input.clientID}:${input.clientSecret}`)
+
+				const response = await f(wk.token_endpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded",
+						Authorization: `Basic ${credentials}`
+					},
+					body: requestBody.toString()
+				})
+
+				if (!response.ok) {
+					return {
+						success: false,
+						error: new InvalidAuthorizationCodeError()
+					}
+				}
+
+				const tokenResponse = (await response.json()) as TokenResponse
+				return {
+					success: true,
+					data: {
+						access: tokenResponse.access_token,
+						refresh: tokenResponse.refresh_token,
+						expiresIn: tokenResponse.expires_in,
+						...(tokenResponse.id_token && { idToken: tokenResponse.id_token }),
+						...(tokenResponse.scope && { scope: tokenResponse.scope })
+					}
+				}
+			} catch {
+				return {
+					success: false,
+					error: new InvalidAuthorizationCodeError()
+				}
 			}
 		},
 

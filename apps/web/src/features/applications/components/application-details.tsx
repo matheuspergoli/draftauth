@@ -1,3 +1,5 @@
+import { useParams } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { env } from "@/environment/env"
 import { run } from "@/libs/utils"
 import {
@@ -10,8 +12,6 @@ import {
 import { Input } from "@/shared/components/input"
 import { Label } from "@/shared/components/label"
 import { applicationQueryOptions } from "@/shared/queries"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { useParams } from "@tanstack/react-router"
 import { DeleteApplicationDialog } from "./delete-application-dialog"
 
 export const ApplicationDetails = () => {
@@ -37,12 +37,12 @@ export const ApplicationDetails = () => {
 			<CardContent className="flex items-center [&>*]:flex-1 gap-5">
 				<fieldset className="space-y-1">
 					<Label>Nome da Aplicação</Label>
-					<Input value={data.appName} disabled />
+					<Input disabled value={data.appName} />
 				</fieldset>
 
 				<fieldset className="space-y-1">
 					<Label>ID da Aplicação</Label>
-					<Input value={data.appId} disabled />
+					<Input disabled value={data.appId} />
 				</fieldset>
 			</CardContent>
 		</Card>

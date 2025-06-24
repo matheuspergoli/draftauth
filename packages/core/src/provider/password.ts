@@ -694,8 +694,8 @@ export const PasswordProvider = (config: PasswordConfig): Provider<PasswordUserD
 // Password Hashing Implementations
 // ========================================
 
-import { TextEncoder } from "node:util"
 import * as jose from "jose"
+import { TextEncoder } from "node:util"
 
 /**
  * PBKDF2 password hasher with configurable iterations.

@@ -109,7 +109,7 @@ export const isDomainMatch = (a: string, b: string): boolean => {
  * @example
  * ```ts
  * const expensiveOperation = lazy(() => {
- *   console.log("Computing...") // Only logs once
+ *   // Computing... (only logs once)
  *   return heavyComputation()
  * })
  *
@@ -118,8 +118,8 @@ export const isDomainMatch = (a: string, b: string): boolean => {
  * ```
  */
 export const lazy = <T>(fn: () => T): (() => T) => {
-	let hasValue = false
 	let value: T
+	let hasValue = false
 
 	return (): T => {
 		if (!hasValue) {

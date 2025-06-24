@@ -1,20 +1,16 @@
-import { randomUUID } from "node:crypto"
+import { and, eq } from "drizzle-orm"
+import { HTTPException } from "hono/http-exception"
 import { db } from "@/db/client"
 import { type ProviderName, type UserStatus, userExternalIdentities, users } from "@/db/schema"
 import { events } from "@/libs/events"
-import { and, eq } from "drizzle-orm"
-import { HTTPException } from "hono/http-exception"
+import { randomUUID } from "node:crypto"
 
 export interface FindOrCreateUserResult {
 	created: boolean
 	user: { userId: string; email: string; status: UserStatus }
 }
 
-export const findUserByEmail = async ({
-	email
-}: {
-	email: string
-}) => {
+export const findUserByEmail = async ({ email }: { email: string }) => {
 	const result = await db
 		.select({
 			userId: users.userId,
@@ -131,11 +127,7 @@ export const findOrCreateUser = async ({
 	return { user, created: true }
 }
 
-export const getUserDetails = async ({
-	userId
-}: {
-	userId: string
-}) => {
+export const getUserDetails = async ({ userId }: { userId: string }) => {
 	const requestedUser = await db
 		.select({
 			userId: users.userId,
@@ -168,7 +160,10 @@ export const listUsers = async () => {
 export const setUserGlobalStatus = async ({
 	userId,
 	status
-}: { userId: string; status: UserStatus }) => {
+}: {
+	userId: string
+	status: UserStatus
+}) => {
 	const requestedUser = await db.select().from(users).where(eq(users.userId, userId)).get()
 
 	if (!requestedUser) {
@@ -189,11 +184,7 @@ export const setUserGlobalStatus = async ({
 	await db.update(users).set({ status: status }).where(eq(users.userId, userId))
 }
 
-export const getUserGlobalStatus = async ({
-	userId
-}: {
-	userId: string
-}) => {
+export const getUserGlobalStatus = async ({ userId }: { userId: string }) => {
 	const requestedUser = await db.select().from(users).where(eq(users.userId, userId)).get()
 
 	if (!requestedUser) {

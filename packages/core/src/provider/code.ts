@@ -64,8 +64,8 @@
  * ```ts
  * success: async (ctx, value) => {
  *   if (value.provider === "code") {
- *     console.log(value.claims.email) // User's email
- *     console.log(value.claims.phone) // User's phone (if provided)
+ *     // User's email: value.claims.email
+ *     // User's phone (if provided): value.claims.phone
  *     // Any other claims collected during the flow
  *   }
  * }

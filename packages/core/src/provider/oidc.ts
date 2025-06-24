@@ -37,10 +37,10 @@
  * ```ts
  * success: async (ctx, value) => {
  *   if (value.provider === "oidc") {
- *     console.log(value.id.sub)    // Subject (user ID)
- *     console.log(value.id.email)  // Email (if email scope requested)
- *     console.log(value.id.name)   // Name (if profile scope requested)
- *     console.log(value.clientID)  // Client ID used for this authentication
+ *     // Subject (user ID): value.id.sub
+ *     // Email (if email scope requested): value.id.email
+ *     // Name (if profile scope requested): value.id.name
+ *     // Client ID used for this authentication: value.clientID
  *   }
  * }
  * ```
@@ -49,7 +49,7 @@
  */
 
 import type { JWTPayload } from "hono/utils/jwt/types"
-import { type JSONWebKeySet, createLocalJWKSet, jwtVerify } from "jose"
+import { createLocalJWKSet, type JSONWebKeySet, jwtVerify } from "jose"
 import type { WellKnown } from "../client"
 import { OauthError, type OauthErrorType } from "../error"
 import { getRelativeUrl, lazy } from "../util"
