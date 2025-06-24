@@ -458,6 +458,7 @@ export const issuer = <
 			iss: issuer(ctx),
 			exp: now + value.ttl.access,
 			iat: now,
+			mode: "access",
 			scopes: value.scopes
 		}
 

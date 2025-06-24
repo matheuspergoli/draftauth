@@ -719,8 +719,7 @@ describe("Core Issuer", () => {
 					})
 				},
 				sso: {
-					enabled: true,
-					isSsoUserStillValid: async () => true
+					enabled: true
 				},
 				providers: {
 					test: {
@@ -1633,16 +1632,6 @@ describe("Core Issuer", () => {
 						"https://admin.example.com/logout"
 					],
 					claimsSupported: ["sub", "email", "name", "custom"],
-					isSsoUserStillValid: async (userId) => {
-						return userId === "advanced-sso-test"
-					},
-					getSsoUserProperties: async (_userId, ssoSessionData, _req, clientID, _scopes) => {
-						return {
-							...ssoSessionData.originalProperties,
-							lastAccessed: new Date().toISOString(),
-							accessedVia: clientID
-						}
-					},
 					getSsoIdentifiers: (properties) => ({
 						userId: properties.userID,
 						email: properties.email,

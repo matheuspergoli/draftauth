@@ -106,7 +106,7 @@ export const FormAlert = (props: FormAlertProps) => {
 	const alertColor = props.color ?? "danger"
 
 	return (
-		<div data-component="form-alert" data-color={alertColor} role="alert" aria-live="polite">
+		<div aria-live="polite" data-color={alertColor} data-component="form-alert" role="alert">
 			{/* Success icon - checkmark in circle */}
 			<SuccessIcon />
 
@@ -125,18 +125,18 @@ export const FormAlert = (props: FormAlertProps) => {
  */
 const SuccessIcon = () => (
 	<svg
-		data-slot="icon-success"
-		xmlns="http://www.w3.org/2000/svg"
-		fill="none"
-		viewBox="0 0 24 24"
-		strokeWidth="1.5"
-		stroke="currentColor"
 		aria-hidden="true"
+		data-slot="icon-success"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="1.5"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
 	>
 		<path
+			d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
 			strokeLinecap="round"
 			strokeLinejoin="round"
-			d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
 		/>
 	</svg>
 )
@@ -147,18 +147,18 @@ const SuccessIcon = () => (
  */
 const DangerIcon = () => (
 	<svg
-		data-slot="icon-danger"
-		xmlns="http://www.w3.org/2000/svg"
-		fill="none"
-		viewBox="0 0 24 24"
-		strokeWidth="1.5"
-		stroke="currentColor"
 		aria-hidden="true"
+		data-slot="icon-danger"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="1.5"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
 	>
 		<path
+			d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
 			strokeLinecap="round"
 			strokeLinejoin="round"
-			d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
 		/>
 	</svg>
 )

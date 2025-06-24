@@ -271,19 +271,19 @@ export const CodeUI = (options: CodeUIOptions): CodeProviderOptions => {
 							{error?.type === "invalid_claim" && <FormAlert message={copy.email_invalid} />}
 
 							{/* Form action identifier */}
-							<input type="hidden" name="action" value="request" />
+							<input name="action" type="hidden" value="request" />
 
 							{/* Contact input field */}
 							<input
-								data-component="input"
 								autofocus
-								required
+								data-component="input"
 								placeholder={copy.email_placeholder}
+								required
 								{...inputAttrs}
 							/>
 
 							{/* Submit button */}
-							<button type="submit" data-component="button">
+							<button data-component="button" type="submit">
 								{copy.button_continue}
 							</button>
 						</form>
@@ -311,31 +311,31 @@ export const CodeUI = (options: CodeUIOptions): CodeProviderOptions => {
 
 							{/* Display success message */}
 							<FormAlert
-								message={(state.resend ? copy.code_resent : copy.code_sent) + contactValue}
 								color="success"
+								message={(state.resend ? copy.code_resent : copy.code_sent) + contactValue}
 							/>
 
 							{/* Form action identifier */}
-							<input type="hidden" name="action" value="verify" />
+							<input name="action" type="hidden" value="verify" />
 
 							{/* PIN code input */}
 							<input
-								data-component="input"
+								aria-label="6-digit verification code"
+								autocomplete="one-time-code"
 								autofocus
+								data-component="input"
+								inputmode="numeric"
+								maxLength={6}
+								minLength={6}
+								name="code"
+								pattern="[0-9]{6}"
+								placeholder={copy.code_placeholder}
 								required
 								type="text"
-								name="code"
-								placeholder={copy.code_placeholder}
-								minLength={6}
-								maxLength={6}
-								inputmode="numeric"
-								autocomplete="one-time-code"
-								pattern="[0-9]{6}"
-								aria-label="6-digit verification code"
 							/>
 
 							{/* Verify button */}
-							<button type="submit" data-component="button">
+							<button data-component="button" type="submit">
 								{copy.button_continue}
 							</button>
 						</form>
@@ -344,17 +344,17 @@ export const CodeUI = (options: CodeUIOptions): CodeProviderOptions => {
 						<form method="post">
 							{/* Preserve claims as hidden inputs */}
 							{Object.entries(state.claims).map(([key, value]) => (
-								<input key={key} type="hidden" name={key} value={value} />
+								<input key={key} name={key} type="hidden" value={value} />
 							))}
 
 							{/* Resend action identifier */}
-							<input type="hidden" name="action" value="resend" />
+							<input name="action" type="hidden" value="resend" />
 
 							{/* Resend link */}
 							<div data-component="form-footer">
 								<span>
 									{copy.code_didnt_get}{" "}
-									<button type="submit" data-component="link">
+									<button data-component="link" type="submit">
 										{copy.code_resend}
 									</button>
 								</span>

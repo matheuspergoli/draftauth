@@ -244,25 +244,25 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 						<FormAlert message={getErrorMessage(error)} />
 
 						<input
-							data-component="input"
-							type="email"
-							name="email"
-							required
-							placeholder={copy.input_email}
-							defaultValue={form?.get("email")?.toString()}
 							autoComplete="email"
+							data-component="input"
+							defaultValue={form?.get("email")?.toString()}
+							name="email"
+							placeholder={copy.input_email}
+							required
+							type="email"
 						/>
 
 						<input
-							data-component="input"
-							type="password"
-							name="password"
-							required
-							placeholder={copy.input_password}
 							autoComplete="current-password"
+							data-component="input"
+							name="password"
+							placeholder={copy.input_password}
+							required
+							type="password"
 						/>
 
-						<button type="submit" data-component="button">
+						<button data-component="button" type="submit">
 							{copy.button_continue}
 						</button>
 
@@ -306,38 +306,38 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 
 						{state.type === "start" && (
 							<>
-								<input type="hidden" name="action" value="register" />
+								<input name="action" type="hidden" value="register" />
 
 								<input
-									data-component="input"
-									type="email"
-									name="email"
-									required
-									placeholder={copy.input_email}
-									defaultValue={!emailError ? form?.get("email")?.toString() : ""}
 									autoComplete="email"
+									data-component="input"
+									defaultValue={!emailError ? form?.get("email")?.toString() : ""}
+									name="email"
+									placeholder={copy.input_email}
+									required
+									type="email"
 								/>
 
 								<input
+									autoComplete="new-password"
 									data-component="input"
-									type="password"
-									name="password"
-									required
-									placeholder={copy.input_password}
 									defaultValue={!passwordError ? form?.get("password")?.toString() : ""}
-									autoComplete="new-password"
+									name="password"
+									placeholder={copy.input_password}
+									required
+									type="password"
 								/>
 
 								<input
-									data-component="input"
-									type="password"
-									name="repeat"
-									required
-									placeholder={copy.input_repeat}
 									autoComplete="new-password"
+									data-component="input"
+									name="repeat"
+									placeholder={copy.input_repeat}
+									required
+									type="password"
 								/>
 
-								<button type="submit" data-component="button">
+								<button data-component="button" type="submit">
 									{copy.button_continue}
 								</button>
 
@@ -354,23 +354,23 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 
 						{state.type === "code" && (
 							<>
-								<input type="hidden" name="action" value="verify" />
+								<input name="action" type="hidden" value="verify" />
 
 								<input
-									data-component="input"
-									type="text"
-									name="code"
-									required
-									placeholder={copy.input_code}
-									minLength={6}
-									maxLength={6}
-									inputMode="numeric"
-									autoComplete="one-time-code"
-									pattern="[0-9]{6}"
 									aria-label="6-digit verification code"
+									autoComplete="one-time-code"
+									data-component="input"
+									inputMode="numeric"
+									maxLength={6}
+									minLength={6}
+									name="code"
+									pattern="[0-9]{6}"
+									placeholder={copy.input_code}
+									required
+									type="text"
 								/>
 
-								<button type="submit" data-component="button">
+								<button data-component="button" type="submit">
 									{copy.button_continue}
 								</button>
 							</>
@@ -402,67 +402,67 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 
 						{state.type === "start" && (
 							<>
-								<input type="hidden" name="action" value="code" />
+								<input name="action" type="hidden" value="code" />
 
 								<input
-									data-component="input"
-									type="email"
-									name="email"
-									required
-									placeholder={copy.input_email}
-									defaultValue={form?.get("email")?.toString()}
 									autoComplete="email"
+									data-component="input"
+									defaultValue={form?.get("email")?.toString()}
+									name="email"
+									placeholder={copy.input_email}
+									required
+									type="email"
 								/>
 							</>
 						)}
 
 						{state.type === "code" && (
 							<>
-								<input type="hidden" name="action" value="verify" />
+								<input name="action" type="hidden" value="verify" />
 
 								<input
-									data-component="input"
-									type="text"
-									name="code"
-									required
-									placeholder={copy.input_code}
-									minLength={6}
-									maxLength={6}
-									inputMode="numeric"
-									autoComplete="one-time-code"
-									pattern="[0-9]{6}"
 									aria-label="6-digit verification code"
+									autoComplete="one-time-code"
+									data-component="input"
+									inputMode="numeric"
+									maxLength={6}
+									minLength={6}
+									name="code"
+									pattern="[0-9]{6}"
+									placeholder={copy.input_code}
+									required
+									type="text"
 								/>
 							</>
 						)}
 
 						{state.type === "update" && (
 							<>
-								<input type="hidden" name="action" value="update" />
+								<input name="action" type="hidden" value="update" />
 
 								<input
-									data-component="input"
-									type="password"
-									name="password"
-									required
-									placeholder={copy.input_password}
-									defaultValue={!passwordError ? form?.get("password")?.toString() : ""}
 									autoComplete="new-password"
+									data-component="input"
+									defaultValue={!passwordError ? form?.get("password")?.toString() : ""}
+									name="password"
+									placeholder={copy.input_password}
+									required
+									type="password"
 								/>
 
 								<input
-									data-component="input"
-									type="password"
-									name="repeat"
-									required
-									placeholder={copy.input_repeat}
-									defaultValue={!passwordError ? form?.get("repeat")?.toString() : ""}
 									autoComplete="new-password"
+									data-component="input"
+									defaultValue={!passwordError ? form?.get("repeat")?.toString() : ""}
+									name="repeat"
+									placeholder={copy.input_repeat}
+									required
+									type="password"
 								/>
 							</>
 						)}
 
-						<button type="submit" data-component="button">
+						<button data-component="button" type="submit">
 							{copy.button_continue}
 						</button>
 					</form>
@@ -470,8 +470,8 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 					{/* Resend code form for verification step */}
 					{state.type === "code" && (
 						<form method="post">
-							<input type="hidden" name="action" value="code" />
-							<input type="hidden" name="email" value={state.email} />
+							<input name="action" type="hidden" value="code" />
+							<input name="email" type="hidden" value={state.email} />
 
 							<div data-component="form-footer">
 								<span>
@@ -480,7 +480,7 @@ export const PasswordUI = (options: PasswordUIOptions): PasswordConfig => {
 										{copy.login.toLowerCase()}
 									</a>
 								</span>
-								<button type="submit" data-component="link">
+								<button data-component="link" type="submit">
 									{copy.code_resend}
 								</button>
 							</div>

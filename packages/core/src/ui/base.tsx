@@ -105,27 +105,27 @@ export const Layout = (props: PropsWithChildren<LayoutProps>) => {
 			<head>
 				<title>{theme?.title || "Draft Auth"}</title>
 				<meta charset="utf-8" />
-				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				<meta content="width=device-width, initial-scale=1" name="viewport" />
 
 				{/* Favicon handling */}
 				{theme?.favicon ? (
-					<link rel="icon" href={theme.favicon} />
+					<link href={theme.favicon} rel="icon" />
 				) : (
 					<>
-						<link rel="icon" href="https://openauth.js.org/favicon.ico" sizes="48x48" />
+						<link href="https://openauth.js.org/favicon.ico" rel="icon" sizes="48x48" />
 						<link
-							rel="icon"
 							href="https://openauth.js.org/favicon.svg"
 							media="(prefers-color-scheme: light)"
+							rel="icon"
 						/>
 						<link
-							rel="icon"
 							href="https://openauth.js.org/favicon-dark.svg"
 							media="(prefers-color-scheme: dark)"
+							rel="icon"
 						/>
 						<link
-							rel="shortcut icon"
 							href="https://openauth.js.org/favicon.svg"
+							rel="shortcut icon"
 							type="image/svg+xml"
 						/>
 					</>
@@ -148,14 +148,14 @@ export const Layout = (props: PropsWithChildren<LayoutProps>) => {
 								<img
 									alt="Logo Light"
 									data-component="logo"
-									src={getThemeValue("logo", "light")}
 									data-mode="light"
+									src={getThemeValue("logo", "light")}
 								/>
 								<img
 									alt="Logo Dark"
 									data-component="logo"
-									src={getThemeValue("logo", "dark")}
 									data-mode="dark"
+									src={getThemeValue("logo", "dark")}
 								/>
 							</>
 						) : (
@@ -177,13 +177,13 @@ export const Layout = (props: PropsWithChildren<LayoutProps>) => {
  */
 const DefaultDraftAuthLogo = () => (
 	<svg
+		aria-label="Draft Auth Logo"
 		data-component="logo-default"
-		width="51"
+		fill="none"
 		height="51"
 		viewBox="0 0 51 51"
-		fill="none"
+		width="51"
 		xmlns="http://www.w3.org/2000/svg"
-		aria-label="Draft Auth Logo"
 	>
 		<path
 			d="M0 50.2303V0.12854H50.1017V50.2303H0ZM3.08002 11.8326H11.7041V3.20856H3.08002V11.8326ZM14.8526 11.8326H23.4766V3.20856H14.8526V11.8326ZM26.5566 11.8326H35.1807V3.20856H26.5566V11.8326ZM38.3292 11.8326H47.0217V3.20856H38.3292V11.8326ZM3.08002 23.6052H11.7041V14.9811H3.08002V23.6052ZM14.8526 23.6052H23.4766V14.9811H14.8526V23.6052ZM26.5566 23.6052H35.1807V14.9811H26.5566V23.6052ZM38.3292 23.6052H47.0217V14.9811H38.3292V23.6052ZM3.08002 35.3092H11.7041V26.6852H3.08002V35.3092ZM14.8526 35.3092H23.4766V26.6852H14.8526V35.3092ZM26.5566 35.3092H35.1807V26.6852H26.5566V35.3092ZM38.3292 35.3092H47.0217V26.6852H38.3292V35.3092ZM3.08002 47.1502H11.7041V38.3893H3.08002V47.1502ZM14.8526 47.1502H23.4766V38.3893H14.8526V47.1502ZM26.5566 47.1502H35.1807V38.3893H26.5566V47.1502ZM38.3292 47.1502H47.0217V38.3893H38.3292V47.1502Z"
