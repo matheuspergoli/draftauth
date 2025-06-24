@@ -32,7 +32,7 @@ function Badge({
 	const Comp = asChild ? SlotPrimitive.Slot : "span"
 
 	return (
-		<Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />
+		<Comp className={cn(badgeVariants({ variant }), className)} data-slot="badge" {...props} />
 	)
 }
 

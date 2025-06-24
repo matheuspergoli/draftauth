@@ -114,8 +114,8 @@ export const ApplicationRedirectUris = () => {
 				<div className="space-y-2">
 					{data.map((uri) => (
 						<div
-							key={uri.uriId}
 							className="flex items-center justify-between p-2 rounded-md border"
+							key={uri.uriId}
 						>
 							<span className="font-mono text-sm">{uri.uri}</span>
 
@@ -144,7 +144,7 @@ export const ApplicationRedirectUris = () => {
 												await deleteRedirectURI({ uriId: uri.uriId, appId })
 											}}
 										>
-											<Button mode="loading" isLoading={isPending}>
+											<Button isLoading={isPending} mode="loading">
 												Apagar
 											</Button>
 										</AlertDialogAction>

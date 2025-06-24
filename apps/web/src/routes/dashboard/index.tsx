@@ -155,8 +155,8 @@ function RouteComponent() {
 									const IconComponent = displayInfo.icon
 									return (
 										<li
-											key={log.logId}
 											className="flex items-start space-x-3 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+											key={log.logId}
 										>
 											<div className="mt-1 flex-shrink-0 bg-muted rounded-full p-2">
 												<IconComponent className="h-4 w-4 text-muted-foreground" />

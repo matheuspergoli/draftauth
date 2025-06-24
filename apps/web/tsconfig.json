@@ -1,18 +1,18 @@
 {
-	"extends": "@draftauth/tsconfig/internal-package.json",
-	"compilerOptions": {
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"],
-			"@draftauth/core": ["../../packages/core/src/index.ts"],
-			"@draftauth/core/*": ["../../packages/core/src/*"]
-		},
-		"types": ["vite/client", "@draftauth/tsconfig/reset"]
-	},
-	"references": [
-		{
-			"path": "../api/tsconfig.json"
-		}
-	],
-	"include": ["vite.config.ts", "**/*.ts", "**/*.tsx"]
+  "extends": "@draftauth/tsconfig/internal-package.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@draftauth/core": ["../../packages/core/src/index.ts"],
+      "@draftauth/core/*": ["../../packages/core/src/*"]
+    },
+    "types": ["vite/client", "@draftauth/tsconfig/reset"]
+  },
+  "references": [
+    {
+      "path": "../api/tsconfig.json"
+    }
+  ],
+  "include": ["vite.config.ts", "**/*.ts", "**/*.tsx"]
 }

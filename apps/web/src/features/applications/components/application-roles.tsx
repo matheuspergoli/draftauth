@@ -108,8 +108,8 @@ export const ApplicationRoles = () => {
 
 							<form.AppForm>
 								<form.SubscribeButton
-									disabled={ability.cannot("create_role", "Application")}
 									className="mt-3"
+									disabled={ability.cannot("create_role", "Application")}
 								>
 									Criar cargo
 								</form.SubscribeButton>
@@ -160,7 +160,7 @@ export const ApplicationRoles = () => {
 													disabled={ability.cannot("delete_role", "Application")}
 													onClick={async () => await deleteRole({ roleId: values.roleId })}
 												>
-													<Button mode="loading" isLoading={isPending}>
+													<Button isLoading={isPending} mode="loading">
 														Apagar
 													</Button>
 												</AlertDialogAction>

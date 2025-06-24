@@ -11,7 +11,7 @@ const InnerApp = () => {
 export const App = () => {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider defaultTheme="default" defaultColorMode="dark">
+			<ThemeProvider defaultColorMode="dark" defaultTheme="default">
 				<InnerApp />
 			</ThemeProvider>
 		</QueryClientProvider>

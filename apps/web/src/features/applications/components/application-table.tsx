@@ -59,7 +59,7 @@ export const applicationTableColumns: ColumnDef<Applications[number]>[] = [
 		cell: ({ row }) => {
 			return (
 				<Button asChild className="block ml-auto w-fit">
-					<Link to="/dashboard/applications/$appId" params={{ appId: row.original.appId }}>
+					<Link params={{ appId: row.original.appId }} to="/dashboard/applications/$appId">
 						Gerenciar
 					</Link>
 				</Button>
@@ -96,10 +96,10 @@ export function ApplicationTable<TData, TValue>({
 				<CreateApplicationDialog />
 
 				<Input
+					className="max-w-sm"
+					onChange={(event) => table.getColumn("appName")?.setFilterValue(event.target.value)}
 					placeholder="Buscar aplicação por nome"
 					value={(table.getColumn("appName")?.getFilterValue() as string) ?? ""}
-					onChange={(event) => table.getColumn("appName")?.setFilterValue(event.target.value)}
-					className="max-w-sm"
 				/>
 			</div>
 
@@ -123,7 +123,7 @@ export function ApplicationTable<TData, TValue>({
 					<TableBody>
 						{table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+								<TableRow data-state={row.getIsSelected() && "selected"} key={row.id}>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
 											{flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -133,7 +133,7 @@ export function ApplicationTable<TData, TValue>({
 							))
 						) : (
 							<TableRow>
-								<TableCell colSpan={columns.length} className="h-24 text-center">
+								<TableCell className="h-24 text-center" colSpan={columns.length}>
 									Sem resultados.
 								</TableCell>
 							</TableRow>

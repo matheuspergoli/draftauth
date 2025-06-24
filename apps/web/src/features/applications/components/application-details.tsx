@@ -37,12 +37,12 @@ export const ApplicationDetails = () => {
 			<CardContent className="flex items-center [&>*]:flex-1 gap-5">
 				<fieldset className="space-y-1">
 					<Label>Nome da Aplicação</Label>
-					<Input value={data.appName} disabled />
+					<Input disabled value={data.appName} />
 				</fieldset>
 
 				<fieldset className="space-y-1">
 					<Label>ID da Aplicação</Label>
-					<Input value={data.appId} disabled />
+					<Input disabled value={data.appId} />
 				</fieldset>
 			</CardContent>
 		</Card>

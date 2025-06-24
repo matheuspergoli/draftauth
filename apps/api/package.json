@@ -1,43 +1,43 @@
 {
-	"name": "api",
-	"private": true,
-	"version": "0.1.0",
-	"type": "module",
-	"license": "MIT",
-	"scripts": {
-		"build": "tsup",
-		"start": "bun ./dist/index.js",
-		"dev": "bun --watch ./src/index.ts",
-		"db:push": "drizzle-kit push",
-		"db:studio": "drizzle-kit studio",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:reset": "rm -rf db.sqlite && pnpm db:push",
-		"clean": "rm -rf dist .turbo node_modules"
-	},
-	"dependencies": {
-		"@draftauth/ability": "workspace:*",
-		"@draftauth/core": "workspace:*",
-		"@draftauth/emails": "workspace:*",
-		"@draftauth/events": "workspace:*",
-		"@draftauth/utils": "workspace:*",
-		"@hono/zod-validator": "^0.7.0",
-		"@libsql/client": "^0.15.9",
-		"@t3-oss/env-core": "^0.13.8",
-		"@upstash/ratelimit": "^2.0.5",
-		"@upstash/redis": "^1.35.0",
-		"drizzle-orm": "^0.44.2",
-		"hono": "^4.8.2",
-		"resend": "^4.6.0",
-		"zod": "^3.25.67",
-		"zxcvbn": "^4.4.2"
-	},
-	"devDependencies": {
-		"@draftauth/tsconfig": "workspace:*",
-		"@types/node": "^24.0.3",
-		"@types/zxcvbn": "^4.4.5",
-		"drizzle-kit": "^0.31.2",
-		"tsup": "^8.5.0",
-		"typescript": "^5.8.3"
-	}
+  "name": "api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "start": "bun ./dist/index.js",
+    "dev": "bun --watch ./src/index.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:reset": "rm -rf db.sqlite && pnpm db:push",
+    "clean": "rm -rf dist .turbo node_modules"
+  },
+  "dependencies": {
+    "@draftauth/ability": "workspace:*",
+    "@draftauth/core": "workspace:*",
+    "@draftauth/emails": "workspace:*",
+    "@draftauth/events": "workspace:*",
+    "@draftauth/utils": "workspace:*",
+    "@hono/zod-validator": "^0.7.0",
+    "@libsql/client": "^0.15.9",
+    "@t3-oss/env-core": "^0.13.8",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.35.0",
+    "drizzle-orm": "^0.44.2",
+    "hono": "^4.8.2",
+    "resend": "^4.6.0",
+    "zod": "^3.25.67",
+    "zxcvbn": "^4.4.2"
+  },
+  "devDependencies": {
+    "@draftauth/tsconfig": "workspace:*",
+    "@types/node": "^24.0.3",
+    "@types/zxcvbn": "^4.4.5",
+    "drizzle-kit": "^0.31.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
+  }
 }

@@ -28,8 +28,8 @@ function ErrorMessages(props: ErrorMessagesProps) {
 			{field.state.meta.isTouched
 				? errors.map((error) => (
 						<div
-							key={typeof error === "string" ? error : error.message}
 							className="text-red-500"
+							key={typeof error === "string" ? error : error.message}
 							{...props}
 						>
 							{typeof error === "string" ? error : error.message}
@@ -72,10 +72,10 @@ export function SubscribeButton(props: SubscribeButtonProps) {
 				<Button
 					{...props}
 					className={cn(props.className)}
-					type="submit"
-					mode="loading"
-					isLoading={isSubmitting}
 					disabled={isSubmitting || props.disabled}
+					isLoading={isSubmitting}
+					mode="loading"
+					type="submit"
 				/>
 			)}
 		</form.Subscribe>
@@ -91,9 +91,9 @@ export function TextField(props: TextFieldProps) {
 			{...props}
 			id={field.name}
 			name={field.name}
-			value={field.state.value}
 			onBlur={field.handleBlur}
 			onChange={(e) => field.handleChange(e.target.value)}
+			value={field.state.value}
 		/>
 	)
 }
@@ -108,10 +108,10 @@ export function SelectField(props: SelectFieldProps) {
 
 	return (
 		<Select
-			name={field.name}
 			disabled={props.disabled}
-			value={field.state.value}
+			name={field.name}
 			onValueChange={(value) => field.handleChange(value)}
+			value={field.state.value}
 		>
 			<SelectTrigger className="w-full">
 				<SelectValue placeholder={props?.placeholder} />
@@ -144,9 +144,9 @@ export function TextArea(props: TextAreaFieldProps) {
 	return (
 		<Textarea
 			{...props}
-			value={field.state.value}
 			onBlur={field.handleBlur}
 			onChange={(e) => field.handleChange(e.target.value)}
+			value={field.state.value}
 		/>
 	)
 }

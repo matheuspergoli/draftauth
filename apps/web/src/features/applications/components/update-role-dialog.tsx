@@ -64,8 +64,8 @@ export const UpdateRoleDialog = ({
 
 					<form.AppForm>
 						<form.SubscribeButton
-							disabled={ability.cannot("edit_role", "Application")}
 							className="mt-3"
+							disabled={ability.cannot("edit_role", "Application")}
 						>
 							Atualizar
 						</form.SubscribeButton>

@@ -32,10 +32,10 @@ export const EmailNotFoundInClaimsPage = () => {
 			</p>
 
 			<button
-				type="button"
 				data-color="ghost"
 				data-component="button"
 				onClick={() => window.history.back()}
+				type="button"
 			>
 				Tentar Novamente
 			</button>

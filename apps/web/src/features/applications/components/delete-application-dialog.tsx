@@ -42,7 +42,7 @@ export const DeleteApplicationDialog = ({ appId }: { appId: string }) => {
 							router.navigate({ to: "/dashboard/applications" })
 						}}
 					>
-						<Button mode="loading" isLoading={isPending}>
+						<Button isLoading={isPending} mode="loading">
 							Apagar
 						</Button>
 					</AlertDialogAction>
