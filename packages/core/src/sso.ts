@@ -207,7 +207,7 @@ const validateSsoSession = async (
 
 	// Basic validation: structure and expiration
 	const now = Math.floor(Date.now() / 1000)
-	let isSsoSessionValid = ssoSessionData.userId && ssoSessionData.exp > now
+	const isSsoSessionValid = ssoSessionData.userId && ssoSessionData.exp > now
 
 	return isSsoSessionValid ? ssoSessionData : null
 }
